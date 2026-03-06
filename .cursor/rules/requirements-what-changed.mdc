@@ -1,0 +1,21 @@
+---
+description: Keep requirements docs updated with What Changed
+alwaysApply: true
+---
+
+# Requirements "What Changed" Update Rule
+
+When implementing a feature or making behavior changes, always update the relevant requirements analysis document with a `## What Changed` section (or refresh it if it already exists).
+
+Use the feature analysis file under `requirements/` that matches the task context (for example, `requirements/analysis_feature1.md`).
+
+Minimum content for `What Changed`:
+
+- Backend/API updates that shipped
+- Frontend/UI behavior that changed
+- Test/spec coverage added or modified
+- Any docs/script updates needed to support the change
+
+Completion criteria:
+
+- Implementation is not considered complete until the `What Changed` section reflects the actual delivered changes.

@@ -1,0 +1,23 @@
+---
+description: Feature spec authoring rules for Cypress generation
+globs: specs/**/*.feature
+alwaysApply: false
+---
+
+# Feature Spec Authoring
+
+Apply these rules when creating or editing behavior specs in `specs/`.
+
+- Keep scenarios user-centric and behavior-focused.
+- Include at least one happy path and one negative path per feature.
+- Use clear preconditions in `Background` when shared across scenarios.
+- Prefer deterministic steps and explicit expected outcomes.
+- Reference stable routes, roles, and fixture names where possible.
+- Keep each scenario focused on a single behavior outcome.
+
+Suggested structure:
+
+- `Feature` title with business value
+- optional `Background`
+- tagged scenarios (`@smoke`, `@regression`) as appropriate
+- explicit assertions in `Then` and follow-up `And` steps

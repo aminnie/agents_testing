@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "sku": "SKU-123",
+      "name": "Sample Item",
+      "price": 29.99,
+      "currency": "USD",
+      "inStock": true
+    },
+    {
+      "sku": "SKU-OOS",
+      "name": "Out Of Stock Item",
+      "price": 59.99,
+      "currency": "USD",
+      "inStock": false
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+Feature: Catalog and cart
+  As a shopper
+  I want to browse products and add them to my cart
+  So that I can prepare for checkout
+
+  Background:
+    Given test data "catalog/standard-items.json"
+    And I am authenticated as "customer"
+
+  @smoke @regression
+  Scenario: Catalog list is visible after login
+    Given I am on "/"
+    When I log in with valid credentials
+    Then I should see at least 20 catalog items
+
+  @smoke @regression
+  Scenario: User adds a catalog item to cart
+    Given I am on "/"
+    And I log in with valid credentials
+    When I add the first catalog item to cart
+    Then cart should contain 1 item
+    And cart total should be greater than "$0.00"
+
+  @regression
+  Scenario: User views a catalog item detail and adds it to cart
+    Given I am on "/"
+    And I log in with valid credentials
+    When I open the first catalog item detail screen
+    And I add the item to cart from the detail screen
+    Then I should return to "/store"
+    And cart should contain 1 item
+
+  @regression
+  Scenario: User returns from item detail without adding
+    Given I am on "/"
+    And I log in with valid credentials
+    When I open the first catalog item detail screen
+    And I return to the catalog list without adding the item
+    Then I should return to "/store"
+    And cart should remain empty

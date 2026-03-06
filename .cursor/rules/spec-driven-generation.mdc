@@ -1,0 +1,22 @@
+---
+description: Always-on spec-driven Cypress generation workflow
+alwaysApply: true
+---
+
+# Spec-Driven Cypress Generation
+
+When asked to create or update Cypress tests, treat `specs/*.feature` as the behavior source of truth.
+
+- Start from spec scenarios and map each behavior to focused Cypress test cases.
+- Generate files under:
+  - `cypress/e2e/` for test suites
+  - `cypress/pages/` for page objects when needed
+  - `cypress/fixtures/` for deterministic data
+- Include positive and negative scenarios from the spec.
+- Suggest missing `data-cy` selectors when the UI lacks stable hooks.
+- Keep generated outputs modular; do not create one oversized test file.
+- Ensure outputs comply with:
+  - `AGENTS.md` for project-wide standards.
+  - `CYRPRESS-AGENT.md` for Cypress testing/generation standards.
+
+If a feature has multiple workflows, split into multiple Cypress spec files.

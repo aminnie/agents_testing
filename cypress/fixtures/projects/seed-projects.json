@@ -1,0 +1,14 @@
+{
+  "projects": [
+    {
+      "name": "Website Redesign",
+      "key": "WR-2026",
+      "status": "active"
+    },
+    {
+      "name": "Mobile Refresh",
+      "key": "MR-2026",
+      "status": "active"
+    }
+  ]
+}

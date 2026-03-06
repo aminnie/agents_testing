@@ -1,0 +1,30 @@
+export default function AppHeader({
+  userEmail,
+  onGoStore,
+  onGoCheckout,
+  onLogout,
+  isCheckoutEnabled
+}) {
+  return (
+    <header className="row-between">
+      <h1 data-cy="dashboard-title">My Store</h1>
+      <p data-cy="session-user-email">{userEmail || "unknown user"}</p>
+      <div className="row-between">
+        <button data-cy="nav-store" onClick={onGoStore} type="button">
+          Store
+        </button>
+        <button
+          data-cy="nav-checkout"
+          disabled={!isCheckoutEnabled}
+          onClick={onGoCheckout}
+          type="button"
+        >
+          Checkout
+        </button>
+      </div>
+      <button data-cy="logout-button" onClick={onLogout} type="button">
+        Logout
+      </button>
+    </header>
+  );
+}

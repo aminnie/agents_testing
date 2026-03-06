@@ -1,0 +1,29 @@
+{
+  "name": "agents_testing-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "app/backend",
+    "app/frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev:backend": "sh -c 'PORT=${BACKEND_PORT:-4000} npm run dev --workspace app/backend'",
+    "dev:backend:clean": "sh -c 'PORT_TO_FREE=${BACKEND_PORT:-4000}; PIDS=$(lsof -ti tcp:${PORT_TO_FREE}); if [ -n \"$PIDS\" ]; then echo \"Stopping process(es) on :${PORT_TO_FREE} -> $PIDS\"; echo \"$PIDS\" | xargs kill; fi; npm run dev:backend'",
+    "dev:frontend": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173} BACKEND_PORT=${BACKEND_PORT:-4000} npm run dev --workspace app/frontend'",
+    "dev:frontend:clean": "sh -c 'PORT_TO_FREE=${FRONTEND_PORT:-5173}; PIDS=$(lsof -ti tcp:${PORT_TO_FREE}); if [ -n \"$PIDS\" ]; then echo \"Stopping process(es) on :${PORT_TO_FREE} -> $PIDS\"; echo \"$PIDS\" | xargs kill; fi; npm run dev:frontend'",
+    "dev:clean": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; PIDS_BACKEND=$(lsof -ti tcp:${BACKEND_PORT}); PIDS_FRONTEND=$(lsof -ti tcp:${FRONTEND_PORT}); if [ -n \"$PIDS_BACKEND\" ]; then echo \"Stopping process(es) on :${BACKEND_PORT} -> $PIDS_BACKEND\"; echo \"$PIDS_BACKEND\" | xargs kill; fi; if [ -n \"$PIDS_FRONTEND\" ]; then echo \"Stopping process(es) on :${FRONTEND_PORT} -> $PIDS_FRONTEND\"; echo \"$PIDS_FRONTEND\" | xargs kill; fi; npm run dev'",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "npm run build --workspace app/frontend",
+    "cypress:install": "sh -c 'CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress install --force'",
+    "cypress:verify": "sh -c 'CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress verify'",
+    "cypress:open": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress open \"$@\"' --",
+    "cypress:run": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress run \"$@\"' --",
+    "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run\"'"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cypress": "^15.11.0",
+    "start-server-and-test": "^2.1.5"
+  }
+}

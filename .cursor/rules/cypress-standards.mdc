@@ -1,0 +1,23 @@
+---
+description: Always-on Cypress testing standards
+alwaysApply: true
+---
+
+# Cypress Standards
+
+Use these standards for any Cypress-related code or guidance in this repository.
+
+- Prefer behavior-focused E2E tests that validate what users see and do.
+- Keep tests independent, deterministic, and CI-safe.
+- Use stable selectors (`data-cy` preferred); avoid style or DOM-structure selectors.
+- Do not use arbitrary time waits (for example `cy.wait(5000)`).
+- Use `cy.intercept()` aliases for critical network behavior and assertions.
+- Keep tests short and focused; split multi-workflow coverage into separate specs.
+- Use page objects for reusable interactions and shared selectors.
+- Use fixtures for deterministic test data and avoid hardcoded sensitive values.
+- Follow naming convention `*.cy.ts` for Cypress spec files.
+
+For detailed project guidance:
+
+- Use `AGENTS.md` for general engineering and change-management standards.
+- Use `CYRPRESS-AGENT.md` for Cypress-specific standards and generation workflow.
