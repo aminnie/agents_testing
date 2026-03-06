@@ -1,6 +1,6 @@
 # My Store + Cypress Portfolio
 
-This repository contains a small web store application used to validate Cypress best practices in `CYRPRESS-AGENT.md`.
+This repository contains a small web store application used to develop and validate agents, skills and plugin best practices in the development life cycle.
 
 ## What is included
 
