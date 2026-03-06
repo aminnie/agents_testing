@@ -1,4 +1,4 @@
-# My Store + Cypress Portfolio
+# My Store Agents Development Application
 
 This repository contains a small web store application used to develop and validate agents, skills and plugin best practices in the development life cycle.
 
