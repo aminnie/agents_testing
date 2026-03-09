@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppHeader from "./components/AppHeader.jsx";
 import CheckoutPage from "./components/CheckoutPage.jsx";
@@ -7,6 +8,7 @@ import ItemDetailPage from "./components/ItemDetailPage.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
 import ProductFormPage from "./components/ProductFormPage.jsx";
 import StorePage from "./components/StorePage.jsx";
+import theme from "./theme.js";
 
 const STORAGE_KEYS = Object.freeze({
   auth: ["store", "auth", "state"].join("-"),
@@ -550,8 +552,11 @@ function StoreApp() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <StoreApp />
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <StoreApp />
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

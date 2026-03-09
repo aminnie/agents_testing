@@ -91,10 +91,21 @@ describe("Feature: Catalog pagination", () => {
     cy.location("search").should("include", "page=1");
     cy.location("search").should("include", "pageSize=50");
     cy.get('[data-cy="catalog-list"] li').should("have.length.at.most", 50);
-    cy.get('[data-cy="catalog-page-first"]').should("be.disabled");
-    cy.get('[data-cy="catalog-page-prev"]').should("be.disabled");
-    cy.get('[data-cy="catalog-page-next"]').should("be.disabled");
-    cy.get('[data-cy="catalog-page-last"]').should("be.disabled");
+    catalogPage.pageIndicator().invoke("text").then((text) => {
+      const match = text.match(/^Page (\d+) of (\d+)$/);
+      expect(match, "page indicator format").to.not.equal(null);
+      const pageCount = Number(match?.[2] || 1);
+
+      cy.get('[data-cy="catalog-page-first"]').should("be.disabled");
+      cy.get('[data-cy="catalog-page-prev"]').should("be.disabled");
+      if (pageCount === 1) {
+        cy.get('[data-cy="catalog-page-next"]').should("be.disabled");
+        cy.get('[data-cy="catalog-page-last"]').should("be.disabled");
+      } else {
+        cy.get('[data-cy="catalog-page-next"]').should("be.enabled");
+        cy.get('[data-cy="catalog-page-last"]').should("be.enabled");
+      }
+    });
   });
 
   it("should preserve page and page size when returning from item detail", () => {

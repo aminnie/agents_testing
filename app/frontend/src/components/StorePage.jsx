@@ -1,3 +1,22 @@
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import EditIcon from "@mui/icons-material/Edit";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  List,
+  ListItem,
+  NativeSelect,
+  Stack,
+  Typography
+} from "@mui/material";
+
 export default function StorePage({
   loadingCatalog,
   catalog,
@@ -25,81 +44,122 @@ export default function StorePage({
   const disableNext = currentPage >= totalPages || totalItems <= pageSize;
 
   return (
-    <>
-      <section className="card">
-        <h2>Catalog</h2>
-        {loadingCatalog ? <p data-cy="catalog-loading">Loading...</p> : null}
-        <ul data-cy="catalog-list">
+    <Stack spacing={3} sx={{ mt: 2 }}>
+      <Card>
+        <CardContent>
+          <Typography sx={{ mb: 2 }} variant="h5">Catalog</Typography>
+          {loadingCatalog ? (
+            <Box data-cy="catalog-loading" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+              <CircularProgress size={18} />
+              <Typography variant="body2">Loading...</Typography>
+            </Box>
+          ) : null}
+          <List data-cy="catalog-list" sx={{ p: 0 }}>
           {catalog.map((item) => (
-            <li className="row-between" key={item.id}>
-              <span data-cy={`catalog-item-${item.id}`}>
+            <ListItem
+              divider
+              key={item.id}
+              sx={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 2 }}
+            >
+              <Typography data-cy={`catalog-item-${item.id}`} sx={{ fontWeight: 500 }} variant="body1">
                 {item.header || item.name} - {totalLabel(item.priceCents)}
-              </span>
-              <div className="row-actions">
+              </Typography>
+              <Stack direction="row" spacing={1}>
                 {isProductManagementEnabled ? (
-                  <button
+                  <Button
                     data-cy={`catalog-edit-${item.id}`}
                     onClick={() => onEditItem(item.id)}
+                    size="small"
+                    startIcon={<EditIcon />}
                     type="button"
+                    variant="outlined"
                   >
                     Edit product
-                  </button>
+                  </Button>
                 ) : null}
-                <button data-cy={`catalog-view-${item.id}`} onClick={() => onViewItem(item.id)} type="button">
+                <Button
+                  data-cy={`catalog-view-${item.id}`}
+                  onClick={() => onViewItem(item.id)}
+                  size="small"
+                  startIcon={<OpenInNewIcon />}
+                  type="button"
+                  variant="outlined"
+                >
                   View item
-                </button>
-                <button data-cy={`catalog-add-${item.id}`} onClick={() => onAddToCart(item)} type="button">
+                </Button>
+                <Button
+                  data-cy={`catalog-add-${item.id}`}
+                  onClick={() => onAddToCart(item)}
+                  size="small"
+                  startIcon={<AddShoppingCartIcon />}
+                  type="button"
+                >
                   Add to cart
-                </button>
-              </div>
-            </li>
+                </Button>
+              </Stack>
+            </ListItem>
           ))}
-        </ul>
-        <div className="row-actions" data-cy="catalog-pagination">
-          <label htmlFor="catalog-page-size">Page size</label>
-          <select
-            data-cy="catalog-page-size"
-            id="catalog-page-size"
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            value={String(pageSize)}
+          </List>
+          <Stack
+            alignItems="center"
+            data-cy="catalog-pagination"
+            direction="row"
+            spacing={1}
+            sx={{ flexWrap: "wrap", mt: 2 }}
           >
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
-          </select>
-          <button data-cy="catalog-page-first" disabled={disablePrev} onClick={onFirstPage} type="button">
-            First
-          </button>
-          <button data-cy="catalog-page-prev" disabled={disablePrev} onClick={onPrevPage} type="button">
-            Previous
-          </button>
-          <span data-cy="catalog-page-indicator">Page {currentPage} of {totalPages}</span>
-          <button data-cy="catalog-page-next" disabled={disableNext} onClick={onNextPage} type="button">
-            Next
-          </button>
-          <button data-cy="catalog-page-last" disabled={disableNext} onClick={onLastPage} type="button">
-            Last
-          </button>
-        </div>
-      </section>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel id="catalog-page-size-label">Page size</InputLabel>
+              <NativeSelect
+                id="catalog-page-size"
+                inputProps={{ "data-cy": "catalog-page-size" }}
+                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+                value={String(pageSize)}
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </NativeSelect>
+            </FormControl>
+            <Button data-cy="catalog-page-first" disabled={disablePrev} onClick={onFirstPage} type="button" variant="outlined">
+              First
+            </Button>
+            <Button data-cy="catalog-page-prev" disabled={disablePrev} onClick={onPrevPage} type="button" variant="outlined">
+              Previous
+            </Button>
+            <Typography data-cy="catalog-page-indicator" sx={{ fontWeight: 600 }}>
+              Page {currentPage} of {totalPages}
+            </Typography>
+            <Button data-cy="catalog-page-next" disabled={disableNext} onClick={onNextPage} type="button" variant="outlined">
+              Next
+            </Button>
+            <Button data-cy="catalog-page-last" disabled={disableNext} onClick={onLastPage} type="button" variant="outlined">
+              Last
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
 
-      <section className="card">
-        <h2>Cart</h2>
-        {cart.length === 0 ? <p data-cy="cart-empty">Cart is empty</p> : null}
-        <ul data-cy="cart-list">
-          {cart.map((item) => (
-            <li key={item.id}>
-              <span data-cy={`cart-item-${item.id}`}>
-                {(item.header || item.name)} x {item.quantity}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p data-cy="cart-total">Total: {totalLabel(cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0))}</p>
-        <button data-cy="go-to-checkout" onClick={onGoCheckout} type="button">
-          Go to checkout
-        </button>
-      </section>
-    </>
+      <Card>
+        <CardContent>
+          <Typography sx={{ mb: 2 }} variant="h5">Cart</Typography>
+          {cart.length === 0 ? <Typography data-cy="cart-empty">Cart is empty</Typography> : null}
+          <List data-cy="cart-list" sx={{ p: 0 }}>
+            {cart.map((item) => (
+              <ListItem key={item.id} sx={{ px: 0 }}>
+                <Typography data-cy={`cart-item-${item.id}`}>
+                  {(item.header || item.name)} x {item.quantity}
+                </Typography>
+              </ListItem>
+            ))}
+          </List>
+          <Typography data-cy="cart-total" sx={{ fontWeight: 600 }}>
+            Total: {totalLabel(cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0))}
+          </Typography>
+          <Button data-cy="go-to-checkout" onClick={onGoCheckout} startIcon={<ShoppingCartCheckoutIcon />} type="button">
+            Go to checkout
+          </Button>
+        </CardContent>
+      </Card>
+    </Stack>
   );
 }

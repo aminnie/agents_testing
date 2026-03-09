@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Alert, Button, Card, CardContent, CircularProgress, List, ListItem, Stack, Typography } from "@mui/material";
 
 export default function HelpPage({ onBack }) {
   const [loading, setLoading] = useState(true);
@@ -23,52 +25,65 @@ export default function HelpPage({ onBack }) {
 
   if (loading) {
     return (
-      <section className="card" data-cy="help-page-loading">
-        <h2 data-cy="help-page-title">Help</h2>
-        <p>Loading...</p>
-      </section>
+      <Card data-cy="help-page-loading" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography data-cy="help-page-title" gutterBottom variant="h5">Help</Typography>
+          <Stack alignItems="center" direction="row" spacing={1}>
+            <CircularProgress size={18} />
+            <Typography>Loading...</Typography>
+          </Stack>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <section className="card" data-cy="help-page-error">
-        <h2 data-cy="help-page-title">Help</h2>
-        <p>{error}</p>
+      <Card data-cy="help-page-error" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography data-cy="help-page-title" gutterBottom variant="h5">Help</Typography>
+          <Alert sx={{ mb: 2 }} severity="error">{error}</Alert>
         {onBack ? (
-          <button data-cy="help-back" onClick={onBack} type="button">
+          <Button data-cy="help-back" onClick={onBack} startIcon={<ArrowBackIcon />} type="button">
             Back
-          </button>
+          </Button>
         ) : null}
-      </section>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <section className="card" data-cy="help-page">
-      <h2 data-cy="help-page-title">Help</h2>
+    <Card data-cy="help-page" sx={{ mt: 2 }}>
+      <CardContent>
+      <Typography data-cy="help-page-title" gutterBottom variant="h5">Help</Typography>
 
-      <h3>Demo users</h3>
-      <ul data-cy="help-demo-users">
+      <Typography sx={{ mt: 1 }} variant="h6">Demo users</Typography>
+      <List data-cy="help-demo-users" sx={{ p: 0 }}>
         {(helpData?.demoUsers || []).map((user) => (
-          <li key={user.email}>
-            <strong>{user.email}</strong> / {user.password} ({user.role})
-          </li>
+          <ListItem key={user.email} sx={{ px: 0 }}>
+            <Typography>
+              <strong>{user.email}</strong> / {user.password} ({user.role})
+            </Typography>
+          </ListItem>
         ))}
-      </ul>
+      </List>
 
-      <h3>Navigation tips</h3>
-      <ul data-cy="help-navigation-tips">
+      <Typography sx={{ mt: 1 }} variant="h6">Navigation tips</Typography>
+      <List data-cy="help-navigation-tips" sx={{ p: 0 }}>
         {(helpData?.navigationTips || []).map((tip, index) => (
-          <li key={`${tip}-${index}`}>{tip}</li>
+          <ListItem key={`${tip}-${index}`} sx={{ px: 0 }}>
+            <Typography>{tip}</Typography>
+          </ListItem>
         ))}
-      </ul>
+      </List>
 
       {onBack ? (
-        <button data-cy="help-back" onClick={onBack} type="button">
+        <Button data-cy="help-back" onClick={onBack} startIcon={<ArrowBackIcon />} type="button">
           Back
-        </button>
+        </Button>
       ) : null}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

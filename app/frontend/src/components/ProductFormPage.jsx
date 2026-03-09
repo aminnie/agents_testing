@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SaveIcon from "@mui/icons-material/Save";
+import { Alert, Button, Card, CardContent, CircularProgress, Stack, TextField, Typography } from "@mui/material";
 
 export default function ProductFormPage({
   mode,
@@ -30,34 +33,43 @@ export default function ProductFormPage({
 
   if (!canManageProducts) {
     return (
-      <section className="card" data-cy="product-form-forbidden">
-        <h2>Editor access required</h2>
-        <p>Only editors can create or edit products.</p>
-        <button data-cy="product-form-cancel" onClick={onCancel} type="button">
-          Return to catalog
-        </button>
-      </section>
+      <Card data-cy="product-form-forbidden" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography gutterBottom variant="h5">Editor access required</Typography>
+          <Typography sx={{ mb: 2 }}>Only editors can create or edit products.</Typography>
+          <Button data-cy="product-form-cancel" onClick={onCancel} startIcon={<ArrowBackIcon />} type="button">
+            Return to catalog
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isEditMode && loadingCatalog && !item) {
     return (
-      <section className="card" data-cy="product-form-loading">
-        <h2>Edit product</h2>
-        <p>Loading...</p>
-      </section>
+      <Card data-cy="product-form-loading" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography gutterBottom variant="h5">Edit product</Typography>
+          <Stack alignItems="center" direction="row" spacing={1}>
+            <CircularProgress size={18} />
+            <Typography>Loading...</Typography>
+          </Stack>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isEditMode && !item) {
     return (
-      <section className="card" data-cy="product-form-not-found">
-        <h2>Product not found</h2>
-        <p>No catalog item exists for id "{itemId}".</p>
-        <button data-cy="product-form-cancel" onClick={onCancel} type="button">
-          Return to catalog
-        </button>
-      </section>
+      <Card data-cy="product-form-not-found" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography gutterBottom variant="h5">Product not found</Typography>
+          <Typography sx={{ mb: 2 }}>No catalog item exists for id "{itemId}".</Typography>
+          <Button data-cy="product-form-cancel" onClick={onCancel} startIcon={<ArrowBackIcon />} type="button">
+            Return to catalog
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -71,47 +83,47 @@ export default function ProductFormPage({
   }
 
   return (
-    <section className="card" data-cy="product-form-page">
-      <h2 data-cy="product-form-title">{isEditMode ? "Edit product" : "New product"}</h2>
-      <form data-cy="product-form" onSubmit={handleSubmit}>
-        <label htmlFor="productHeader">Header</label>
-        <input
+    <Card data-cy="product-form-page" sx={{ mt: 2 }}>
+      <CardContent>
+        <Typography data-cy="product-form-title" gutterBottom variant="h5">
+          {isEditMode ? "Edit product" : "New product"}
+        </Typography>
+        <Stack component="form" data-cy="product-form" onSubmit={handleSubmit} spacing={2}>
+          <TextField
           id="productHeader"
           name="productHeader"
-          data-cy="product-form-header"
+          inputProps={{ "data-cy": "product-form-header" }}
+          label="Header"
           value={header}
           onChange={(event) => setHeader(event.target.value)}
         />
-
-        <label htmlFor="productDescription">Description</label>
-        <input
+          <TextField
           id="productDescription"
           name="productDescription"
-          data-cy="product-form-description"
+          inputProps={{ "data-cy": "product-form-description" }}
+          label="Description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
         />
-
-        <label htmlFor="productPrice">Price (cents)</label>
-        <input
+          <TextField
           id="productPrice"
           name="productPrice"
-          data-cy="product-form-price"
+          inputProps={{ "data-cy": "product-form-price" }}
+          label="Price (cents)"
           value={price}
           onChange={(event) => setPrice(event.target.value.replace(/\D/g, ""))}
         />
-
-        <div className="row-actions">
-          <button data-cy="product-form-submit" disabled={isSubmitting} type="submit">
+          <Stack direction="row" spacing={1}>
+            <Button data-cy="product-form-submit" disabled={isSubmitting} startIcon={<SaveIcon />} type="submit">
             {isSubmitting ? "Saving..." : "Save product"}
-          </button>
-          <button data-cy="product-form-cancel" onClick={onCancel} type="button">
-            Cancel
-          </button>
-        </div>
-      </form>
-
-      {errorMessage ? <p data-cy="product-form-error">{errorMessage}</p> : null}
-    </section>
+            </Button>
+            <Button data-cy="product-form-cancel" onClick={onCancel} startIcon={<ArrowBackIcon />} type="button" variant="outlined">
+              Cancel
+            </Button>
+          </Stack>
+        </Stack>
+        {errorMessage ? <Alert data-cy="product-form-error" severity="error" sx={{ mt: 2 }}>{errorMessage}</Alert> : null}
+      </CardContent>
+    </Card>
   );
 }

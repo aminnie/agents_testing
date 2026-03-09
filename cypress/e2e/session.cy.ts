@@ -21,6 +21,7 @@ describe("Feature: Session management", () => {
     cy.wait("@login").its("response.statusCode").should("eq", 200);
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
+    cy.get('[data-cy="account-menu-trigger"]').click();
     cy.get('[data-cy="logout-button"]').click();
     cy.get('[data-cy="login-title"]').should("be.visible");
     cy.get('[data-cy="login-password"]').should("have.value", "");

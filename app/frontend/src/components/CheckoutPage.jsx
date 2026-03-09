@@ -1,3 +1,17 @@
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import PaymentIcon from "@mui/icons-material/Payment";
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  Stack,
+  TextField,
+  Typography
+} from "@mui/material";
+
 export default function CheckoutPage({
   cart,
   totalCents,
@@ -12,60 +26,67 @@ export default function CheckoutPage({
 }) {
   if (orderMessage) {
     return (
-      <section className="card">
-        <h2 data-cy="checkout-page-title">Checkout complete</h2>
-        <p data-cy="checkout-success">{orderMessage}</p>
-      </section>
+      <Card sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography data-cy="checkout-page-title" gutterBottom variant="h5">Checkout complete</Typography>
+          <Alert data-cy="checkout-success" icon={<CheckCircleOutlineIcon />} severity="success">
+            {orderMessage}
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <>
-      <section className="card">
-        <h2 data-cy="checkout-page-title">Checkout</h2>
-        <ul data-cy="cart-list">
+    <Stack spacing={3} sx={{ mt: 2 }}>
+      <Card>
+        <CardContent>
+          <Typography data-cy="checkout-page-title" gutterBottom variant="h5">Checkout</Typography>
+          <List data-cy="cart-list" sx={{ p: 0 }}>
           {cart.map((item) => (
-            <li key={item.id}>
-              <span data-cy={`cart-item-${item.id}`}>
+            <ListItem key={item.id} sx={{ px: 0 }}>
+              <Typography data-cy={`cart-item-${item.id}`}>
                 {item.name} x {item.quantity}
-              </span>
-            </li>
+              </Typography>
+            </ListItem>
           ))}
-        </ul>
-        {cart.length === 0 ? <p data-cy="cart-empty">Cart is empty</p> : null}
-        <p data-cy="cart-total">Total: {formatPrice(totalCents)}</p>
-      </section>
-      <section className="card">
-        <h2>Payment</h2>
-        <form data-cy="checkout-form" onSubmit={onSubmit}>
-          <label htmlFor="nameOnCard">Name on card</label>
-          <input
+          </List>
+          {cart.length === 0 ? <Typography data-cy="cart-empty">Cart is empty</Typography> : null}
+          <Typography data-cy="cart-total" sx={{ fontWeight: 600 }}>
+            Total: {formatPrice(totalCents)}
+          </Typography>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent>
+          <Typography gutterBottom variant="h5">Payment</Typography>
+          <Stack component="form" data-cy="checkout-form" onSubmit={onSubmit} spacing={2}>
+            <TextField
             id="nameOnCard"
             name="nameOnCard"
-            data-cy="checkout-name"
             autoComplete="cc-name"
+              inputProps={{ "data-cy": "checkout-name" }}
+              label="Name on card"
             value={nameOnCard}
             onChange={onNameChange}
           />
-
-          <label htmlFor="cardNumber">Card number</label>
-          <input
+            <TextField
             id="cardNumber"
             name="cardNumber"
-            data-cy="checkout-card"
             autoComplete="cc-number"
+              inputProps={{ "data-cy": "checkout-card" }}
+              label="Card number"
             value={cardNumber}
             onChange={onCardChange}
           />
-
-          <button data-cy="checkout-submit" type="submit">
-            Confirm order
-          </button>
-        </form>
-
-        {checkoutError ? <p data-cy="checkout-error">{checkoutError}</p> : null}
-        {orderMessage ? <p data-cy="checkout-success">{orderMessage}</p> : null}
-      </section>
-    </>
+            <Button data-cy="checkout-submit" startIcon={<PaymentIcon />} type="submit">
+              Confirm order
+            </Button>
+          </Stack>
+          {checkoutError ? <Alert data-cy="checkout-error" severity="error" sx={{ mt: 2 }}>{checkoutError}</Alert> : null}
+          {orderMessage ? <Alert data-cy="checkout-success" severity="success" sx={{ mt: 2 }}>{orderMessage}</Alert> : null}
+        </CardContent>
+      </Card>
+    </Stack>
   );
 }

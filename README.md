@@ -8,6 +8,7 @@ This repository contains a small web store application used to develop and valid
   - 20 catalog items
   - 5 login users
 - React frontend (`app/frontend`) for:
+  - Material UI themed interface (professional nav + account menu)
   - login
   - in-app help page with demo credentials and navigation guidance
   - catalog browsing

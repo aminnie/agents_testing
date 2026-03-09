@@ -1,3 +1,9 @@
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EditIcon from "@mui/icons-material/Edit";
+import { Button, Card, CardContent, CircularProgress, Stack, Typography } from "@mui/material";
+
 export default function ItemDetailPage({
   item,
   itemId,
@@ -11,56 +17,76 @@ export default function ItemDetailPage({
 }) {
   if (loadingCatalog && !item) {
     return (
-      <section className="card" data-cy="item-detail-loading">
-        <h2>Item details</h2>
-        <p>Loading...</p>
-      </section>
+      <Card data-cy="item-detail-loading" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography gutterBottom variant="h5">Item details</Typography>
+          <Stack alignItems="center" direction="row" spacing={1}>
+            <CircularProgress size={18} />
+            <Typography>Loading...</Typography>
+          </Stack>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!item) {
     return (
-      <section className="card" data-cy="item-detail-not-found">
-        <h2>Item not found</h2>
-        <p>No catalog item exists for id "{itemId}".</p>
-        <button data-cy="item-detail-return" onClick={onReturnToStore} type="button">
-          Return to catalog
-        </button>
-      </section>
+      <Card data-cy="item-detail-not-found" sx={{ mt: 2 }}>
+        <CardContent>
+          <Typography gutterBottom variant="h5">Item not found</Typography>
+          <Typography sx={{ mb: 2 }}>No catalog item exists for id "{itemId}".</Typography>
+          <Button data-cy="item-detail-return" onClick={onReturnToStore} startIcon={<ArrowBackIcon />} type="button">
+            Return to catalog
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <section className="card" data-cy="item-detail-page">
-      <h2 data-cy="item-detail-header">{item.header || item.name}</h2>
-      <p data-cy="item-detail-description">{item.description}</p>
-      <p data-cy="item-detail-price">Price: {totalLabel(item.priceCents)}</p>
-      <div className="row-actions">
+    <Card data-cy="item-detail-page" sx={{ mt: 2 }}>
+      <CardContent>
+        <Typography data-cy="item-detail-header" gutterBottom variant="h5">{item.header || item.name}</Typography>
+        <Typography data-cy="item-detail-description" sx={{ mb: 1 }}>{item.description}</Typography>
+        <Typography data-cy="item-detail-price" sx={{ fontWeight: 600 }}>
+          Price: {totalLabel(item.priceCents)}
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: "wrap" }}>
         {isProductManagementEnabled ? (
-          <button
+          <Button
             data-cy="item-detail-new-product"
             onClick={onGoNewProduct}
+            startIcon={<AddCircleOutlineIcon />}
             type="button"
+            variant="outlined"
           >
             New product
-          </button>
+          </Button>
         ) : null}
         {isProductManagementEnabled ? (
-          <button
+          <Button
             data-cy="item-detail-edit-product"
             onClick={() => onEditItem(item.id)}
+            startIcon={<EditIcon />}
             type="button"
+            variant="outlined"
           >
             Edit product
-          </button>
+          </Button>
         ) : null}
-        <button data-cy="item-detail-add-and-return" onClick={() => onAddToCartAndReturn(item)} type="button">
+        <Button
+          data-cy="item-detail-add-and-return"
+          onClick={() => onAddToCartAndReturn(item)}
+          startIcon={<AddShoppingCartIcon />}
+          type="button"
+        >
           Add to cart and return
-        </button>
-        <button data-cy="item-detail-return" onClick={onReturnToStore} type="button">
+        </Button>
+        <Button data-cy="item-detail-return" onClick={onReturnToStore} startIcon={<ArrowBackIcon />} type="button" variant="outlined">
           Return to catalog
-        </button>
-      </div>
-    </section>
+        </Button>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
