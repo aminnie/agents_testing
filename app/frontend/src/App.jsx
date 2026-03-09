@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppHeader from "./components/AppHeader.jsx";
 import CheckoutPage from "./components/CheckoutPage.jsx";
+import HelpPage from "./components/HelpPage.jsx";
 import ItemDetailPage from "./components/ItemDetailPage.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
 import ProductFormPage from "./components/ProductFormPage.jsx";
@@ -11,8 +12,6 @@ const STORAGE_KEYS = Object.freeze({
   auth: ["store", "auth", "state"].join("-"),
   user: ["store", "user", "state"].join("-")
 });
-const PRODUCT_MANAGEMENT_TOOLTIP = "Editor role required to manage products.";
-
 function formatPrice(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -54,7 +53,6 @@ function ItemDetailRoute({
       onGoNewProduct={onGoNewProduct}
       onEditItem={onEditItem}
       isProductManagementEnabled={isProductManagementEnabled}
-      productManagementTooltip={PRODUCT_MANAGEMENT_TOOLTIP}
       totalLabel={totalLabel}
     />
   );
@@ -106,7 +104,7 @@ function StoreApp() {
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [productFormError, setProductFormError] = useState("");
   const [productFormSubmitting, setProductFormSubmitting] = useState(false);
-  const isEditor = currentUser?.role === "editor";
+  const isProductManager = ["editor", "manager"].includes(currentUser?.role || "");
 
   const totalCents = useMemo(
     () => cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
@@ -127,7 +125,7 @@ function StoreApp() {
   }
 
   useEffect(() => {
-    if (!token && location.pathname !== "/") {
+    if (!token && !["/", "/help"].includes(location.pathname)) {
       navigate("/", { replace: true });
       return;
     }
@@ -348,11 +346,20 @@ function StoreApp() {
     setCardNumber("");
   }
 
+  if (!token && location.pathname === "/help") {
+    return (
+      <main className="container">
+        <HelpPage onBack={() => navigate("/")} />
+      </main>
+    );
+  }
+
   if (!token) {
     return (
       <LoginScreen
         authError={authError}
         email={email}
+        onGoHelp={() => navigate("/help")}
         onEmailChange={(event) => setEmail(event.target.value)}
         onPasswordChange={(event) => setPassword(event.target.value)}
         onSubmit={onLoginSubmit}
@@ -366,11 +373,11 @@ function StoreApp() {
       <AppHeader
         isCheckoutEnabled={cart.length > 0}
         onGoCheckout={() => navigate("/checkout")}
+        onGoHelp={() => navigate("/help")}
         onGoNewProduct={openNewProductForm}
         onGoStore={() => navigate("/store")}
         onLogout={logout}
-        isProductManagementEnabled={isEditor}
-        productManagementTooltip={PRODUCT_MANAGEMENT_TOOLTIP}
+        isProductManagementEnabled={isProductManager}
         userEmail={currentUser?.email}
       />
 
@@ -384,11 +391,9 @@ function StoreApp() {
               loadingCatalog={loadingCatalog}
               onAddToCart={addToCart}
               onEditItem={viewProductEditor}
-              onGoNewProduct={openNewProductForm}
               onViewItem={viewItem}
               onGoCheckout={() => navigate("/checkout")}
-              isProductManagementEnabled={isEditor}
-              productManagementTooltip={PRODUCT_MANAGEMENT_TOOLTIP}
+              isProductManagementEnabled={isProductManager}
               totalLabel={formatPrice}
             />
           }
@@ -403,7 +408,7 @@ function StoreApp() {
               onGoNewProduct={openNewProductForm}
               onEditItem={viewProductEditor}
               onReturnToStore={() => navigate("/store")}
-              isProductManagementEnabled={isEditor}
+              isProductManagementEnabled={isProductManager}
               totalLabel={formatPrice}
             />
           }
@@ -415,7 +420,7 @@ function StoreApp() {
               mode="create"
               catalog={catalog}
               loadingCatalog={loadingCatalog}
-              isProductManagementEnabled={isEditor}
+              isProductManagementEnabled={isProductManager}
               onCreateProduct={createProduct}
               onUpdateProduct={updateProduct}
               onCancel={() => navigate("/store")}
@@ -431,13 +436,19 @@ function StoreApp() {
               mode="edit"
               catalog={catalog}
               loadingCatalog={loadingCatalog}
-              isProductManagementEnabled={isEditor}
+              isProductManagementEnabled={isProductManager}
               onCreateProduct={createProduct}
               onUpdateProduct={updateProduct}
               onCancel={() => navigate("/store")}
               errorMessage={productFormError}
               isSubmitting={productFormSubmitting}
             />
+          }
+        />
+        <Route
+          path="/help"
+          element={
+            <HelpPage onBack={() => navigate("/store")} />
           }
         />
         <Route

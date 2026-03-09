@@ -7,8 +7,7 @@ export default function ItemDetailPage({
   onReturnToStore,
   onGoNewProduct,
   onEditItem,
-  isProductManagementEnabled,
-  productManagementTooltip
+  isProductManagementEnabled
 }) {
   if (loadingCatalog && !item) {
     return (
@@ -37,24 +36,24 @@ export default function ItemDetailPage({
       <p data-cy="item-detail-description">{item.description}</p>
       <p data-cy="item-detail-price">Price: {totalLabel(item.priceCents)}</p>
       <div className="row-actions">
-        <button
-          data-cy="item-detail-new-product"
-          disabled={!isProductManagementEnabled}
-          onClick={onGoNewProduct}
-          title={!isProductManagementEnabled ? productManagementTooltip : ""}
-          type="button"
-        >
-          New product
-        </button>
-        <button
-          data-cy="item-detail-edit-product"
-          disabled={!isProductManagementEnabled}
-          onClick={() => onEditItem(item.id)}
-          title={!isProductManagementEnabled ? productManagementTooltip : ""}
-          type="button"
-        >
-          Edit product
-        </button>
+        {isProductManagementEnabled ? (
+          <button
+            data-cy="item-detail-new-product"
+            onClick={onGoNewProduct}
+            type="button"
+          >
+            New product
+          </button>
+        ) : null}
+        {isProductManagementEnabled ? (
+          <button
+            data-cy="item-detail-edit-product"
+            onClick={() => onEditItem(item.id)}
+            type="button"
+          >
+            Edit product
+          </button>
+        ) : null}
         <button data-cy="item-detail-add-and-return" onClick={() => onAddToCartAndReturn(item)} type="button">
           Add to cart and return
         </button>

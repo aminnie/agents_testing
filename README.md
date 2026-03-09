@@ -9,6 +9,7 @@ This repository contains a small web store application used to develop and valid
   - 5 login users
 - React frontend (`app/frontend`) for:
   - login
+  - in-app help page with demo credentials and navigation guidance
   - catalog browsing
   - item detail view
   - add to cart
@@ -180,6 +181,150 @@ Role types are normalized in the backend as:
 
 - `GET /api/catalog` returns catalog items with UUID ids, generated headers, descriptions, and prices.
 - `GET /api/catalog/:id` returns item detail for a UUID id.
-- `POST /api/catalog` allows `editor`, `manager`, and `admin` users to create new catalog items (header/description + price), with UUID generated server-side.
-- `PUT /api/catalog/:id` allows `editor` users to update catalog item header, description, and price.
+- `GET /api/help` returns demo user credentials and navigation guidance for this demo app.
+- `POST /api/catalog` allows `editor` and `manager` users to create new catalog items (header/description + price), with UUID generated server-side.
+- `PUT /api/catalog/:id` allows `editor` and `manager` users to update catalog item header, description, and price.
 - `POST /api/login` returns `user.role` (normalized role name) and `user.roleId` (numeric role type id).
+
+## Agent Prompt Templates
+
+Use these prompts to drive the standard feature workflow.
+
+Feature analysis prompt:
+
+```text
+Please proceed to analyze requirements/analysis_feature<N>.md
+```
+
+Example:
+
+```text
+Please proceed to analyze requirements/analysis_feature4.md
+```
+
+Feature implementation prompt:
+
+```text
+Please proceed to implement Feature <N>
+```
+
+Example:
+
+```text
+Please proceed to implement Feature 4
+```
+
+Requirements clarification / decision finalization prompt:
+
+```text
+Please update requirements/analysis_feature<N>.md with the following decisions:
+
+For the Open Questions:
+1. <decision 1>
+2. <decision 2>
+3. <decision 3>
+
+Please convert these decisions into explicit requirements and update the What Changed section.
+```
+
+Example:
+
+```text
+Please update requirements/analysis_feature4.md with the following decisions:
+
+For the Open Questions:
+1. Also allow manual header override.
+2. Make create/edit available on both pages.
+3. For non-editor users, disable the control and add a tooltip.
+
+Please convert these decisions into explicit requirements and update the What Changed section.
+```
+
+Template file:
+
+- `CLARIFICATION-AGENT.md`
+
+End-to-end workflow example:
+
+```text
+Please proceed to analyze requirements/analysis_feature4.md
+Please update requirements/analysis_feature4.md with the following decisions:
+For the Open Questions:
+1. <decision 1>
+2. <decision 2>
+Please proceed to implement Feature 4
+```
+
+## Agent Files and Sequence
+
+Use these `*-AGENT.md` files for different stages of feature delivery:
+
+- `CLARIFICATION-AGENT.md`
+  - Use after analysis when open questions need decisions finalized.
+  - Output should convert decisions into explicit requirements and update the analysis doc.
+  - Example prompt:
+    ```text
+    Please update requirements/analysis_feature5.md with the following decisions:
+
+    For the Open Questions:
+    1. Keep manager/admin access.
+    2. Add tooltip text for disabled controls.
+
+    Please convert these decisions into explicit requirements and update the What Changed section.
+    ```
+
+- `ANALYSIS-AGENT.md`
+  - Use when you want a full architecture analysis before coding.
+  - Output should define design decisions, file map, test plan, and `What Changed` updates.
+  - Example prompt:
+    ```text
+    Please proceed to analyze requirements/analysis_feature5.md
+    ```
+
+    Notes on what to typically expect of the analysis run:
+    - current-state gap analysis vs requested behavior
+    - finalized architecture decision
+    - explicit UI visibility rules by role
+    - explicit backend authorization target (manager|editor only for create/edit)
+    - detailed file-by-file implementation map
+    - data flow, phased build sequence, and critical details
+    - updated What Changed reflecting the full analysis pass
+
+- `CYRPRESS-AGENT.md`
+  - Use when generating or refining Cypress artifacts from feature behavior.
+  - Output should include/adjust specs, page objects, and E2E tests aligned with project rules.
+  - Example prompt:
+    ```text
+    Please use CYRPRESS-AGENT.md guidance to generate Cypress coverage for Feature 5 from specs/feature5.feature
+    ```
+
+Recommended sequence once a new feature requirement is written:
+
+1. Run analysis against `requirements/analysis_feature<N>.md` (architecture + plan).
+   - Example:
+     ```text
+     Please proceed to analyze requirements/analysis_feature5.md
+     ```
+2. Run clarification to resolve open questions and finalize decisions.
+   - Example:
+     ```text
+     Please update requirements/analysis_feature5.md with the following decisions:
+     1. Add editor create access.
+     2. Keep manager/admin create access.
+     ```
+3. Implement Feature `<N>` in code.
+   - Example:
+     ```text
+     Please proceed to implement Feature 5
+     ```
+4. Use Cypress agent guidance to add/update E2E coverage as needed.
+   - Example:
+     ```text
+     Please add/update Cypress tests for Feature 5 using CYRPRESS-AGENT.md guidance
+     ```
+5. Run verification (`npm run test:e2e`) and ensure the analysis file has an updated `What Changed` section.
+   - Example commands:
+     ```bash
+     npm run test:e2e
+     npm run cypress:run -- --spec cypress/e2e/feature5.cy.ts
+     ```

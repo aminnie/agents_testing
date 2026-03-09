@@ -60,20 +60,20 @@ async function requireCatalogWriteAccess(req, res, next) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
-  if (!["editor", "manager", "admin"].includes(role)) {
+  if (!["editor", "manager"].includes(role)) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }
   next();
 }
 
-async function requireCatalogEditor(req, res, next) {
+async function requireCatalogProductManager(req, res, next) {
   const role = await getUserRole(req.userId);
   if (!role) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
-  if (role !== "editor") {
+  if (!["editor", "manager"].includes(role)) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }
@@ -107,6 +107,36 @@ function authMiddleware(req, res, next) {
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/api/help", async (_req, res) => {
+  try {
+    const demoUsers = await db.all(
+      `SELECT
+        email,
+        password,
+        COALESCE(rt.name, u.role, 'user') AS role
+      FROM users u
+      LEFT JOIN role_types rt ON rt.id = u.role_id
+      ORDER BY u.id`
+    );
+
+    res.json({
+      demoUsers,
+      navigationTips: [
+        "Sign in with any demo user to access the store.",
+        "Browse catalog items and view item details before adding to cart.",
+        "Use checkout after adding at least one item to cart.",
+        "Manager and editor users can create and edit products from header, catalog, and item detail pages."
+      ],
+      apiNotes: [
+        "POST /api/login authenticates using email and password.",
+        "GET /api/catalog and checkout endpoints require a valid session token."
+      ]
+    });
+  } catch {
+    res.status(500).json({ message: "Unable to load help information" });
+  }
 });
 
 app.post("/api/login", async (req, res) => {
@@ -213,7 +243,7 @@ app.post("/api/catalog", authMiddleware, requireCatalogWriteAccess, async (req, 
   });
 });
 
-app.put("/api/catalog/:id", authMiddleware, requireCatalogEditor, async (req, res) => {
+app.put("/api/catalog/:id", authMiddleware, requireCatalogProductManager, async (req, res) => {
   const header = normalizeText(req.body?.header);
   const description = normalizeText(req.body?.description);
   const priceCents = Number(req.body?.priceCents);

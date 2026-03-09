@@ -4,11 +4,17 @@ export default function LoginScreen({
   authError,
   onEmailChange,
   onPasswordChange,
-  onSubmit
+  onSubmit,
+  onGoHelp
 }) {
   return (
     <main className="container">
-      <h1 data-cy="login-title">Mini Store Login</h1>
+      <div className="row-between">
+        <h1 data-cy="login-title">Mini Store Login</h1>
+        <button data-cy="login-help" onClick={onGoHelp} type="button">
+          Help
+        </button>
+      </div>
       <form className="card" data-cy="login-form" onSubmit={onSubmit}>
         <label htmlFor="email">Email</label>
         <input

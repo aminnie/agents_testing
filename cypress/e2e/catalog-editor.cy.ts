@@ -4,7 +4,6 @@ import { ProductFormPage } from "../pages/ProductFormPage";
 describe("Feature: Catalog editor workflows", () => {
   const catalogPage = new CatalogPage();
   const productFormPage = new ProductFormPage();
-  const tooltipText = "Editor role required to manage products.";
 
   it("should allow editor to create a product from header control", () => {
     cy.intercept("POST", "/api/login").as("login");
@@ -77,7 +76,41 @@ describe("Feature: Catalog editor workflows", () => {
     cy.location("pathname").should("match", /^\/store\/product\/.+\/edit$/);
   });
 
-  it("should show disabled product controls with tooltip for non-editor users", () => {
+  it("should allow manager to create and edit products", () => {
+    cy.intercept("POST", "/api/login").as("login");
+    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("POST", "/api/catalog").as("createCatalogItem");
+    cy.intercept("PUT", "/api/catalog/*").as("updateCatalogItem");
+
+    cy.loginUi("manager@example.com", "Password123!");
+    cy.wait("@login").its("response.statusCode").should("eq", 200);
+    cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
+
+    cy.get('[data-cy="nav-new-product"]').should("be.visible");
+    catalogPage.openNewProductFromHeader();
+    cy.location("pathname").should("eq", "/store/product/new");
+
+    productFormPage.fillForm(
+      "Manager Created Product",
+      "Manager created this catalog item.",
+      "2600"
+    );
+    productFormPage.submit();
+    cy.wait("@createCatalogItem").its("response.statusCode").should("eq", 201);
+    cy.location("pathname").should("eq", "/store");
+
+    catalogPage.editFirstCatalogItem();
+    productFormPage.fillForm(
+      "Manager Updated Product",
+      "Updated by manager from catalog view.",
+      "3200"
+    );
+    productFormPage.submit();
+    cy.wait("@updateCatalogItem").its("response.statusCode").should("eq", 200);
+    cy.location("pathname").should("eq", "/store");
+  });
+
+  it("should hide product controls for non-manager and non-editor users", () => {
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog").as("catalog");
 
@@ -85,23 +118,29 @@ describe("Feature: Catalog editor workflows", () => {
     cy.wait("@login").its("response.statusCode").should("eq", 200);
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
-    cy.get('[data-cy="nav-new-product"]')
-      .should("be.disabled")
-      .and("have.attr", "title", tooltipText);
-    cy.get('[data-cy="catalog-new-product"]')
-      .should("be.disabled")
-      .and("have.attr", "title", tooltipText);
-    cy.get('[data-cy^="catalog-edit-"]')
-      .first()
-      .should("be.disabled")
-      .and("have.attr", "title", tooltipText);
+    cy.get('[data-cy="nav-new-product"]').should("not.exist");
+    cy.get('[data-cy="catalog-new-product"]').should("not.exist");
+    cy.get('[data-cy^="catalog-edit-"]').should("have.length", 0);
 
     catalogPage.viewFirstCatalogItem();
-    cy.get('[data-cy="item-detail-new-product"]')
-      .should("be.disabled")
-      .and("have.attr", "title", tooltipText);
-    cy.get('[data-cy="item-detail-edit-product"]')
-      .should("be.disabled")
-      .and("have.attr", "title", tooltipText);
+    cy.get('[data-cy="item-detail-new-product"]').should("not.exist");
+    cy.get('[data-cy="item-detail-edit-product"]').should("not.exist");
+  });
+
+  it("should hide product controls for admin users", () => {
+    cy.intercept("POST", "/api/login").as("login");
+    cy.intercept("GET", "/api/catalog").as("catalog");
+
+    cy.loginUi("admin@example.com", "Password123!");
+    cy.wait("@login").its("response.statusCode").should("eq", 200);
+    cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
+
+    cy.get('[data-cy="nav-new-product"]').should("not.exist");
+    cy.get('[data-cy="catalog-new-product"]').should("not.exist");
+    cy.get('[data-cy^="catalog-edit-"]').should("have.length", 0);
+
+    catalogPage.viewFirstCatalogItem();
+    cy.get('[data-cy="item-detail-new-product"]').should("not.exist");
+    cy.get('[data-cy="item-detail-edit-product"]').should("not.exist");
   });
 });

@@ -7,25 +7,12 @@ export default function StorePage({
   onViewItem,
   onEditItem,
   onGoCheckout,
-  onGoNewProduct,
-  isProductManagementEnabled,
-  productManagementTooltip
+  isProductManagementEnabled
 }) {
   return (
     <>
       <section className="card">
-        <div className="row-between">
-          <h2>Catalog</h2>
-          <button
-            data-cy="catalog-new-product"
-            disabled={!isProductManagementEnabled}
-            onClick={onGoNewProduct}
-            title={!isProductManagementEnabled ? productManagementTooltip : ""}
-            type="button"
-          >
-            New product
-          </button>
-        </div>
+        <h2>Catalog</h2>
         {loadingCatalog ? <p data-cy="catalog-loading">Loading...</p> : null}
         <ul data-cy="catalog-list">
           {catalog.map((item) => (
@@ -34,15 +21,15 @@ export default function StorePage({
                 {item.header || item.name} - {totalLabel(item.priceCents)}
               </span>
               <div className="row-actions">
-                <button
-                  data-cy={`catalog-edit-${item.id}`}
-                  disabled={!isProductManagementEnabled}
-                  onClick={() => onEditItem(item.id)}
-                  title={!isProductManagementEnabled ? productManagementTooltip : ""}
-                  type="button"
-                >
-                  Edit product
-                </button>
+                {isProductManagementEnabled ? (
+                  <button
+                    data-cy={`catalog-edit-${item.id}`}
+                    onClick={() => onEditItem(item.id)}
+                    type="button"
+                  >
+                    Edit product
+                  </button>
+                ) : null}
                 <button data-cy={`catalog-view-${item.id}`} onClick={() => onViewItem(item.id)} type="button">
                   View item
                 </button>

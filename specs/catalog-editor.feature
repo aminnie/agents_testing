@@ -35,11 +35,23 @@ Feature: Catalog editor workflows
     Then "Edit product" should be enabled on the detail page
 
   @regression
-  Scenario: Non-editor sees disabled create/edit controls with tooltip
+  Scenario: Non-manager and non-editor users do not see product-management controls
     Given I am on "/"
     And I log in as "user@example.com"
-    Then "New product" should be disabled with tooltip "Editor role required to manage products."
-    And first catalog "Edit product" control should be disabled with tooltip "Editor role required to manage products."
+    Then "New product" should not be visible
+    And first catalog "Edit product" control should not be visible
     When I view the first catalog item detail
-    Then detail "New product" control should be disabled with tooltip "Editor role required to manage products."
-    And detail "Edit product" control should be disabled with tooltip "Editor role required to manage products."
+    Then detail "New product" control should not be visible
+    And detail "Edit product" control should not be visible
+
+  @regression
+  Scenario: Manager can create and edit products
+    Given I am on "/"
+    And I log in as "manager@example.com"
+    When I click "New product"
+    And I fill "Header" with "Manager Created Product"
+    And I fill "Description" with "Manager created this catalog item."
+    And I fill "Price (cents)" with "2600"
+    And I click "Save product"
+    Then API "POST @catalogCreate" should return "201"
+    And I should return to "/store"
