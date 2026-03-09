@@ -5,7 +5,7 @@ Feature: Checkout
 
   Background:
     Given test data "catalog/standard-items.json"
-    And I am authenticated as "customer"
+    And I am authenticated as "user"
     And cart contains "SKU-123" quantity "1"
 
   @smoke @regression

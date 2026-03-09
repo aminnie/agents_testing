@@ -5,7 +5,7 @@ Feature: Catalog and cart
 
   Background:
     Given test data "catalog/standard-items.json"
-    And I am authenticated as "customer"
+    And I am authenticated as "user"
 
   @smoke @regression
   Scenario: Catalog list is visible after login

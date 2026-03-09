@@ -158,6 +158,13 @@ Expected local URLs (with default ports):
 - `editor@example.com` / `Password123!`
 - `admin@example.com` / `Password123!`
 
+Role types are normalized in the backend as:
+
+- `1 = admin`
+- `2 = manager`
+- `3 = user`
+- `4 = editor`
+
 ## Key folders
 
 - `app/backend/src` - API and SQLite bootstrap
@@ -173,3 +180,4 @@ Expected local URLs (with default ports):
 - `GET /api/catalog` returns catalog items with UUID ids, generated headers, descriptions, and prices.
 - `GET /api/catalog/:id` returns item detail for a UUID id.
 - `POST /api/catalog` allows `manager` and `admin` users to create new catalog items (description + price), with UUID/header generated server-side.
+- `POST /api/login` returns `user.role` (normalized role name) and `user.roleId` (numeric role type id).

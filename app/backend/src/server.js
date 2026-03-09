@@ -6,6 +6,7 @@ import { initDb } from "./db.js";
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
+app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
 
@@ -37,13 +38,23 @@ function deriveHeaderFromDescription(description) {
 }
 
 async function requireCatalogOwner(req, res, next) {
-  const user = await db.get("SELECT role FROM users WHERE id = ?", req.userId);
+  const user = await db.get(
+    `SELECT
+      u.role AS legacyRole,
+      u.role_id AS roleId,
+      rt.name AS role
+    FROM users u
+    LEFT JOIN role_types rt ON rt.id = u.role_id
+    WHERE u.id = ?`,
+    req.userId
+  );
   if (!user) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
 
-  if (!["manager", "admin"].includes(user.role)) {
+  const effectiveRole = user.role || user.legacyRole;
+  if (!["manager", "admin"].includes(effectiveRole)) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }
@@ -88,7 +99,19 @@ app.post("/api/login", async (req, res) => {
     return;
   }
 
-  const user = await db.get("SELECT id, email, role FROM users WHERE email = ? AND password = ?", email, password);
+  const user = await db.get(
+    `SELECT
+      u.id,
+      u.email,
+      u.role AS legacyRole,
+      u.role_id AS roleId,
+      rt.name AS role
+    FROM users u
+    LEFT JOIN role_types rt ON rt.id = u.role_id
+    WHERE u.email = ? AND u.password = ?`,
+    email,
+    password
+  );
 
   if (!user) {
     res.status(401).json({ message: "Invalid email or password" });
@@ -98,7 +121,16 @@ app.post("/api/login", async (req, res) => {
   const token = createToken();
   tokens.set(token, user.id);
 
-  res.json({ token, user });
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role || user.legacyRole || "user",
+      roleId: user.roleId || 3,
+      legacyRole: user.legacyRole
+    }
+  });
 });
 
 app.get("/api/catalog", authMiddleware, async (_req, res) => {
