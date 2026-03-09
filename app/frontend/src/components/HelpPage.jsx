@@ -64,13 +64,6 @@ export default function HelpPage({ onBack }) {
         ))}
       </ul>
 
-      <h3>API notes</h3>
-      <ul data-cy="help-api-notes">
-        {(helpData?.apiNotes || []).map((note, index) => (
-          <li key={`${note}-${index}`}>{note}</li>
-        ))}
-      </ul>
-
       {onBack ? (
         <button data-cy="help-back" onClick={onBack} type="button">
           Back

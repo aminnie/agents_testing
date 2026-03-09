@@ -7,8 +7,23 @@ export default function StorePage({
   onViewItem,
   onEditItem,
   onGoCheckout,
-  isProductManagementEnabled
+  isProductManagementEnabled,
+  pagination,
+  onFirstPage,
+  onPrevPage,
+  onNextPage,
+  onLastPage,
+  onPageSizeChange
 }) {
+  const {
+    currentPage = 1,
+    totalPages = 1,
+    pageSize = 10,
+    totalItems = 0
+  } = pagination || {};
+  const disablePrev = currentPage <= 1 || totalItems <= pageSize;
+  const disableNext = currentPage >= totalPages || totalItems <= pageSize;
+
   return (
     <>
       <section className="card">
@@ -40,6 +55,32 @@ export default function StorePage({
             </li>
           ))}
         </ul>
+        <div className="row-actions" data-cy="catalog-pagination">
+          <label htmlFor="catalog-page-size">Page size</label>
+          <select
+            data-cy="catalog-page-size"
+            id="catalog-page-size"
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            value={String(pageSize)}
+          >
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <button data-cy="catalog-page-first" disabled={disablePrev} onClick={onFirstPage} type="button">
+            First
+          </button>
+          <button data-cy="catalog-page-prev" disabled={disablePrev} onClick={onPrevPage} type="button">
+            Previous
+          </button>
+          <span data-cy="catalog-page-indicator">Page {currentPage} of {totalPages}</span>
+          <button data-cy="catalog-page-next" disabled={disableNext} onClick={onNextPage} type="button">
+            Next
+          </button>
+          <button data-cy="catalog-page-last" disabled={disableNext} onClick={onLastPage} type="button">
+            Last
+          </button>
+        </div>
       </section>
 
       <section className="card">

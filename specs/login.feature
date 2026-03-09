@@ -13,7 +13,7 @@ Feature: Login
     When I fill "email" with "user@example.com"
     And I fill "password" with "CorrectHorseBatteryStaple1!"
     And I click "Sign in"
-    Then I should see "My Store"
+    Then I should see "Happy Vibes"
     And API "POST @login" should return "200"
 
   @regression
@@ -36,7 +36,7 @@ Feature: Login
     Given I am on "/"
     When I log in with valid credentials
     And I reload the page
-    Then I should see "My Store"
+    Then I should see "Happy Vibes"
     And I should see "user@example.com"
 
   @regression

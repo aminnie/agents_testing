@@ -19,11 +19,13 @@
     "cypress:verify": "sh -c 'CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress verify'",
     "cypress:open": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress open \"$@\"' --",
     "cypress:run": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress run \"$@\"' --",
-    "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run\"'"
+    "cypress:run:pdf": "node scripts/run-cypress-with-pdf.mjs",
+    "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:pdf\"'"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
     "cypress": "^15.11.0",
+    "pdfkit": "^0.17.2",
     "start-server-and-test": "^2.1.5"
   }
 }

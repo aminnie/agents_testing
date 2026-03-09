@@ -11,6 +11,7 @@ This repository contains a small web store application used to develop and valid
   - login
   - in-app help page with demo credentials and navigation guidance
   - catalog browsing
+  - catalog pagination (page/pageSize query-param deep linking)
   - item detail view
   - add to cart
   - add to cart from item detail and return to catalog
@@ -82,6 +83,8 @@ Headless:
 npm run test:e2e
 ```
 
+This command now also generates a timestamped PDF report in `reports/` (for example `reports/cypress-report-YYYYMMDD-HHmmss.pdf`).
+
 Interactive:
 
 ```bash
@@ -92,6 +95,12 @@ Headless (Cypress only, assumes app is already running):
 
 ```bash
 npm run cypress:run
+```
+
+Headless with PDF report generation (assumes app is already running):
+
+```bash
+npm run cypress:run:pdf
 ```
 
 Run specific specs (argument forwarding supported):

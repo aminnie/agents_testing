@@ -31,6 +31,34 @@ export class CatalogPage {
     cy.get('[data-cy="item-detail-edit-product"]').click();
   }
 
+  goToFirstPage() {
+    cy.get('[data-cy="catalog-page-first"]').click();
+  }
+
+  goToPreviousPage() {
+    cy.get('[data-cy="catalog-page-prev"]').click();
+  }
+
+  goToNextPage() {
+    cy.get('[data-cy="catalog-page-next"]').click();
+  }
+
+  goToLastPage() {
+    cy.get('[data-cy="catalog-page-last"]').click();
+  }
+
+  setPageSize(pageSize: 10 | 20 | 50) {
+    cy.get('[data-cy="catalog-page-size"]').select(String(pageSize));
+  }
+
+  pageIndicator() {
+    return cy.get('[data-cy="catalog-page-indicator"]');
+  }
+
+  paginationControls() {
+    return cy.get('[data-cy="catalog-pagination"]');
+  }
+
   returnFromDetail() {
     cy.get('[data-cy="item-detail-return"]').click();
   }

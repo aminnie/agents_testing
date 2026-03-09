@@ -4,3 +4,4 @@ app/backend/data/
 cypress/videos/
 cypress/screenshots/
 dist/
+reports/

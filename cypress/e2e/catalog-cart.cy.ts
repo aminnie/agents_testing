@@ -12,7 +12,7 @@ describe("Feature: Catalog and Cart", () => {
   });
 
   it("should display catalog items after login", () => {
-    cy.get('[data-cy="catalog-list"] li').should("have.length.at.least", 20);
+    cy.get('[data-cy="catalog-list"] li').should("have.length", 10);
   });
 
   it("should add an item to cart and update total", () => {

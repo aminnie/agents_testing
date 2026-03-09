@@ -10,7 +10,7 @@ export default function AppHeader({
 }) {
   return (
     <header className="row-between">
-      <h1 data-cy="dashboard-title">My Store</h1>
+      <h1 data-cy="dashboard-title">Happy Vibes</h1>
       <p data-cy="session-user-email">{userEmail || "unknown user"}</p>
       <div className="row-between">
         <button data-cy="nav-store" onClick={onGoStore} type="button">

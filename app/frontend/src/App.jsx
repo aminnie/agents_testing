@@ -12,6 +12,21 @@ const STORAGE_KEYS = Object.freeze({
   auth: ["store", "auth", "state"].join("-"),
   user: ["store", "user", "state"].join("-")
 });
+const PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50]);
+const DEFAULT_PAGE_SIZE = 10;
+
+function parsePositiveInteger(value, fallbackValue) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackValue;
+}
+
+function buildPaginationSearch(currentSearch, page, pageSize) {
+  const params = new URLSearchParams(currentSearch);
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  return `?${params.toString()}`;
+}
+
 function formatPrice(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -105,6 +120,16 @@ function StoreApp() {
   const [productFormError, setProductFormError] = useState("");
   const [productFormSubmitting, setProductFormSubmitting] = useState(false);
   const isProductManager = ["editor", "manager"].includes(currentUser?.role || "");
+  const requestedPageSize = parsePositiveInteger(new URLSearchParams(location.search).get("pageSize"), DEFAULT_PAGE_SIZE);
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
+  const requestedPage = parsePositiveInteger(new URLSearchParams(location.search).get("page"), 1);
+  const totalItems = catalog.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pagedCatalog = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return catalog.slice(startIndex, startIndex + pageSize);
+  }, [catalog, currentPage, pageSize]);
 
   const totalCents = useMemo(
     () => cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
@@ -134,6 +159,16 @@ function StoreApp() {
       navigate("/store", { replace: true });
     }
   }, [token, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (!token || location.pathname !== "/store") {
+      return;
+    }
+    const normalizedSearch = buildPaginationSearch(location.search, currentPage, pageSize);
+    if (location.search !== normalizedSearch) {
+      navigate({ pathname: "/store", search: normalizedSearch }, { replace: true });
+    }
+  }, [token, location.pathname, location.search, currentPage, pageSize, navigate]);
 
   useEffect(() => {
     if (!token) {
@@ -214,12 +249,38 @@ function StoreApp() {
   }
 
   function viewItem(itemId) {
-    navigate(`/store/item/${encodeURIComponent(itemId)}`);
+    navigate({
+      pathname: `/store/item/${encodeURIComponent(itemId)}`,
+      search: buildPaginationSearch(location.search, currentPage, pageSize)
+    });
   }
 
   function addToCartAndReturn(item) {
     addToCart(item);
-    navigate("/store");
+    navigate({
+      pathname: "/store",
+      search: buildPaginationSearch(location.search, currentPage, pageSize)
+    });
+  }
+
+  function goToStore() {
+    navigate({
+      pathname: "/store",
+      search: buildPaginationSearch(location.search, currentPage, pageSize)
+    });
+  }
+
+  function goToPage(nextPage, nextPageSize = pageSize, replace = false) {
+    const boundedPageSize = PAGE_SIZE_OPTIONS.includes(nextPageSize) ? nextPageSize : DEFAULT_PAGE_SIZE;
+    const boundedTotalPages = Math.max(1, Math.ceil(totalItems / boundedPageSize));
+    const boundedPage = Math.min(Math.max(1, nextPage), boundedTotalPages);
+    navigate(
+      {
+        pathname: "/store",
+        search: buildPaginationSearch(location.search, boundedPage, boundedPageSize)
+      },
+      { replace }
+    );
   }
 
   function openNewProductForm() {
@@ -375,7 +436,7 @@ function StoreApp() {
         onGoCheckout={() => navigate("/checkout")}
         onGoHelp={() => navigate("/help")}
         onGoNewProduct={openNewProductForm}
-        onGoStore={() => navigate("/store")}
+        onGoStore={goToStore}
         onLogout={logout}
         isProductManagementEnabled={isProductManager}
         userEmail={currentUser?.email}
@@ -387,12 +448,23 @@ function StoreApp() {
           element={
             <StorePage
               cart={cart}
-              catalog={catalog}
+              catalog={pagedCatalog}
               loadingCatalog={loadingCatalog}
               onAddToCart={addToCart}
               onEditItem={viewProductEditor}
               onViewItem={viewItem}
               onGoCheckout={() => navigate("/checkout")}
+              pagination={{
+                currentPage,
+                totalPages,
+                pageSize,
+                totalItems
+              }}
+              onFirstPage={() => goToPage(1)}
+              onPrevPage={() => goToPage(currentPage - 1)}
+              onNextPage={() => goToPage(currentPage + 1)}
+              onLastPage={() => goToPage(totalPages)}
+              onPageSizeChange={(nextPageSize) => goToPage(1, nextPageSize)}
               isProductManagementEnabled={isProductManager}
               totalLabel={formatPrice}
             />
@@ -407,7 +479,7 @@ function StoreApp() {
               onAddToCartAndReturn={addToCartAndReturn}
               onGoNewProduct={openNewProductForm}
               onEditItem={viewProductEditor}
-              onReturnToStore={() => navigate("/store")}
+              onReturnToStore={goToStore}
               isProductManagementEnabled={isProductManager}
               totalLabel={formatPrice}
             />

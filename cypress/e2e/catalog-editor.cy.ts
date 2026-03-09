@@ -4,6 +4,7 @@ import { ProductFormPage } from "../pages/ProductFormPage";
 describe("Feature: Catalog editor workflows", () => {
   const catalogPage = new CatalogPage();
   const productFormPage = new ProductFormPage();
+  const formatPriceLabel = (priceCents: number) => `Price: $${(priceCents / 100).toFixed(2)}`;
 
   it("should allow editor to create a product from header control", () => {
     cy.intercept("POST", "/api/login").as("login");
@@ -108,6 +109,62 @@ describe("Feature: Catalog editor workflows", () => {
     productFormPage.submit();
     cy.wait("@updateCatalogItem").its("response.statusCode").should("eq", 200);
     cy.location("pathname").should("eq", "/store");
+  });
+
+  it("should persist editor updates after page refresh from catalog and detail paths", () => {
+    cy.intercept("POST", "/api/login").as("login");
+    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("PUT", "/api/catalog/*").as("updateCatalogItem");
+
+    const stamp = Date.now();
+    const firstUpdate = {
+      header: `Editor Persist A ${stamp}`,
+      description: `Updated from catalog ${stamp}`,
+      priceCents: 4100
+    };
+    const secondUpdate = {
+      header: `Editor Persist B ${stamp}`,
+      description: `Updated from detail ${stamp}`,
+      priceCents: 4200
+    };
+
+    cy.loginUi("editor@example.com", "Password123!");
+    cy.wait("@login").its("response.statusCode").should("eq", 200);
+    cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
+
+    catalogPage.editFirstCatalogItem();
+    productFormPage.fillForm(firstUpdate.header, firstUpdate.description, String(firstUpdate.priceCents));
+    productFormPage.submit();
+    cy.wait("@updateCatalogItem").its("response.statusCode").should("eq", 200);
+    cy.location("pathname").should("eq", "/store");
+    cy.get('[data-cy="catalog-list"]').should("contain", firstUpdate.header);
+
+    catalogPage.viewFirstCatalogItem();
+    cy.location("pathname").should("match", /^\/store\/item\/.+$/);
+    cy.get('[data-cy="item-detail-header"]').should("contain", firstUpdate.header);
+    cy.get('[data-cy="item-detail-description"]').should("contain", firstUpdate.description);
+    cy.get('[data-cy="item-detail-price"]').should("have.text", formatPriceLabel(firstUpdate.priceCents));
+
+    cy.reload();
+    cy.get('[data-cy="item-detail-header"]').should("contain", firstUpdate.header);
+    cy.get('[data-cy="item-detail-description"]').should("contain", firstUpdate.description);
+    cy.get('[data-cy="item-detail-price"]').should("have.text", formatPriceLabel(firstUpdate.priceCents));
+
+    catalogPage.openEditProductFromDetail();
+    productFormPage.fillForm(secondUpdate.header, secondUpdate.description, String(secondUpdate.priceCents));
+    productFormPage.submit();
+    cy.wait("@updateCatalogItem").its("response.statusCode").should("eq", 200);
+    cy.location("pathname").should("eq", "/store");
+
+    cy.get('[data-cy="catalog-list"]').should("contain", secondUpdate.header);
+    catalogPage.viewFirstCatalogItem();
+    cy.get('[data-cy="item-detail-header"]').should("contain", secondUpdate.header);
+    cy.get('[data-cy="item-detail-description"]').should("contain", secondUpdate.description);
+    cy.get('[data-cy="item-detail-price"]').should("have.text", formatPriceLabel(secondUpdate.priceCents));
+    cy.reload();
+    cy.get('[data-cy="item-detail-header"]').should("contain", secondUpdate.header);
+    cy.get('[data-cy="item-detail-description"]').should("contain", secondUpdate.description);
+    cy.get('[data-cy="item-detail-price"]').should("have.text", formatPriceLabel(secondUpdate.priceCents));
   });
 
   it("should hide product controls for non-manager and non-editor users", () => {

@@ -52,6 +52,8 @@ npm run cypress:run
 npm run test:e2e
 ```
 
+Default agent rule: when executing full E2E validation, run `npm run test:e2e` so the PDF report artifact is generated in `reports/`.
+
 If binary is missing:
 
 ```bash
