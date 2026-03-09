@@ -4,17 +4,21 @@ import AppHeader from "./components/AppHeader.jsx";
 import CheckoutPage from "./components/CheckoutPage.jsx";
 import ItemDetailPage from "./components/ItemDetailPage.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
+import ProductFormPage from "./components/ProductFormPage.jsx";
 import StorePage from "./components/StorePage.jsx";
 
-const TOKEN_KEY = "store_token";
-const USER_KEY = "store_user";
+const STORAGE_KEYS = Object.freeze({
+  auth: ["store", "auth", "state"].join("-"),
+  user: ["store", "user", "state"].join("-")
+});
+const PRODUCT_MANAGEMENT_TOOLTIP = "Editor role required to manage products.";
 
 function formatPrice(cents) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
 function readStoredUser() {
-  const rawValue = localStorage.getItem(USER_KEY);
+  const rawValue = localStorage.getItem(STORAGE_KEYS.user);
   if (!rawValue) {
     return null;
   }
@@ -22,7 +26,7 @@ function readStoredUser() {
   try {
     return JSON.parse(rawValue);
   } catch {
-    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(STORAGE_KEYS.user);
     return null;
   }
 }
@@ -32,7 +36,10 @@ function ItemDetailRoute({
   loadingCatalog,
   totalLabel,
   onAddToCartAndReturn,
-  onReturnToStore
+  onReturnToStore,
+  onGoNewProduct,
+  onEditItem,
+  isProductManagementEnabled
 }) {
   const { itemId = "" } = useParams();
   const item = catalog.find((entry) => entry.id === itemId);
@@ -44,7 +51,40 @@ function ItemDetailRoute({
       loadingCatalog={loadingCatalog}
       onAddToCartAndReturn={onAddToCartAndReturn}
       onReturnToStore={onReturnToStore}
+      onGoNewProduct={onGoNewProduct}
+      onEditItem={onEditItem}
+      isProductManagementEnabled={isProductManagementEnabled}
+      productManagementTooltip={PRODUCT_MANAGEMENT_TOOLTIP}
       totalLabel={totalLabel}
+    />
+  );
+}
+
+function ProductFormRoute({
+  mode,
+  catalog,
+  loadingCatalog,
+  isProductManagementEnabled,
+  onCreateProduct,
+  onUpdateProduct,
+  onCancel,
+  errorMessage,
+  isSubmitting
+}) {
+  const { itemId = "" } = useParams();
+  const item = mode === "edit" ? catalog.find((entry) => entry.id === itemId) : null;
+
+  return (
+    <ProductFormPage
+      mode={mode}
+      item={item}
+      itemId={itemId}
+      loadingCatalog={loadingCatalog}
+      canManageProducts={isProductManagementEnabled}
+      onSubmit={(values) => (mode === "edit" ? onUpdateProduct(itemId, values) : onCreateProduct(values))}
+      onCancel={onCancel}
+      errorMessage={errorMessage}
+      isSubmitting={isSubmitting}
     />
   );
 }
@@ -55,7 +95,7 @@ function StoreApp() {
   const [email, setEmail] = useState("user@example.com");
   const [password, setPassword] = useState("CorrectHorseBatteryStaple1!");
   const [authError, setAuthError] = useState("");
-  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || "");
+  const [token, setToken] = useState(localStorage.getItem(STORAGE_KEYS.auth) || "");
   const [currentUser, setCurrentUser] = useState(readStoredUser);
   const [catalog, setCatalog] = useState([]);
   const [cart, setCart] = useState([]);
@@ -64,6 +104,9 @@ function StoreApp() {
   const [nameOnCard, setNameOnCard] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [productFormError, setProductFormError] = useState("");
+  const [productFormSubmitting, setProductFormSubmitting] = useState(false);
+  const isEditor = currentUser?.role === "editor";
 
   const totalCents = useMemo(
     () => cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
@@ -71,8 +114,8 @@ function StoreApp() {
   );
 
   function clearSession() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(STORAGE_KEYS.auth);
+    localStorage.removeItem(STORAGE_KEYS.user);
     setToken("");
     setCurrentUser(null);
     setCatalog([]);
@@ -120,8 +163,8 @@ function StoreApp() {
   }, [token]);
 
   function persistAuth(nextToken, user) {
-    localStorage.setItem(TOKEN_KEY, nextToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    localStorage.setItem(STORAGE_KEYS.auth, nextToken);
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
     setToken(nextToken);
     setCurrentUser(user);
   }
@@ -179,6 +222,78 @@ function StoreApp() {
   function addToCartAndReturn(item) {
     addToCart(item);
     navigate("/store");
+  }
+
+  function openNewProductForm() {
+    setProductFormError("");
+    navigate("/store/product/new");
+  }
+
+  function viewProductEditor(itemId) {
+    setProductFormError("");
+    navigate(`/store/product/${encodeURIComponent(itemId)}/edit`);
+  }
+
+  function addOrReplaceCatalogItem(nextItem) {
+    setCatalog((current) => {
+      const existingIndex = current.findIndex((entry) => entry.id === nextItem.id);
+      if (existingIndex === -1) {
+        return [nextItem, ...current];
+      }
+      return current.map((entry) => (entry.id === nextItem.id ? { ...entry, ...nextItem } : entry));
+    });
+  }
+
+  async function createProduct(values) {
+    setProductFormError("");
+    setProductFormSubmitting(true);
+    try {
+      const response = await fetch("/api/catalog", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setProductFormError(payload.message || "Could not create product");
+        return;
+      }
+      addOrReplaceCatalogItem(payload.item);
+      navigate("/store", { replace: true });
+    } catch {
+      setProductFormError("Could not create product");
+    } finally {
+      setProductFormSubmitting(false);
+    }
+  }
+
+  async function updateProduct(itemId, values) {
+    setProductFormError("");
+    setProductFormSubmitting(true);
+    try {
+      const response = await fetch(`/api/catalog/${encodeURIComponent(itemId)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setProductFormError(payload.message || "Could not update product");
+        return;
+      }
+      addOrReplaceCatalogItem(payload.item);
+      navigate("/store", { replace: true });
+    } catch {
+      setProductFormError("Could not update product");
+    } finally {
+      setProductFormSubmitting(false);
+    }
   }
 
   async function submitCheckout(event) {
@@ -251,8 +366,11 @@ function StoreApp() {
       <AppHeader
         isCheckoutEnabled={cart.length > 0}
         onGoCheckout={() => navigate("/checkout")}
+        onGoNewProduct={openNewProductForm}
         onGoStore={() => navigate("/store")}
         onLogout={logout}
+        isProductManagementEnabled={isEditor}
+        productManagementTooltip={PRODUCT_MANAGEMENT_TOOLTIP}
         userEmail={currentUser?.email}
       />
 
@@ -265,8 +383,12 @@ function StoreApp() {
               catalog={catalog}
               loadingCatalog={loadingCatalog}
               onAddToCart={addToCart}
+              onEditItem={viewProductEditor}
+              onGoNewProduct={openNewProductForm}
               onViewItem={viewItem}
               onGoCheckout={() => navigate("/checkout")}
+              isProductManagementEnabled={isEditor}
+              productManagementTooltip={PRODUCT_MANAGEMENT_TOOLTIP}
               totalLabel={formatPrice}
             />
           }
@@ -278,8 +400,43 @@ function StoreApp() {
               catalog={catalog}
               loadingCatalog={loadingCatalog}
               onAddToCartAndReturn={addToCartAndReturn}
+              onGoNewProduct={openNewProductForm}
+              onEditItem={viewProductEditor}
               onReturnToStore={() => navigate("/store")}
+              isProductManagementEnabled={isEditor}
               totalLabel={formatPrice}
+            />
+          }
+        />
+        <Route
+          path="/store/product/new"
+          element={
+            <ProductFormRoute
+              mode="create"
+              catalog={catalog}
+              loadingCatalog={loadingCatalog}
+              isProductManagementEnabled={isEditor}
+              onCreateProduct={createProduct}
+              onUpdateProduct={updateProduct}
+              onCancel={() => navigate("/store")}
+              errorMessage={productFormError}
+              isSubmitting={productFormSubmitting}
+            />
+          }
+        />
+        <Route
+          path="/store/product/:itemId/edit"
+          element={
+            <ProductFormRoute
+              mode="edit"
+              catalog={catalog}
+              loadingCatalog={loadingCatalog}
+              isProductManagementEnabled={isEditor}
+              onCreateProduct={createProduct}
+              onUpdateProduct={updateProduct}
+              onCancel={() => navigate("/store")}
+              errorMessage={productFormError}
+              isSubmitting={productFormSubmitting}
             />
           }
         />

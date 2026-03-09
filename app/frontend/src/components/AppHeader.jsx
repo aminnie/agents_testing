@@ -2,8 +2,11 @@ export default function AppHeader({
   userEmail,
   onGoStore,
   onGoCheckout,
+  onGoNewProduct,
   onLogout,
-  isCheckoutEnabled
+  isCheckoutEnabled,
+  isProductManagementEnabled,
+  productManagementTooltip
 }) {
   return (
     <header className="row-between">
@@ -20,6 +23,15 @@ export default function AppHeader({
           type="button"
         >
           Checkout
+        </button>
+        <button
+          data-cy="nav-new-product"
+          disabled={!isProductManagementEnabled}
+          onClick={onGoNewProduct}
+          title={!isProductManagementEnabled ? productManagementTooltip : ""}
+          type="button"
+        >
+          New product
         </button>
       </div>
       <button data-cy="logout-button" onClick={onLogout} type="button">

@@ -37,7 +37,7 @@ function deriveHeaderFromDescription(description) {
   return `${firstSentence.slice(0, 61).trimEnd()}...`;
 }
 
-async function requireCatalogOwner(req, res, next) {
+async function getUserRole(userId) {
   const user = await db.get(
     `SELECT
       u.role AS legacyRole,
@@ -46,19 +46,37 @@ async function requireCatalogOwner(req, res, next) {
     FROM users u
     LEFT JOIN role_types rt ON rt.id = u.role_id
     WHERE u.id = ?`,
-    req.userId
+    userId
   );
   if (!user) {
+    return null;
+  }
+  return user.role || user.legacyRole || "user";
+}
+
+async function requireCatalogWriteAccess(req, res, next) {
+  const role = await getUserRole(req.userId);
+  if (!role) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
-
-  const effectiveRole = user.role || user.legacyRole;
-  if (!["manager", "admin"].includes(effectiveRole)) {
+  if (!["editor", "manager", "admin"].includes(role)) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }
+  next();
+}
 
+async function requireCatalogEditor(req, res, next) {
+  const role = await getUserRole(req.userId);
+  if (!role) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  if (role !== "editor") {
+    res.status(403).json({ message: "Forbidden" });
+    return;
+  }
   next();
 }
 
@@ -154,7 +172,8 @@ app.get("/api/catalog/:id", authMiddleware, async (req, res) => {
   res.json({ item: mapCatalogItem(item) });
 });
 
-app.post("/api/catalog", authMiddleware, requireCatalogOwner, async (req, res) => {
+app.post("/api/catalog", authMiddleware, requireCatalogWriteAccess, async (req, res) => {
+  const header = normalizeText(req.body?.header);
   const description = normalizeText(req.body?.description);
   const priceCents = Number(req.body?.priceCents);
 
@@ -169,15 +188,15 @@ app.post("/api/catalog", authMiddleware, requireCatalogOwner, async (req, res) =
   }
 
   const publicId = randomUUID();
-  const header = deriveHeaderFromDescription(description);
+  const resolvedHeader = header || deriveHeaderFromDescription(description);
   const sku = `SKU-${publicId.slice(0, 8).toUpperCase()}`;
 
   const result = await db.run(
     "INSERT INTO catalog_items (public_id, sku, name, header, description, price_cents) VALUES (?, ?, ?, ?, ?, ?)",
     publicId,
     sku,
-    header,
-    header,
+    resolvedHeader,
+    resolvedHeader,
     description,
     priceCents
   );
@@ -185,11 +204,60 @@ app.post("/api/catalog", authMiddleware, requireCatalogOwner, async (req, res) =
   res.status(201).json({
     item: {
       id: publicId,
-      header,
-      name: header,
+      header: resolvedHeader,
+      name: resolvedHeader,
       description,
       priceCents,
       internalId: result.lastID
+    }
+  });
+});
+
+app.put("/api/catalog/:id", authMiddleware, requireCatalogEditor, async (req, res) => {
+  const header = normalizeText(req.body?.header);
+  const description = normalizeText(req.body?.description);
+  const priceCents = Number(req.body?.priceCents);
+
+  if (!header) {
+    res.status(400).json({ message: "Item header is required" });
+    return;
+  }
+
+  if (!description) {
+    res.status(400).json({ message: "Item description is required" });
+    return;
+  }
+
+  if (!Number.isInteger(priceCents) || priceCents <= 0) {
+    res.status(400).json({ message: "priceCents must be a positive integer" });
+    return;
+  }
+
+  const existingItem = await db.get(
+    "SELECT id FROM catalog_items WHERE public_id = ?",
+    req.params.id
+  );
+  if (!existingItem) {
+    res.status(404).json({ message: "Catalog item not found" });
+    return;
+  }
+
+  await db.run(
+    "UPDATE catalog_items SET name = ?, header = ?, description = ?, price_cents = ? WHERE public_id = ?",
+    header,
+    header,
+    description,
+    priceCents,
+    req.params.id
+  );
+
+  res.json({
+    item: {
+      id: req.params.id,
+      header,
+      name: header,
+      description,
+      priceCents
     }
   });
 });

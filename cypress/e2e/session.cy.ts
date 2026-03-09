@@ -26,8 +26,8 @@ describe("Feature: Session management", () => {
     cy.get('[data-cy="login-password"]').should("have.value", "");
 
     cy.window().then((windowObject) => {
-      expect(windowObject.localStorage.getItem("store_token")).to.equal(null);
-      expect(windowObject.localStorage.getItem("store_user")).to.equal(null);
+      expect(windowObject.localStorage.getItem("store-auth-state")).to.equal(null);
+      expect(windowObject.localStorage.getItem("store-user-state")).to.equal(null);
     });
 
     cy.reload();

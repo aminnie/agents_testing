@@ -13,6 +13,7 @@ This repository contains a small web store application used to develop and valid
   - item detail view
   - add to cart
   - add to cart from item detail and return to catalog
+  - editor product create/edit form
   - checkout with payment details
 - Spec-driven artifacts:
   - `specs/*.feature`
@@ -179,5 +180,6 @@ Role types are normalized in the backend as:
 
 - `GET /api/catalog` returns catalog items with UUID ids, generated headers, descriptions, and prices.
 - `GET /api/catalog/:id` returns item detail for a UUID id.
-- `POST /api/catalog` allows `manager` and `admin` users to create new catalog items (description + price), with UUID/header generated server-side.
+- `POST /api/catalog` allows `editor`, `manager`, and `admin` users to create new catalog items (header/description + price), with UUID generated server-side.
+- `PUT /api/catalog/:id` allows `editor` users to update catalog item header, description, and price.
 - `POST /api/login` returns `user.role` (normalized role name) and `user.roleId` (numeric role type id).
