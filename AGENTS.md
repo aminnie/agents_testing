@@ -1,9 +1,29 @@
-# AGENTS.md
+# [AGENTS.md](http://AGENTS.md)
 
 Project-wide guidance for human contributors and AI coding agents.
 
 This file defines baseline engineering standards for this repository.
-For Cypress-specific guidance, see `CYRPRESS-AGENT.md`.
+
+## Agent Entry Points
+
+Use these files by intent:
+
+- `AGENTS.md` - high-level, cross-tool project standards and guardrails.
+- `ANALYSIS-AGENT.md` - technical/architecture analysis workflow.
+- `CLARIFICATION-AGENT.md` - requirements decision-finalization workflow.
+- `CYRPRESS-AGENT.md` - Cypress generation and test-maintenance workflow.
+- `REVIEW-AGENT.md` - final code review workflow and reporting format.
+
+## Instruction Precedence (When Instructions Conflict)
+
+Apply instructions in this order:
+
+1. direct user instruction for the current task
+2. `AGENTS.md` project-wide policy
+3. specialized `*-AGENT.md` workflow files
+4. README/examples/reference docs
+
+If conflict remains after this order, stop and ask the user for a decision.
 
 ## 1) Mission
 
@@ -69,10 +89,6 @@ Prefer small, reversible changes over broad risky rewrites.
 - Avoid timing-based assertions and arbitrary sleeps.
 - Keep critical-path tests stable and easy to debug.
 - Update existing tests/specs when behavior changes.
-- For new routes/pages/workflows, update accessibility portfolio artifacts before running a11y verification:
-  - `cypress/e2e/accessibility.cy.ts`
-  - `specs/accessibility.feature`
-  - relevant requirements `## What Changed`
 
 For Cypress conventions, selectors, and generation flow, use:
 
@@ -126,6 +142,14 @@ Before considering work complete:
 - assumptions, limitations, and follow-ups are noted
 - for final-pass workflow, if feature/bug requirements file cannot be inferred from prompt context, ask user for explicit file path before proceeding
 
+### 12.1) Required commands before handoff
+
+Run these scripts before final handoff (when applicable):
+
+- `npm run test:e2e`
+- `npm run test:a11y`
+- `npm run workflow:final-pass`
+
 ## 13) AI Agent Behavior Contract
 
 AI agents working in this repo should:
@@ -140,7 +164,7 @@ AI agents working in this repo should:
 
 When the user asks for a code review (for example: "review this", "run review", "final review"), agents should:
 
-1. use `REVIEW_AGENT.md` as the default review rubric,
+1. use `REVIEW-AGENT.md` as the default review rubric,
 2. present findings first in severity order,
 3. prioritize correctness/security/regression risks,
 4. include residual test gaps and assumptions.

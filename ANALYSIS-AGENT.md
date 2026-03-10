@@ -1,33 +1,107 @@
----
+# Analysis Agent Prompt Template (V2)
 
-## name: code-architect
-description: Designs feature architectures by analyzing existing codebase patterns and conventions, then providing comprehensive implementation blueprints with specific files to create/modify, component designs, data flows, and build sequences
-tools: Glob, Grep, LS, Read, NotebookRead, WebFetch, TodoWrite, WebSearch, KillShell, BashOutput
-color: green
+Use this template to produce a complete technical and architectural analysis before implementation.
 
-You are a senior software architect who delivers comprehensive, actionable architecture blueprints by deeply understanding codebases and making confident architectural decisions.
+This analysis flow must work for both:
+- `requirements/product_feature<N>.md`
+- `requirements/product_bug<N>.md`
+
+## Purpose
+
+Deliver a decisive, implementation-ready blueprint by analyzing existing code patterns and mapping requested behavior to concrete, low-risk changes.
+
+## Inputs
+
+- A target requirements file under `requirements/` (feature or bug).
+- Current project standards from `AGENTS.md`.
+- Clarification outcomes from `## Clarification Decisions` when present.
+
+## Scope
+
+- Analysis only (no implementation/code edits as part of the analysis response itself).
+- Make one recommended architecture approach with rationale and trade-offs.
+- Keep changes compatible unless requirements explicitly call for breaking behavior.
 
 ## Core Process
 
-**1. Codebase Pattern Analysis**
-Extract existing patterns, conventions, and architectural decisions. Identify the technology stack, module boundaries, abstraction layers, and AGENT.md guidelines. Find similar features to understand established approaches.
+1. **Codebase Pattern Analysis**
+   - Identify established backend/frontend/testing patterns to reuse.
+   - Locate similar features and conventions to minimize risk.
+   - Confirm constraints from `AGENTS.md` and related project guidance.
 
-**2. Architecture Design**
-Based on patterns found, design the complete feature architecture. Make decisive choices - pick one approach and commit. Ensure seamless integration with existing code. Design for testability, performance, and maintainability.
+2. **Architecture Design**
+   - Define the target behavior and system boundaries.
+   - Specify API, UI, data, authorization, and state management impacts.
+   - Identify security, resilience, and regression risks with mitigations.
 
-**3. Complete Implementation Blueprint**
-Specify every file to create or modify, component responsibilities, integration points, and data flow. Break implementation into clear phases with specific tasks.
+3. **Implementation Blueprint**
+   - Produce a file-by-file implementation map.
+   - Define sequencing and dependencies across backend, frontend, tests, and docs.
+   - Include verification plan and completion criteria.
 
-## Output Guidance
+## Hard-Stop Rule
 
-Deliver a decisive, complete architecture blueprint that provides everything needed for implementation. Include:
+If required decisions are unresolved or requirements conflict:
+- Return `Blocking Questions` as a numbered list (`1.`, `2.`, `3.`...).
+- State that analysis is blocked pending clarification.
+- Do not invent defaults silently.
 
-- **Patterns & Conventions Found**: Existing patterns with file:line references, similar features, key abstractions
-- **Architecture Decision**: Your chosen approach with rationale and trade-offs
-- **Component Design**: Each component with file path, responsibilities, dependencies, and interfaces
-- **Implementation Map**: Specific files to create/modify with detailed change descriptions
-- **Data Flow**: Complete flow from entry points through transformations to outputs
-- **Build Sequence**: Phased implementation steps as a checklist
-- **Critical Details**: Error handling, state management, testing, performance, and security considerations
+## Required Output in the Requirements File
 
-Make confident architectural choices rather than presenting multiple options. Be specific and actionable - provide file paths, function names, and concrete steps.
+Update the same target `product_*` file with these sections:
+- `## Technical Analysis`
+- `## Implementation Plan`
+- `## Test Strategy`
+- `## What Changed` (analysis planning updates only, not implementation results)
+
+Each section must be explicit and actionable.
+
+## Required Analysis Content
+
+Include all of the following:
+- **Patterns and conventions found** with file path references
+- **Architecture decision** with rationale and trade-offs
+- **API/data contract changes** (if any), including compatibility notes
+- **UI/UX behavior changes** and role/permission visibility rules (if applicable)
+- **File-by-file implementation map** with concrete edits
+- **Data flow overview** from entry points to persistence/output
+- **Risk controls** for error handling, security, and regressions
+- **Test strategy** covering Cypress specs, fixtures/page objects, and accessibility impact
+- **Verification commands** expected before handoff
+- **Blocking Questions** (numbered), if unresolved
+
+## Handoff Status
+
+End with one of:
+- `Status: Ready for implementation`
+- `Status: Blocked pending clarification`
+
+## Prompt Template
+
+```text
+Please proceed to analyze requirements/product_feature<N>.md.
+
+Use AGENTS.md and existing project patterns.
+Update the same requirements file with:
+- ## Technical Analysis
+- ## Implementation Plan
+- ## Test Strategy
+- ## What Changed
+
+If unresolved decisions remain, return numbered blocking questions and stop.
+```
+
+## Bug Variant Template
+
+```text
+Please proceed to analyze requirements/product_bug<N>.md.
+
+Use AGENTS.md and existing project patterns.
+Update the same requirements file with:
+- ## Technical Analysis
+- ## Implementation Plan
+- ## Test Strategy
+- ## What Changed
+
+If unresolved decisions remain, return numbered blocking questions and stop.
+```

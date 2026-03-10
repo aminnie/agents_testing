@@ -242,7 +242,7 @@ Create `app/frontend/src/components/UserAdminPage.jsx`:
 2. Frontend: add admin route, page, and header entry.
 3. Cypress/specs: add admin user-management coverage.
 4. Docs: update README and this requirements file `## What Changed`.
-5. Final pass: run `npm run workflow:final-pass` and execute `REVIEW_AGENT.md`.
+5. Final pass: run `npm run workflow:final-pass` and execute `REVIEW-AGENT.md`.
 
 ## What Changed
 

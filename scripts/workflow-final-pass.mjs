@@ -105,11 +105,14 @@ async function ensureRequirementsReviewExists(requirementsReviewPath) {
     if (!contents.includes("## Verification Results")) {
       throw new Error("Requirements review file is missing `## Verification Results`.");
     }
+    if (!contents.includes("## Review Results")) {
+      throw new Error("Requirements review file is missing `## Review Results`.");
+    }
   } catch {
     throw new Error(
       [
         `Invalid requirements review artifact: ${path.relative(WORKSPACE_ROOT, requirementsReviewPath) || "<unset>"}.`,
-        "Use the relevant requirements file and ensure it includes `## What Changed` and `## Verification Results`",
+        "Use the relevant requirements file and ensure it includes `## What Changed`, `## Verification Results`, and `## Review Results`",
         "before re-running workflow:final-pass."
       ].join(" ")
     );

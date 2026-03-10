@@ -314,13 +314,19 @@ Use these prompts to drive the standard feature workflow.
 Feature analysis prompt:
 
 ```text
-Please proceed to analyze requirements/analysis_feature<N>.md
+Please proceed to analyze requirements/product_feature<N>.md
+```
+
+Bug analysis prompt:
+
+```text
+Please proceed to analyze requirements/product_bug<N>.md
 ```
 
 Example:
 
 ```text
-Please proceed to analyze requirements/analysis_feature4.md
+Please proceed to analyze requirements/product_feature4.md
 ```
 
 Feature implementation prompt:
@@ -339,41 +345,66 @@ Feature implementation + end-of-build review prompt:
 
 ```text
 Please proceed to implement Feature <N>.
-After coding and tests pass, run a final code review using REVIEW_AGENT.md guidance focused on changed files.
-Report findings by severity, fix critical/high issues, and summarize any remaining medium/low recommendations.
+After coding and tests pass, run a final code review using REVIEW-AGENT.md guidance focused on changed files.
+Report findings by severity (`Critical`, `High`, `Medium`, `Low`), fix unresolved `Critical`/`High` issues, and summarize remaining medium/low recommendations.
+If unresolved `Critical`/`High` findings remain, set `Status: Blocked pending fixes or explicit approval`.
 ```
 
 Code review request prompt (standalone):
 
 ```text
-Please run a code review using REVIEW_AGENT.md.
+Please run a code review using REVIEW-AGENT.md.
 Focus on changed files, report findings first by severity, then list open questions and test gaps.
 ```
 
 Requirements clarification / decision finalization prompt:
 
 ```text
-Please update requirements/analysis_feature<N>.md with the following decisions:
+Please update requirements/product_feature<N>.md with the following decisions:
 
 For the Open Questions:
 1. <decision 1>
 2. <decision 2>
 3. <decision 3>
 
-Please convert these decisions into explicit requirements and update the What Changed section.
+Please convert these decisions into explicit requirements and acceptance criteria,
+and write them under a new section titled:
+## Clarification Decisions
+
+If anything is still unclear, return numbered blocking questions and stop.
 ```
 
 Example:
 
 ```text
-Please update requirements/analysis_feature4.md with the following decisions:
+Please update requirements/product_feature4.md with the following decisions:
 
 For the Open Questions:
 1. Also allow manual header override.
 2. Make create/edit available on both pages.
 3. For non-editor users, disable the control and add a tooltip.
 
-Please convert these decisions into explicit requirements and update the What Changed section.
+Please convert these decisions into explicit requirements and acceptance criteria,
+and write them under a new section titled:
+## Clarification Decisions
+
+If anything is still unclear, return numbered blocking questions and stop.
+```
+
+Bug variant:
+
+```text
+Please update requirements/product_bug<N>.md with the following decisions:
+
+For the Open Questions:
+1. <decision 1>
+2. <decision 2>
+
+Please convert these decisions into explicit requirements and acceptance criteria,
+and write them under a new section titled:
+## Clarification Decisions
+
+If anything is still unclear, return numbered blocking questions and stop.
 ```
 
 Template file:
@@ -383,8 +414,8 @@ Template file:
 End-to-end workflow example:
 
 ```text
-Please proceed to analyze requirements/analysis_feature4.md
-Please update requirements/analysis_feature4.md with the following decisions:
+Please proceed to analyze requirements/product_feature4.md
+Please update requirements/product_feature4.md with the following decisions:
 For the Open Questions:
 1. <decision 1>
 2. <decision 2>
@@ -395,25 +426,40 @@ Please proceed to implement Feature 4
 
 Use these `*-AGENT.md` files for different stages of feature delivery:
 
+- `AGENTS.md`
+  - Use for high-level, cross-tool project standards and guardrails.
+  - If guidance conflicts, `AGENTS.md` is the baseline policy unless a direct user instruction overrides it.
 - `CLARIFICATION-AGENT.md`
   - Use after analysis when open questions need decisions finalized.
-  - Output should convert decisions into explicit requirements and update the analysis doc.
+  - Supports both `requirements/product_feature<N>.md` and `requirements/product_bug<N>.md`.
+  - Output writes decisions into `## Clarification Decisions` in the same requirements file.
+  - If unresolved items remain, return numbered blocking questions and hard stop (no assumptions).
   - Example prompt:
     ```text
-    Please update requirements/analysis_feature5.md with the following decisions:
+    Please update requirements/product_feature5.md with the following decisions:
 
     For the Open Questions:
     1. Keep manager/admin access.
     2. Add tooltip text for disabled controls.
 
-    Please convert these decisions into explicit requirements and update the What Changed section.
+    Please convert these decisions into explicit requirements and acceptance criteria,
+    and write them under a new section titled:
+    ## Clarification Decisions
+
+    If anything is still unclear, return numbered blocking questions and stop.
     ```
 - `ANALYSIS-AGENT.md`
   - Use when you want a full architecture analysis before coding.
-  - Output should define design decisions, file map, test plan, and `What Changed` updates.
+  - Supports both `requirements/product_feature<N>.md` and `requirements/product_bug<N>.md`.
+  - Output updates the same requirements file with:
+    - `## Technical Analysis`
+    - `## Implementation Plan`
+    - `## Test Strategy`
+    - `## What Changed` (analysis planning updates)
+  - If unresolved requirements remain, return numbered blocking questions and hard stop.
   - Example prompt:
     ```text
-    Please proceed to analyze requirements/analysis_feature5.md
+    Please proceed to analyze requirements/product_feature5.md
     ```
     Notes on what to typically expect of the analysis run:
     - current-state gap analysis vs requested behavior
@@ -422,7 +468,7 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     - explicit backend authorization target (manager|editor only for create/edit)
     - detailed file-by-file implementation map
     - data flow, phased build sequence, and critical details
-    - updated What Changed reflecting the full analysis pass  
+    - `Status: Ready for implementation` or `Status: Blocked pending clarification`
 
 - `CYRPRESS-AGENT.md`
   - Use when generating or refining Cypress artifacts from feature behavior.
@@ -431,44 +477,29 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     ```text
     Please use CYRPRESS-AGENT.md guidance to generate Cypress coverage for Feature 5 from specs/feature5.feature
     ```
-- `REVIEW_AGENT.md`
+- `REVIEW-AGENT.md`
   - Use at the end of implementation as a quality/security review gate.
-  - Output should list findings first (by severity), then fixes applied, then residual risks/gaps.
+  - Output should list findings first by severity (`Critical`, `High`, `Medium`, `Low`), followed by open questions, residual risks/test gaps, fix plan, and final status.
+  - If unresolved `Critical`/`High` findings remain, set `Status: Blocked pending fixes or explicit approval`.
   - Example prompt:
     ```text
-    Please run a final review for Feature 10 using REVIEW_AGENT.md.
-    Focus on changed files only, fix all critical/high findings, and summarize medium/low follow-ups.
+    Please run a final review for Feature 10 using REVIEW-AGENT.md.
+    Focus on changed files only, fix unresolved `Critical`/`High` findings, and summarize medium/low follow-ups.
     ```
 
 Recommended sequence once a new feature requirement is written:
 
-1. Run analysis against `requirements/analysis_feature<N>.md` (architecture + plan).
-  - Example:
-2. Run clarification to resolve open questions and finalize decisions.
-  - Example:
-  1. Add editor create access.
-  2. Keep manager/admin create access.
-    `
+1. Run analysis against `requirements/product_feature<N>.md` or `requirements/product_bug<N>.md` (architecture + plan); if blocking questions remain, stop for clarification answers.
+2. Run clarification to resolve open questions and finalize decisions in `## Clarification Decisions`; if blocking questions remain, stop until answers are provided.
 3. Implement Feature `<N>` in code.
-  - Example:  
-
 4. Use Cypress agent guidance to add/update E2E coverage as needed.
-  - Example:  
-
 5. Update the a11y portfolio for new feature surface area before running accessibility tests.
   - Required updates:
     - `cypress/e2e/accessibility.cy.ts`
     - `specs/accessibility.feature`
-    - feature requirements `## What Changed`  
-
-6. Run verification (`npm run test:e2e`) and ensure the analysis file has an updated `What Changed` section.
-  - Example commands:  
-
-7. Run end-of-build review using `REVIEW_AGENT.md`; fix critical/high findings before final handoff.
-  - Example:
-    ```text
-    Please run final code review using REVIEW_AGENT.md for the just-implemented feature.
-    ```
+    - feature requirements `## What Changed`
+6. Run verification (`npm run test:e2e`) and ensure the requirements file has updated `## What Changed`, `## Verification Results`, and `## Review Results`.
+7. Run end-of-build review using `REVIEW-AGENT.md`; unresolved `Critical`/`High` findings must be fixed (or explicitly approved) before final handoff.
 
 Workflow helper command:
 
@@ -485,6 +516,7 @@ What it does:
 - Validates that the referenced file is non-empty and includes:
   - `## What Changed`
   - `## Verification Results`
+  - `## Review Results`
 
 ## PR/Release Checklist
 
@@ -493,8 +525,8 @@ Use this checklist before opening a PR or preparing a release:
 - Requirements file for the feature is updated, including `## What Changed`.
 - A11y portfolio artifacts are updated for new feature pages/workflows (`cypress/e2e/accessibility.cy.ts`, `specs/accessibility.feature`, requirements `## What Changed`).
 - End-to-end verification completed via `npm run workflow:final-pass`.
-- Final code review completed using `REVIEW_AGENT.md`.
-- Relevant requirements artifact is referenced via `REQUIREMENTS_REVIEW_PATH` and includes non-empty `## What Changed` + `## Verification Results`.
-- Critical/high review findings are fixed; remaining medium/low items are documented.
+- Final code review completed using `REVIEW-AGENT.md`.
+- Relevant requirements artifact is referenced via `REQUIREMENTS_REVIEW_PATH` and includes non-empty `## What Changed` + `## Verification Results` + `## Review Results`.
+- Unresolved `Critical`/`High` review findings are fixed (or explicitly approved); remaining medium/low items are documented.
 - Latest generated reports are available in `reports/` (PDF and a11y JSON as applicable).
 
