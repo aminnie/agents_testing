@@ -108,10 +108,14 @@ export default function StorePage({
             sx={{ flexWrap: "wrap", mt: 2 }}
           >
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel id="catalog-page-size-label">Page size</InputLabel>
+              <InputLabel htmlFor="catalog-page-size-native" id="catalog-page-size-label">Page size</InputLabel>
               <NativeSelect
                 id="catalog-page-size"
-                inputProps={{ "data-cy": "catalog-page-size" }}
+                inputProps={{
+                  "aria-label": "Page size",
+                  "data-cy": "catalog-page-size",
+                  id: "catalog-page-size-native"
+                }}
                 onChange={(event) => onPageSizeChange(Number(event.target.value))}
                 value={String(pageSize)}
               >

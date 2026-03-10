@@ -7,7 +7,9 @@ import HelpPage from "./components/HelpPage.jsx";
 import ItemDetailPage from "./components/ItemDetailPage.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
 import ProductFormPage from "./components/ProductFormPage.jsx";
+import RegisterScreen from "./components/RegisterScreen.jsx";
 import StorePage from "./components/StorePage.jsx";
+import UserAdminPage from "./components/UserAdminPage.jsx";
 import theme from "./theme.js";
 
 const STORAGE_KEYS = Object.freeze({
@@ -110,6 +112,11 @@ function StoreApp() {
   const [email, setEmail] = useState("user@example.com");
   const [password, setPassword] = useState("CorrectHorseBatteryStaple1!");
   const [authError, setAuthError] = useState("");
+  const [registerDisplayName, setRegisterDisplayName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerError, setRegisterError] = useState("");
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
   const [token, setToken] = useState(localStorage.getItem(STORAGE_KEYS.auth) || "");
   const [currentUser, setCurrentUser] = useState(readStoredUser);
   const [catalog, setCatalog] = useState([]);
@@ -122,6 +129,7 @@ function StoreApp() {
   const [productFormError, setProductFormError] = useState("");
   const [productFormSubmitting, setProductFormSubmitting] = useState(false);
   const isProductManager = ["editor", "manager"].includes(currentUser?.role || "");
+  const isAdmin = (currentUser?.role || "") === "admin";
   const requestedPageSize = parsePositiveInteger(new URLSearchParams(location.search).get("pageSize"), DEFAULT_PAGE_SIZE);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
   const requestedPage = parsePositiveInteger(new URLSearchParams(location.search).get("page"), 1);
@@ -152,7 +160,7 @@ function StoreApp() {
   }
 
   useEffect(() => {
-    if (!token && !["/", "/help"].includes(location.pathname)) {
+    if (!token && !["/", "/help", "/register"].includes(location.pathname)) {
       navigate("/", { replace: true });
       return;
     }
@@ -227,6 +235,52 @@ function StoreApp() {
 
     persistAuth(payload.token, payload.user);
     navigate("/store", { replace: true });
+  }
+
+  async function onRegisterSubmit(event) {
+    event.preventDefault();
+    setRegisterError("");
+
+    const normalizedDisplayName = registerDisplayName.trim().replace(/\s+/g, " ");
+    const normalizedEmail = registerEmail.trim().toLowerCase();
+    const normalizedPassword = registerPassword.trim();
+
+    if (!normalizedDisplayName || !normalizedEmail || !normalizedPassword) {
+      setRegisterError("Display name, email, and password are required");
+      return;
+    }
+
+    if (normalizedPassword.length < 8) {
+      setRegisterError("Password must be at least 8 characters");
+      return;
+    }
+
+    setRegisterSubmitting(true);
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: normalizedDisplayName,
+          email: normalizedEmail,
+          password: normalizedPassword
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setRegisterError(payload.message || "Registration failed");
+        return;
+      }
+      persistAuth(payload.token, payload.user);
+      setEmail(normalizedEmail);
+      setPassword("");
+      setRegisterPassword("");
+      navigate("/store", { replace: true });
+    } catch {
+      setRegisterError("Registration failed");
+    } finally {
+      setRegisterSubmitting(false);
+    }
   }
 
   function logout() {
@@ -409,25 +463,45 @@ function StoreApp() {
     setCardNumber("");
   }
 
-  if (!token && location.pathname === "/help") {
-    return (
-      <main className="container">
-        <HelpPage onBack={() => navigate("/")} />
-      </main>
-    );
-  }
-
   if (!token) {
     return (
-      <LoginScreen
-        authError={authError}
-        email={email}
-        onGoHelp={() => navigate("/help")}
-        onEmailChange={(event) => setEmail(event.target.value)}
-        onPasswordChange={(event) => setPassword(event.target.value)}
-        onSubmit={onLoginSubmit}
-        password={password}
-      />
+      <main className="container">
+        <Routes>
+          <Route path="/help" element={<HelpPage onBack={() => navigate("/")} />} />
+          <Route
+            path="/register"
+            element={
+              <RegisterScreen
+                displayName={registerDisplayName}
+                email={registerEmail}
+                password={registerPassword}
+                registerError={registerError}
+                isSubmitting={registerSubmitting}
+                onDisplayNameChange={(event) => setRegisterDisplayName(event.target.value)}
+                onEmailChange={(event) => setRegisterEmail(event.target.value)}
+                onPasswordChange={(event) => setRegisterPassword(event.target.value)}
+                onSubmit={onRegisterSubmit}
+                onBackToLogin={() => navigate("/", { replace: true })}
+              />
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <LoginScreen
+                authError={authError}
+                email={email}
+                onGoHelp={() => navigate("/help")}
+                onGoRegister={() => navigate("/register")}
+                onEmailChange={(event) => setEmail(event.target.value)}
+                onPasswordChange={(event) => setPassword(event.target.value)}
+                onSubmit={onLoginSubmit}
+                password={password}
+              />
+            }
+          />
+        </Routes>
+      </main>
     );
   }
 
@@ -435,10 +509,12 @@ function StoreApp() {
     <main className="container">
       <AppHeader
         isCheckoutEnabled={cart.length > 0}
+        isAdmin={isAdmin}
         onGoCheckout={() => navigate("/checkout")}
         onGoHelp={() => navigate("/help")}
         onGoNewProduct={openNewProductForm}
         onGoStore={goToStore}
+        onGoUserAdmin={() => navigate("/admin/users")}
         onLogout={logout}
         isProductManagementEnabled={isProductManager}
         userEmail={currentUser?.email}
@@ -523,6 +599,14 @@ function StoreApp() {
           path="/help"
           element={
             <HelpPage onBack={() => navigate("/store")} />
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            isAdmin
+              ? <UserAdminPage onBack={() => navigate("/store")} token={token} />
+              : <Navigate replace to="/store" />
           }
         />
         <Route

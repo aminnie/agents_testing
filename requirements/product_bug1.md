@@ -58,3 +58,51 @@ If the issue is reproducible in a specific UI path, next step is to capture that
     - Covers edit/save from catalog, verification in detail view, browser refresh persistence checks, edit/save from detail, and second refresh persistence checks.
 - Docs/script updates:
   - Updated this bug analysis document with verification results and the added regression coverage.
+
+## Technical Analysis
+
+### Current-State Technical Findings
+
+1. Backend persistence path for product updates is functioning:
+   - `PUT /api/catalog/:id` returns `200` for authorized roles and writes values to SQLite.
+2. Role authorization is aligned with expected behavior:
+   - editor/manager are allowed update access.
+3. Data verification via subsequent `GET /api/catalog/:id` confirmed durable writes in DB.
+
+### Most Likely Failure Domains (if issue resurfaces)
+
+1. Frontend state replacement timing:
+   - local catalog state not updated or overwritten by stale fetch response.
+2. UI route/context mismatch:
+   - user edits one item but returns/reads another item context.
+3. Session/environment mismatch:
+   - frontend pointed at different backend instance/DB file.
+4. Race condition between edit completion and navigation:
+   - redirect before update payload is reflected in local state.
+
+### Architecture-Level Diagnostic Plan
+
+1. Add targeted request/response assertions in Cypress for edit flow:
+   - assert `PUT /api/catalog/:id` request body equals form input,
+   - assert `PUT` response body reflects expected values,
+   - assert subsequent `GET`/UI values match response after navigation + refresh.
+2. Add state-consistency checkpoints in UI flow:
+   - after save, verify store list, detail page, and refresh all show same values.
+3. Add environment sanity checks in test harness:
+   - ensure backend health endpoint and frontend base URL point to same port set.
+
+### Proposed Code Strategy (only if bug is reproduced)
+
+1. Keep backend unchanged unless reproduction shows API mismatch.
+2. In frontend edit handlers, enforce single-source update path:
+   - replace catalog item from API response before navigation,
+   - avoid stale fallback objects.
+3. If needed, re-fetch updated item after save in detail-route path as consistency guard.
+
+### Acceptance Criteria for Closure
+
+1. Reproduction scenario either:
+   - no longer reproduces with deterministic Cypress coverage, or
+   - has a confirmed fix with passing regression tests.
+2. Editor and manager edit paths both pass update + refresh persistence checks.
+3. No regression in authorization (non-manager/non-editor remain forbidden).

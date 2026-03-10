@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
@@ -20,10 +21,12 @@ export default function AppHeader({
   onGoStore,
   onGoCheckout,
   onGoHelp,
+  onGoUserAdmin,
   onGoNewProduct,
   onLogout,
   isCheckoutEnabled,
-  isProductManagementEnabled
+  isProductManagementEnabled,
+  isAdmin
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const isMenuOpen = Boolean(menuAnchor);
@@ -40,6 +43,7 @@ export default function AppHeader({
     <AppBar position="static" sx={{ borderRadius: 3, mt: 2 }}>
       <Toolbar sx={{ gap: 1, flexWrap: "wrap" }}>
         <Typography
+          component="h1"
           data-cy="dashboard-title"
           sx={{ display: "flex", alignItems: "center", fontWeight: 700, mr: 1 }}
           variant="h6"
@@ -47,7 +51,11 @@ export default function AppHeader({
           <StorefrontIcon sx={{ mr: 1 }} />
           Happy Vibes
         </Typography>
-        <Typography data-cy="session-user-email" sx={{ color: "rgba(255,255,255,0.9)", mr: "auto" }} variant="body2">
+        <Typography
+          data-cy="session-user-email"
+          sx={{ color: "#ffffff", fontWeight: 500, mr: "auto" }}
+          variant="body2"
+        >
           {userEmail || "unknown user"}
         </Typography>
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
@@ -71,6 +79,16 @@ export default function AppHeader({
               type="button"
             >
               New product
+            </Button>
+          ) : null}
+          {isAdmin ? (
+            <Button
+              data-cy="nav-user-admin"
+              onClick={onGoUserAdmin}
+              startIcon={<AdminPanelSettingsIcon />}
+              type="button"
+            >
+              User admin
             </Button>
           ) : null}
           <Button data-cy="nav-help" onClick={onGoHelp} startIcon={<HelpOutlineIcon />} type="button">

@@ -18,7 +18,8 @@ export default function LoginScreen({
   onEmailChange,
   onPasswordChange,
   onSubmit,
-  onGoHelp
+  onGoHelp,
+  onGoRegister
 }) {
   return (
     <Box className="container">
@@ -49,6 +50,15 @@ export default function LoginScreen({
             />
             <Button data-cy="login-submit" startIcon={<LoginIcon />} type="submit">
               Sign in
+            </Button>
+            <Button
+              data-cy="login-register-link"
+              onClick={onGoRegister}
+              sx={{ alignSelf: "flex-start", textTransform: "none" }}
+              type="button"
+              variant="text"
+            >
+              Not a registered user, please click here
             </Button>
             {authError ? <Alert data-cy="login-error" severity="error">{authError}</Alert> : null}
           </Stack>

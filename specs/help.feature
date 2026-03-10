@@ -1,16 +1,16 @@
 Feature: Help
   As a demo user
   I want in-app help information
-  So that I can find credentials and navigate the application
+  So that I can understand how to use and navigate the application
 
   Background:
     Given I am on "/help"
 
   @smoke @regression
-  Scenario: Help page shows demo users and guidance
+  Scenario: Help page shows navigation guidance without user listing
     When help information loads successfully
     Then I should see "Help"
-    And I should see demo user credentials
+    And I should not see demo user credentials
     And I should see navigation guidance
 
   @regression

@@ -1,14 +1,14 @@
 describe("Feature: Help", () => {
-  it("should show demo users and navigation guidance on the help page", () => {
+  it("should show guidance content and hide demo user listing on the help page", () => {
     cy.intercept("GET", "/api/help").as("help");
 
     cy.visit("/help");
     cy.wait("@help").its("response.statusCode").should("be.oneOf", [200, 304]);
 
     cy.get('[data-cy="help-page-title"]').should("contain", "Help");
-    cy.get('[data-cy="help-demo-users"]').should("contain", "user@example.com");
-    cy.get('[data-cy="help-demo-users"]').should("contain", "CorrectHorseBatteryStaple1!");
-    cy.get('[data-cy="help-navigation-tips"] li').should("have.length.at.least", 3);
+    cy.get('[data-cy="help-demo-users"]').should("not.exist");
+    cy.get('[data-cy="help-navigation-tips"] li').should("have.length.at.least", 4);
+    cy.get('[data-cy="help-navigation-tips"]').should("contain", "Admin users can manage user roles");
   });
 
   it("should show graceful error state when help API fails", () => {

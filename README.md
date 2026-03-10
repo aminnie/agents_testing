@@ -1,4 +1,4 @@
-# My Store Agents Development Application
+# Happy Vibes Store Agents Development Application
 
 This repository contains a small web store application used to develop and validate agents, skills and plugin best practices in the development life cycle.
 
@@ -10,7 +10,9 @@ This repository contains a small web store application used to develop and valid
 - React frontend (`app/frontend`) for:
   - Material UI themed interface (professional nav + account menu)
   - login
-  - in-app help page with demo credentials and navigation guidance
+  - visitor self-registration with auto-login
+  - admin-only user management (email/display name/role updates)
+  - in-app help page with demo user emails/roles and navigation guidance
   - catalog browsing
   - catalog pagination (page/pageSize query-param deep linking)
   - item detail view
@@ -59,6 +61,23 @@ The same overrides work for:
 
 You can copy `.env.example` for reference, but these scripts read shell environment variables directly.
 
+## Optional demo/test password overrides
+
+Default demo/test credentials can be overridden via environment variables:
+
+- `DEMO_USER_PASSWORD`:
+  - backend seed password for `user@example.com`.
+- `DEMO_TEAM_PASSWORD`:
+  - backend seed password for `shopper@example.com`, `manager@example.com`, `editor@example.com`, and `admin@example.com`.
+- `DEFAULT_LOGIN_PASSWORD`:
+  - Cypress `loginUi()` default password used when a password argument is not provided.
+
+Example:
+
+```bash
+DEMO_USER_PASSWORD='MyDemoUserPass1!' DEMO_TEAM_PASSWORD='MyDemoTeamPass1!' DEFAULT_LOGIN_PASSWORD='MyDemoUserPass1!' npm run test:e2e
+```
+
 ## Run the application
 
 Run backend and frontend together:
@@ -104,6 +123,82 @@ Headless with PDF report generation (assumes app is already running):
 npm run cypress:run:pdf
 ```
 
+Accessibility baseline checks (dedicated WCAG-focused suite):
+
+```bash
+npm run test:a11y
+```
+
+Run accessibility checks only (assumes app is already running):
+
+```bash
+npm run cypress:run:a11y
+```
+
+Each accessibility run writes a timestamped JSON report to `reports/`:
+
+- `reports/cypressaxe-report-YYYYMMDD-HHmmss.json`
+
+## Accessibility Status
+
+Current accessibility measurement workflow is automated and repeatable:
+
+- Run baseline suite: `npm run test:a11y`
+- Run suite against already-running app: `npm run cypress:run:a11y`
+- WCAG tags audited by default: `wcag2a`, `wcag2aa`, `wcag21aa`, `wcag22aa`
+
+A11y portfolio maintenance rule for new features:
+
+- Before running `npm run test:a11y`, update accessibility coverage artifacts for any new route/page/workflow:
+  - `cypress/e2e/accessibility.cy.ts` (new audit scenario/scope),
+  - `specs/accessibility.feature` (matching behavior scenario),
+  - feature requirements `## What Changed` (note the accessibility coverage update).
+
+Generated artifacts:
+
+- Behavioral test report PDF: `reports/cypress-report-YYYYMMDD-HHmmss.pdf`
+- Accessibility JSON report: `reports/cypressaxe-report-YYYYMMDD-HHmmss.json`
+
+Compliance note:
+
+- Passing automated checks is a strong baseline, but final WCAG 2.2 AA compliance also requires manual validation (keyboard-only navigation, screen reader checks, zoom/reflow, and content-level review).
+- Default regression runs (`npm run test:e2e`, `npm run cypress:run`) intentionally exclude `cypress/e2e/accessibility.cy.ts` to avoid pending-only entries; accessibility checks run only through `test:a11y` / `cypress:run:a11y`.
+
+What is tested from an accessibility perspective:
+
+- Automated `axe` scans on login, help, store, item detail, checkout, and product form pages.
+- WCAG rule tags in scope: `wcag2a`, `wcag2aa`, `wcag21aa`, `wcag22aa`.
+- Manual checks (when run) for keyboard navigation, screen reader labels/announcements, zoom/reflow, and key contrast/state signaling.
+
+What is not fully tested from an accessibility perspective:
+
+- Full screen-reader journey parity across all assistive technology/browser combinations.
+- Full WCAG content-level and editorial checks (copy clarity, alternative text quality, semantic intent in dynamic content).
+- Complete cross-device/mobile assistive-tech matrix validation.
+- Formal legal/compliance certification or external audit.
+
+Manual a11y run checklist (recommended):
+
+1. Start the app (`npm run dev` or `npm run dev:clean`) and open `http://localhost:5173`.
+2. Validate keyboard-only usage on login, help, store, item detail, checkout, and product form:
+  - `Tab`/`Shift+Tab` order is logical,
+  - all interactive controls are reachable,
+  - visible focus indicator is always present,
+  - `Enter`/`Space` triggers expected actions.
+3. Validate screen reader semantics (VoiceOver/NVDA):
+  - page has one clear heading,
+  - form fields have usable labels,
+  - buttons/menus/icon actions have meaningful names,
+  - error/success messages are announced and understandable.
+4. Validate zoom/reflow:
+  - browser zoom at 200% and 400% still keeps content readable/operable,
+  - no critical clipping/overlap,
+  - horizontal scroll is avoided for core workflows where possible.
+5. Validate color and non-text contrast:
+  - check key text/action contrast in the header, forms, and alerts,
+  - ensure state is not conveyed by color alone.
+6. Capture notes with browser/version, pages tested, observed issues, and attach latest artifacts from `reports/`.
+
 Run specific specs (argument forwarding supported):
 
 ```bash
@@ -116,6 +211,18 @@ If Cypress reports that no binary is installed, run:
 npm run cypress:install
 npm run cypress:verify
 ```
+
+If Cypress fails with errors like `bad option: --no-sandbox` or `bad option: --smoke-test`:
+
+- Cause: `ELECTRON_RUN_AS_NODE=1` is set in the current shell/session.
+- Fix: unset it before running Cypress:
+
+```bash
+unset ELECTRON_RUN_AS_NODE
+npm run cypress:verify
+```
+
+Project scripts already handle this automatically for Cypress commands.
 
 ## Local manual E2E sequence
 
@@ -191,10 +298,14 @@ Role types are normalized in the backend as:
 
 - `GET /api/catalog` returns catalog items with UUID ids, generated headers, descriptions, and prices.
 - `GET /api/catalog/:id` returns item detail for a UUID id.
-- `GET /api/help` returns demo user credentials and navigation guidance for this demo app.
+- `GET /api/help` returns navigation guidance for this demo app (no user listing payload).
+- `GET /api/admin/roles` returns available role types (admin-only).
+- `GET /api/admin/users` returns users for user-management editing (admin-only).
+- `PUT /api/admin/users/:id` updates user email/display name/role with final-admin safeguard (admin-only).
+- `POST /api/register` creates a new visitor account with default `user` role and returns an authenticated session.
 - `POST /api/catalog` allows `editor` and `manager` users to create new catalog items (header/description + price), with UUID generated server-side.
 - `PUT /api/catalog/:id` allows `editor` and `manager` users to update catalog item header, description, and price.
-- `POST /api/login` returns `user.role` (normalized role name) and `user.roleId` (numeric role type id).
+- `POST /api/login` returns `user.role` (normalized role name), `user.roleId` (numeric role type id), and `user.displayName`.
 
 ## Agent Prompt Templates
 
@@ -222,6 +333,21 @@ Example:
 
 ```text
 Please proceed to implement Feature 4
+```
+
+Feature implementation + end-of-build review prompt:
+
+```text
+Please proceed to implement Feature <N>.
+After coding and tests pass, run a final code review using REVIEW_AGENT.md guidance focused on changed files.
+Report findings by severity, fix critical/high issues, and summarize any remaining medium/low recommendations.
+```
+
+Code review request prompt (standalone):
+
+```text
+Please run a code review using REVIEW_AGENT.md.
+Focus on changed files, report findings first by severity, then list open questions and test gaps.
 ```
 
 Requirements clarification / decision finalization prompt:
@@ -282,7 +408,6 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
 
     Please convert these decisions into explicit requirements and update the What Changed section.
     ```
-
 - `ANALYSIS-AGENT.md`
   - Use when you want a full architecture analysis before coding.
   - Output should define design decisions, file map, test plan, and `What Changed` updates.
@@ -290,7 +415,6 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     ```text
     Please proceed to analyze requirements/analysis_feature5.md
     ```
-
     Notes on what to typically expect of the analysis run:
     - current-state gap analysis vs requested behavior
     - finalized architecture decision
@@ -298,7 +422,7 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     - explicit backend authorization target (manager|editor only for create/edit)
     - detailed file-by-file implementation map
     - data flow, phased build sequence, and critical details
-    - updated What Changed reflecting the full analysis pass
+    - updated What Changed reflecting the full analysis pass  
 
 - `CYRPRESS-AGENT.md`
   - Use when generating or refining Cypress artifacts from feature behavior.
@@ -307,34 +431,70 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     ```text
     Please use CYRPRESS-AGENT.md guidance to generate Cypress coverage for Feature 5 from specs/feature5.feature
     ```
+- `REVIEW_AGENT.md`
+  - Use at the end of implementation as a quality/security review gate.
+  - Output should list findings first (by severity), then fixes applied, then residual risks/gaps.
+  - Example prompt:
+    ```text
+    Please run a final review for Feature 10 using REVIEW_AGENT.md.
+    Focus on changed files only, fix all critical/high findings, and summarize medium/low follow-ups.
+    ```
 
 Recommended sequence once a new feature requirement is written:
 
 1. Run analysis against `requirements/analysis_feature<N>.md` (architecture + plan).
-   - Example:
-     ```text
-     Please proceed to analyze requirements/analysis_feature5.md
-     ```
+  - Example:
 2. Run clarification to resolve open questions and finalize decisions.
-   - Example:
-     ```text
-     Please update requirements/analysis_feature5.md with the following decisions:
-     1. Add editor create access.
-     2. Keep manager/admin create access.
-     ```
+  - Example:
+  1. Add editor create access.
+  2. Keep manager/admin create access.
+    `
 3. Implement Feature `<N>` in code.
-   - Example:
-     ```text
-     Please proceed to implement Feature 5
-     ```
+  - Example:  
+
 4. Use Cypress agent guidance to add/update E2E coverage as needed.
-   - Example:
-     ```text
-     Please add/update Cypress tests for Feature 5 using CYRPRESS-AGENT.md guidance
-     ```
-5. Run verification (`npm run test:e2e`) and ensure the analysis file has an updated `What Changed` section.
-   - Example commands:
-     ```bash
-     npm run test:e2e
-     npm run cypress:run -- --spec cypress/e2e/feature5.cy.ts
-     ```
+  - Example:  
+
+5. Update the a11y portfolio for new feature surface area before running accessibility tests.
+  - Required updates:
+    - `cypress/e2e/accessibility.cy.ts`
+    - `specs/accessibility.feature`
+    - feature requirements `## What Changed`  
+
+6. Run verification (`npm run test:e2e`) and ensure the analysis file has an updated `What Changed` section.
+  - Example commands:  
+
+7. Run end-of-build review using `REVIEW_AGENT.md`; fix critical/high findings before final handoff.
+  - Example:
+    ```text
+    Please run final code review using REVIEW_AGENT.md for the just-implemented feature.
+    ```
+
+Workflow helper command:
+
+```bash
+npm run workflow:final-pass
+```
+
+What it does:
+
+- Runs behavioral verification (`npm run test:e2e`)
+- Runs accessibility verification (`npm run test:a11y`)
+- Infers the relevant requirements markdown file from chat prompt context (feature/bug reference or explicit `requirements/...md` path).
+- If inference is unavailable/ambiguous, use `REQUIREMENTS_REVIEW_PATH` to set the file explicitly.
+- Validates that the referenced file is non-empty and includes:
+  - `## What Changed`
+  - `## Verification Results`
+
+## PR/Release Checklist
+
+Use this checklist before opening a PR or preparing a release:
+
+- Requirements file for the feature is updated, including `## What Changed`.
+- A11y portfolio artifacts are updated for new feature pages/workflows (`cypress/e2e/accessibility.cy.ts`, `specs/accessibility.feature`, requirements `## What Changed`).
+- End-to-end verification completed via `npm run workflow:final-pass`.
+- Final code review completed using `REVIEW_AGENT.md`.
+- Relevant requirements artifact is referenced via `REQUIREMENTS_REVIEW_PATH` and includes non-empty `## What Changed` + `## Verification Results`.
+- Critical/high review findings are fixed; remaining medium/low items are documented.
+- Latest generated reports are available in `reports/` (PDF and a11y JSON as applicable).
+

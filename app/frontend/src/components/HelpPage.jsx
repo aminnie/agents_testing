@@ -58,17 +58,6 @@ export default function HelpPage({ onBack }) {
       <CardContent>
       <Typography data-cy="help-page-title" gutterBottom variant="h5">Help</Typography>
 
-      <Typography sx={{ mt: 1 }} variant="h6">Demo users</Typography>
-      <List data-cy="help-demo-users" sx={{ p: 0 }}>
-        {(helpData?.demoUsers || []).map((user) => (
-          <ListItem key={user.email} sx={{ px: 0 }}>
-            <Typography>
-              <strong>{user.email}</strong> / {user.password} ({user.role})
-            </Typography>
-          </ListItem>
-        ))}
-      </List>
-
       <Typography sx={{ mt: 1 }} variant="h6">Navigation tips</Typography>
       <List data-cy="help-navigation-tips" sx={{ p: 0 }}>
         {(helpData?.navigationTips || []).map((tip, index) => (

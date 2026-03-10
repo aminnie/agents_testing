@@ -15,16 +15,21 @@
     "dev:clean": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; PIDS_BACKEND=$(lsof -ti tcp:${BACKEND_PORT}); PIDS_FRONTEND=$(lsof -ti tcp:${FRONTEND_PORT}); if [ -n \"$PIDS_BACKEND\" ]; then echo \"Stopping process(es) on :${BACKEND_PORT} -> $PIDS_BACKEND\"; echo \"$PIDS_BACKEND\" | xargs kill; fi; if [ -n \"$PIDS_FRONTEND\" ]; then echo \"Stopping process(es) on :${FRONTEND_PORT} -> $PIDS_FRONTEND\"; echo \"$PIDS_FRONTEND\" | xargs kill; fi; npm run dev'",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build": "npm run build --workspace app/frontend",
-    "cypress:install": "sh -c 'CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress install --force'",
-    "cypress:verify": "sh -c 'CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress verify'",
-    "cypress:open": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress open \"$@\"' --",
-    "cypress:run": "sh -c 'FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress run \"$@\"' --",
+    "cypress:install": "sh -c 'unset ELECTRON_RUN_AS_NODE; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress install --force'",
+    "cypress:verify": "sh -c 'unset ELECTRON_RUN_AS_NODE; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} npx cypress verify'",
+    "cypress:open": "sh -c 'unset ELECTRON_RUN_AS_NODE; FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress open \"$@\"' --",
+    "cypress:run": "sh -c 'unset ELECTRON_RUN_AS_NODE; FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress run \"$@\"' --",
+    "cypress:run:a11y": "sh -c 'unset ELECTRON_RUN_AS_NODE; FRONTEND_PORT=${FRONTEND_PORT:-5173}; CYPRESS_CACHE_FOLDER=${CYPRESS_CACHE_FOLDER:-$HOME/Library/Caches/Cypress} CYPRESS_VERIFY_TIMEOUT=120000 CYPRESS_RUN_A11Y=true CYPRESS_baseUrl=http://localhost:${FRONTEND_PORT} npx cypress run --spec cypress/e2e/accessibility.cy.ts'",
     "cypress:run:pdf": "node scripts/run-cypress-with-pdf.mjs",
-    "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:pdf\"'"
+    "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:pdf\"'",
+    "test:a11y": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:a11y\"'",
+    "workflow:final-pass": "node scripts/workflow-final-pass.mjs"
   },
   "devDependencies": {
+    "axe-core": "^4.11.1",
     "concurrently": "^9.2.1",
     "cypress": "^15.11.0",
+    "cypress-axe": "^1.7.0",
     "pdfkit": "^0.17.2",
     "start-server-and-test": "^2.1.5"
   }

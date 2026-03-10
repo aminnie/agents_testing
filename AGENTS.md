@@ -69,6 +69,10 @@ Prefer small, reversible changes over broad risky rewrites.
 - Avoid timing-based assertions and arbitrary sleeps.
 - Keep critical-path tests stable and easy to debug.
 - Update existing tests/specs when behavior changes.
+- For new routes/pages/workflows, update accessibility portfolio artifacts before running a11y verification:
+  - `cypress/e2e/accessibility.cy.ts`
+  - `specs/accessibility.feature`
+  - relevant requirements `## What Changed`
 
 For Cypress conventions, selectors, and generation flow, use:
 
@@ -120,6 +124,7 @@ Before considering work complete:
 - no obvious lint/type errors are introduced
 - docs are updated when workflows/behavior changed
 - assumptions, limitations, and follow-ups are noted
+- for final-pass workflow, if feature/bug requirements file cannot be inferred from prompt context, ask user for explicit file path before proceeding
 
 ## 13) AI Agent Behavior Contract
 
@@ -130,4 +135,13 @@ AI agents working in this repo should:
 - preserve existing user changes and avoid unrelated edits
 - avoid destructive operations unless explicitly requested
 - prefer reproducible, script-based workflows
+
+### 13.1) Code review routing rule
+
+When the user asks for a code review (for example: "review this", "run review", "final review"), agents should:
+
+1. use `REVIEW_AGENT.md` as the default review rubric,
+2. present findings first in severity order,
+3. prioritize correctness/security/regression risks,
+4. include residual test gaps and assumptions.
 

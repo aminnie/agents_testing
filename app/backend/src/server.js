@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { randomBytes, randomUUID } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { initDb } from "./db.js";
 
 const app = express();
@@ -21,6 +22,16 @@ function normalizeText(value) {
   return String(value || "")
     .trim()
     .replace(/\s+/g, " ");
+}
+
+function normalizeEmail(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 }
 
 function deriveHeaderFromDescription(description) {
@@ -80,6 +91,19 @@ async function requireCatalogProductManager(req, res, next) {
   next();
 }
 
+async function requireAdminAccess(req, res, next) {
+  const role = await getUserRole(req.userId);
+  if (!role) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  if (role !== "admin") {
+    res.status(403).json({ message: "Forbidden" });
+    return;
+  }
+  next();
+}
+
 function mapCatalogItem(row) {
   const header = row.header || row.name;
   return {
@@ -111,23 +135,13 @@ app.get("/health", (_req, res) => {
 
 app.get("/api/help", async (_req, res) => {
   try {
-    const demoUsers = await db.all(
-      `SELECT
-        email,
-        password,
-        COALESCE(rt.name, u.role, 'user') AS role
-      FROM users u
-      LEFT JOIN role_types rt ON rt.id = u.role_id
-      ORDER BY u.id`
-    );
-
     res.json({
-      demoUsers,
       navigationTips: [
-        "Sign in with any demo user to access the store.",
+        "Sign in to access your personalized store experience.",
         "Browse catalog items and view item details before adding to cart.",
         "Use checkout after adding at least one item to cart.",
-        "Manager and editor users can create and edit products from header, catalog, and item detail pages."
+        "Manager and editor users can create and edit products from header, catalog, and item detail pages.",
+        "Admin users can manage user roles and profile details from the User admin page."
       ],
       apiNotes: [
         "POST /api/login authenticates using email and password.",
@@ -140,7 +154,8 @@ app.get("/api/help", async (_req, res) => {
 });
 
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || "").trim();
 
   if (!email || !password) {
     res.status(400).json({ message: "Email and password are required" });
@@ -151,17 +166,24 @@ app.post("/api/login", async (req, res) => {
     `SELECT
       u.id,
       u.email,
+      u.password,
+      u.display_name AS displayName,
       u.role AS legacyRole,
       u.role_id AS roleId,
       rt.name AS role
     FROM users u
     LEFT JOIN role_types rt ON rt.id = u.role_id
-    WHERE u.email = ? AND u.password = ?`,
-    email,
-    password
+    WHERE lower(u.email) = ?`,
+    email
   );
 
   if (!user) {
+    res.status(401).json({ message: "Invalid email or password" });
+    return;
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, String(user.password || ""));
+  if (!isPasswordValid) {
     res.status(401).json({ message: "Invalid email or password" });
     return;
   }
@@ -174,9 +196,180 @@ app.post("/api/login", async (req, res) => {
     user: {
       id: user.id,
       email: user.email,
+      displayName: user.displayName || "",
       role: user.role || user.legacyRole || "user",
       roleId: user.roleId || 3,
       legacyRole: user.legacyRole
+    }
+  });
+});
+
+app.post("/api/register", async (req, res) => {
+  const displayName = normalizeText(req.body?.displayName);
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || "").trim();
+
+  if (!displayName || !email || !password) {
+    res.status(400).json({ message: "Display name, email, and password are required" });
+    return;
+  }
+
+  if (password.length < 8) {
+    res.status(400).json({ message: "Password must be at least 8 characters" });
+    return;
+  }
+
+  const existingUser = await db.get("SELECT id FROM users WHERE lower(email) = ?", email);
+  if (existingUser) {
+    res.status(409).json({ message: "An account with that email already exists" });
+    return;
+  }
+
+  let result;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    result = await db.run(
+      "INSERT INTO users (email, password, role, role_id, display_name) VALUES (?, ?, ?, ?, ?)",
+      email,
+      hashedPassword,
+      "user",
+      3,
+      displayName
+    );
+  } catch (error) {
+    if (String(error?.message || "").includes("UNIQUE constraint failed: users.email")) {
+      res.status(409).json({ message: "An account with that email already exists" });
+      return;
+    }
+    res.status(500).json({ message: "Unable to register user" });
+    return;
+  }
+
+  const token = createToken();
+  tokens.set(token, result.lastID);
+
+  res.status(201).json({
+    token,
+    user: {
+      id: result.lastID,
+      email,
+      displayName,
+      role: "user",
+      roleId: 3,
+      legacyRole: "user"
+    }
+  });
+});
+
+app.get("/api/admin/roles", authMiddleware, requireAdminAccess, async (_req, res) => {
+  const roles = await db.all("SELECT id, name FROM role_types ORDER BY id");
+  res.json({ roles });
+});
+
+app.get("/api/admin/users", authMiddleware, requireAdminAccess, async (_req, res) => {
+  const users = await db.all(
+    `SELECT
+      u.id,
+      u.email,
+      u.display_name AS displayName,
+      u.role AS legacyRole,
+      u.role_id AS roleId,
+      rt.name AS role
+    FROM users u
+    LEFT JOIN role_types rt ON rt.id = u.role_id
+    ORDER BY u.id`
+  );
+  res.json({
+    users: users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName || "",
+      role: user.role || user.legacyRole || "user",
+      roleId: user.roleId || 3
+    }))
+  });
+});
+
+app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, res) => {
+  const userId = Number.parseInt(String(req.params.id || ""), 10);
+  const email = normalizeEmail(req.body?.email);
+  const displayName = normalizeText(req.body?.displayName);
+  const roleId = Number.parseInt(String(req.body?.roleId ?? ""), 10);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    res.status(400).json({ message: "Invalid user id" });
+    return;
+  }
+  if (!email || !isValidEmail(email)) {
+    res.status(400).json({ message: "A valid email is required" });
+    return;
+  }
+  if (!displayName) {
+    res.status(400).json({ message: "Display name is required" });
+    return;
+  }
+  if (!Number.isInteger(roleId) || roleId <= 0) {
+    res.status(400).json({ message: "A valid roleId is required" });
+    return;
+  }
+
+  const existingUser = await db.get(
+    `SELECT
+      u.id,
+      u.email,
+      u.display_name AS displayName,
+      COALESCE(rt.name, u.role, 'user') AS role
+    FROM users u
+    LEFT JOIN role_types rt ON rt.id = u.role_id
+    WHERE u.id = ?`,
+    userId
+  );
+  if (!existingUser) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  const selectedRole = await db.get("SELECT id, name FROM role_types WHERE id = ?", roleId);
+  if (!selectedRole) {
+    res.status(400).json({ message: "Selected role is invalid" });
+    return;
+  }
+
+  const duplicateEmailUser = await db.get("SELECT id FROM users WHERE lower(email) = ? AND id <> ?", email, userId);
+  if (duplicateEmailUser) {
+    res.status(409).json({ message: "An account with that email already exists" });
+    return;
+  }
+
+  if (existingUser.role === "admin" && selectedRole.name !== "admin") {
+    const adminCountRow = await db.get(
+      `SELECT COUNT(*) AS count
+      FROM users u
+      LEFT JOIN role_types rt ON rt.id = u.role_id
+      WHERE COALESCE(rt.name, u.role, 'user') = 'admin'`
+    );
+    if ((adminCountRow?.count || 0) <= 1) {
+      res.status(409).json({ message: "Cannot remove the last remaining admin user" });
+      return;
+    }
+  }
+
+  await db.run(
+    "UPDATE users SET email = ?, display_name = ?, role_id = ?, role = ? WHERE id = ?",
+    email,
+    displayName,
+    selectedRole.id,
+    selectedRole.name,
+    userId
+  );
+
+  res.json({
+    user: {
+      id: userId,
+      email,
+      displayName,
+      role: selectedRole.name,
+      roleId: selectedRole.id
     }
   });
 });

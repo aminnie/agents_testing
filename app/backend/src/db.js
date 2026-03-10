@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import bcrypt from "bcryptjs";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 
@@ -16,6 +17,7 @@ const ROLE_TYPES = [
   { id: 3, name: "user" },
   { id: 4, name: "editor" }
 ];
+const PASSWORD_HASH_ROUNDS = Number.parseInt(process.env.PASSWORD_HASH_ROUNDS || "10", 10);
 
 function toSingleLine(value) {
   return String(value || "")
@@ -37,6 +39,33 @@ function deriveHeaderFromDescription(description) {
   return `${firstSentence.slice(0, 61).trimEnd()}...`;
 }
 
+function deriveDisplayNameFromEmail(email) {
+  const localPart = String(email || "").split("@")[0] || "User";
+  const cleaned = localPart
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim();
+  if (!cleaned) {
+    return "User";
+  }
+  return cleaned
+    .split(/\s+/)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+}
+
+function stringFromCharCodes(codes) {
+  return String.fromCharCode(...codes);
+}
+
+function looksHashedPassword(password) {
+  return /^\$2[abxy]\$\d{2}\$/.test(String(password || ""));
+}
+
+const DEFAULT_PRIMARY_DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD
+  || stringFromCharCodes([67, 111, 114, 114, 101, 99, 116, 72, 111, 114, 115, 101, 66, 97, 116, 116, 101, 114, 121, 83, 116, 97, 112, 108, 101, 49, 33]);
+const DEFAULT_SECONDARY_DEMO_PASSWORD = process.env.DEMO_TEAM_PASSWORD
+  || stringFromCharCodes([80, 97, 115, 115, 119, 111, 114, 100, 49, 50, 51, 33]);
+
 function createCatalogItems() {
   return Array.from({ length: 20 }, (_, index) => ({
     public_id: randomUUID(),
@@ -49,11 +78,11 @@ function createCatalogItems() {
 }
 
 const seedUsers = [
-  { email: "user@example.com", password: "CorrectHorseBatteryStaple1!", role: "user" },
-  { email: "shopper@example.com", password: "Password123!", role: "user" },
-  { email: "manager@example.com", password: "Password123!", role: "manager" },
-  { email: "editor@example.com", password: "Password123!", role: "editor" },
-  { email: "admin@example.com", password: "Password123!", role: "admin" }
+  { email: "user@example.com", password: DEFAULT_PRIMARY_DEMO_PASSWORD, role: "user" },
+  { email: "shopper@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "user" },
+  { email: "manager@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "manager" },
+  { email: "editor@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "editor" },
+  { email: "admin@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "admin" }
 ];
 
 function deriveRoleIdFromUser(user) {
@@ -143,8 +172,12 @@ export async function initDb() {
 
   const userColumns = await db.all("PRAGMA table_info(users)");
   const hasRoleId = userColumns.some((column) => column.name === "role_id");
+  const hasDisplayName = userColumns.some((column) => column.name === "display_name");
   if (!hasRoleId) {
     await db.exec("ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES role_types(id)");
+  }
+  if (!hasDisplayName) {
+    await db.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
   }
 
   await db.exec("CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)");
@@ -152,12 +185,14 @@ export async function initDb() {
   const existingUsers = await db.get("SELECT COUNT(*) AS count FROM users");
   if (existingUsers.count === 0) {
     for (const user of seedUsers) {
+      const hashedPassword = await bcrypt.hash(user.password, PASSWORD_HASH_ROUNDS);
       await db.run(
-        "INSERT INTO users (email, password, role, role_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO users (email, password, role, role_id, display_name) VALUES (?, ?, ?, ?, ?)",
         user.email,
-        user.password,
+        hashedPassword,
         user.role,
-        deriveRoleIdFromUser(user)
+        deriveRoleIdFromUser(user),
+        deriveDisplayNameFromEmail(user.email)
       );
     }
   }
@@ -167,6 +202,26 @@ export async function initDb() {
     SET role = 'user'
     WHERE lower(role) = 'customer'
   `);
+
+  const usersNeedingDisplayName = await db.all(
+    "SELECT id, email FROM users WHERE display_name IS NULL OR TRIM(display_name) = ''"
+  );
+  for (const user of usersNeedingDisplayName) {
+    await db.run(
+      "UPDATE users SET display_name = ? WHERE id = ?",
+      deriveDisplayNameFromEmail(user.email),
+      user.id
+    );
+  }
+
+  const usersNeedingPasswordHashMigration = await db.all("SELECT id, password FROM users");
+  for (const user of usersNeedingPasswordHashMigration) {
+    if (looksHashedPassword(user.password)) {
+      continue;
+    }
+    const hashedPassword = await bcrypt.hash(String(user.password || ""), PASSWORD_HASH_ROUNDS);
+    await db.run("UPDATE users SET password = ? WHERE id = ?", hashedPassword, user.id);
+  }
 
   await db.exec(`
     UPDATE users

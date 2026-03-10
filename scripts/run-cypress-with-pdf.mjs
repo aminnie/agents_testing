@@ -133,6 +133,7 @@ async function generatePdfReport({
 }
 
 async function main() {
+  delete process.env.ELECTRON_RUN_AS_NODE;
   const generatedAt = new Date();
   const reportFile = `cypress-report-${formatTimestamp(generatedAt)}.pdf`;
   const outputPath = path.join(REPORTS_DIR, reportFile);
