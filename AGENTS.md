@@ -4,6 +4,8 @@ Project-wide guidance for human contributors and AI coding agents.
 
 This file defines baseline engineering standards for this repository.
 
+For a quick summary of each `*-AGENT.md` file and the recommended execution sequence, see `README.md` under `Agent Files and Workflow Order`.
+
 ## Agent Entry Points
 
 Use these files by intent:

@@ -1,8 +1,74 @@
 # Happy Vibes Store Agents Development Application
 
-This repository contains a small web store application used to develop and validate agents, skills and plugin best practices in the development life cycle.
+This repository contains a small web store application that is used to develop and validate AI agents, skills and plugin best practices in the development life cycle. The agents provided guides the development process to ensure a consistent process is followed from requirements review through a fully tested and code reviewed application.
 
-## What is included
+## AI Agent Files and Workflow Order
+
+This project includes the following agent guidance files used to drive the development process:
+
+- `AGENTS.md` - default baseline engineering policy and instruction precedence for all work in this repository.
+- `CLARIFICATION-AGENT.md` - refines ambiguous requirement or bug requests into explicit, testable requirements and acceptance criteria before build work starts.
+- `ANALYSIS-AGENT.md` - produces technical analysis, architecture decisions, implementation map, and risk/test strategy for a selected requirement file.
+- `CYRPRESS-AGENT.md` - defines Cypress generation/maintenance standards, selector rules, and spec-driven test workflow for `specs/*.feature`.
+- `SIMPLIFIER-AGENT.md` - runs behavior-preserving refactor/simplification passes on changed code to improve readability and maintainability.
+- `REVIEW-AGENT.md` - performs final review with findings-first reporting focused on correctness, regression risk, and security.
+
+Recommended workflow order:
+
+1. `AGENTS.md` - start with default project standards and instruction precedence.
+2. `CLARIFICATION-AGENT.md` - finalize requirement details and decisions.
+3. `ANALYSIS-AGENT.md` - create implementation-ready technical blueprint.
+4. Implement code changes (following `AGENTS.md` baseline rules).
+5. `CYRPRESS-AGENT.md` - generate/update Cypress/spec and code artifacts and validate behavior.
+6. `SIMPLIFIER-AGENT.md` (optional but recommended) - simplify changed code without altering behavior.
+7. `REVIEW-AGENT.md` - run final pass review before handoff/PR.
+
+### Code Implementation Trigger Summary
+
+When code implementation is triggered (step 4 in the workflow), the agent should:
+
+1. Use the clarified requirements and technical analysis as the implementation source of truth.
+2. Apply scoped backend/frontend/test/documentation changes required to satisfy the target `requirements/product_feature*.md` or `requirements/product_bug*.md` file.
+3. Preserve baseline guardrails from `AGENTS.md` (small safe changes, no destructive operations, no unrelated edits).
+4. Update Cypress/spec artifacts as needed (following `CYRPRESS-AGENT.md`) so behavior is validated and regression-safe.
+5. Run verification commands before handoff:
+  - `npm run test:e2e (spec driven smoke and regression tests)`
+  - `npm run test:a11y (accessibility testing portfolio)`
+  - `npm run workflow:final-pass`
+6. Run a Snyk code scan on changed first-party code; when Snyk is installed/configured as an MCP in the IDE, this scan is automatically triggered as part of the implementation flow (using `snyk_code_scan` on the affected frontend/backend source path). Resolve any new findings before handoff.
+7. Update the requirements artifact with delivered outcomes:
+  - `## What Changed`
+  - `## Verification Results`
+  - `## Review Results`
+
+Note:
+- Code review is part of the recommended workflow (`REVIEW-AGENT.md`), but it is not implicitly auto-triggered by code edits unless your orchestration explicitly invokes it (or the user requests a review).
+
+See below for more details on the agents and how to invoke from a Chat Agent.
+
+## Role of `workflow:final-pass`
+
+The `workflow:final-pass` script is the final workflow gate before handoff/PR. It verifies both runtime quality and delivery artifact completeness.
+
+What it does:
+
+1. Resolves the target requirements review file:
+   - uses `REQUIREMENTS_REVIEW_PATH` when provided,
+   - otherwise attempts prompt-based inference (direct `requirements/...md` path, `feature <N>`, or `bug <N>`).
+2. Runs `npm run test:e2e`.
+3. Runs `npm run test:a11y`.
+4. Validates that the requirements review file exists, is non-empty, and contains:
+   - `## What Changed`
+   - `## Verification Results`
+   - `## Review Results`
+5. Fails fast with actionable guidance if any step is missing or failing.
+
+Why it matters:
+
+- prevents incomplete handoff by enforcing core regression and accessibility checks,
+- ensures the requirements artifact documents what shipped and how it was validated.
+
+## What is included in the Web Store Application
 
 - Backend API (`app/backend`) with SQLite seed data:
   - 20 catalog items
@@ -311,7 +377,9 @@ Role types are normalized in the backend as:
 
 ## Agent Prompt Templates
 
-Use these prompts to drive the standard feature workflow.
+Use these prompts to drive the standard feature workflow.  
+
+Start by creating a product_features or product_bug markdown file with the requirements for the change to be applied to the code base.
 
 Feature analysis prompt:
 
@@ -471,7 +539,6 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     - detailed file-by-file implementation map
     - data flow, phased build sequence, and critical details
     - `Status: Ready for implementation` or `Status: Blocked pending clarification`
-
 - `CYRPRESS-AGENT.md`
   - Use when generating or refining Cypress artifacts from feature behavior.
   - Output should include/adjust specs, page objects, and E2E tests aligned with project rules.

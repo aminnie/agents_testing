@@ -1,4 +1,4 @@
-# CYRPRESS-AGENT.md
+# Cypress Agent Guidance (V2)
 
 Unified guidance for AI agents generating and maintaining Cypress tests in this repository.
 
@@ -236,3 +236,9 @@ A feature is complete when:
 - stable selectors exist
 - tests are maintainable and modular
 - tests pass in expected local/CI workflow
+
+## Handoff Status
+
+End with one of:
+- `Status: Ready for handoff`
+- `Status: Blocked pending clarification`
