@@ -3,39 +3,53 @@ export class UserAdminPage {
     cy.get('[data-cy="nav-user-admin"]').click();
   }
 
-  userSelect() {
-    return cy.get('[data-cy="admin-user-select"]');
+  searchInput() {
+    return cy.get('[data-cy="admin-users-search-input"]');
   }
 
-  emailInput() {
-    return cy.get('[data-cy="admin-user-email"]');
+  searchSubmitButton() {
+    return cy.get('[data-cy="admin-users-search-submit"]');
   }
 
-  displayNameInput() {
-    return cy.get('[data-cy="admin-user-display-name"]');
+  searchClearButton() {
+    return cy.get('[data-cy="admin-users-search-clear"]');
   }
 
-  roleSelect() {
-    return cy.get('[data-cy="admin-user-role"]');
+  pageIndicator() {
+    return cy.get('[data-cy="admin-users-page-indicator"]');
   }
 
-  saveButton() {
-    return cy.get('[data-cy="admin-user-save"]');
+  pageSizeSelect() {
+    return cy.get('[data-cy="admin-users-page-size"]');
   }
 
-  successAlert() {
-    return cy.get('[data-cy="admin-user-success"]');
+  firstPageButton() {
+    return cy.get('[data-cy="admin-users-page-first"]');
   }
 
-  errorAlert() {
-    return cy.get('[data-cy="admin-user-error"]');
+  prevPageButton() {
+    return cy.get('[data-cy="admin-users-page-prev"]');
   }
 
-  selectUserByEmail(email: string) {
-    this.userSelect().find("option").contains(email).then(($option) => {
-      cy.wrap($option).invoke("val").then((value) => {
-        this.userSelect().select(String(value));
-      });
-    });
+  nextPageButton() {
+    return cy.get('[data-cy="admin-users-page-next"]');
+  }
+
+  lastPageButton() {
+    return cy.get('[data-cy="admin-users-page-last"]');
+  }
+
+  editButtonByUserId(userId: string | number) {
+    return cy.get(`[data-cy="admin-user-edit-${userId}"]`);
+  }
+
+  editButtonByEmail(email: string) {
+    return cy.contains('[data-cy^="admin-user-row-email-"]', email)
+      .parents("li")
+      .find('[data-cy^="admin-user-edit-"]');
+  }
+
+  noResultsMessage() {
+    return cy.get('[data-cy="admin-users-no-results"]');
   }
 }

@@ -59,6 +59,7 @@ If any unresolved `Critical` or `High` findings remain:
 6. **Requirements File Update**
    - Write the final review output into the active requirements artifact under:
      - `## Review Results`
+     - `## Phase Timeline` (append timestamped `Review` phase updates)
    - Include, at minimum:
      - findings summary by severity
      - unresolved items (if any)

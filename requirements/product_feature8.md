@@ -239,4 +239,8 @@ Recommended minimum safety net:
 - [x] Phase 3: migrate all page components to MUI primitives
 - [x] Phase 4: preserve/verify `data-cy` hooks and behavior compatibility
 - [x] Phase 5: manual visual validation and doc/requirements updates
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).
  

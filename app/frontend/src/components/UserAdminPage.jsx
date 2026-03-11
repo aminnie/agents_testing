@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import SaveIcon from "@mui/icons-material/Save";
+import EditIcon from "@mui/icons-material/Edit";
 import {
   Alert,
+  Box,
   Button,
   Card,
   CardContent,
@@ -15,6 +16,32 @@ import {
   TextField,
   Typography
 } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
+
+const PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50]);
+const DEFAULT_PAGE_SIZE = 10;
+
+function parsePositiveInteger(value, fallbackValue) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackValue;
+}
+
+function isPrintableSearchText(value) {
+  return /^[\x20-\x7E]*$/.test(String(value || ""));
+}
+
+function buildAdminSearch(currentSearch, page, pageSize, query = "") {
+  const params = new URLSearchParams(currentSearch);
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  const normalizedQuery = String(query || "").trim();
+  if (normalizedQuery) {
+    params.set("q", normalizedQuery);
+  } else {
+    params.delete("q");
+  }
+  return `?${params.toString()}`;
+}
 
 function buildAuthHeaders(token) {
   return {
@@ -24,52 +51,63 @@ function buildAuthHeaders(token) {
 }
 
 export default function UserAdminPage({ token, onBack }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const activeSearchQuery = String(currentSearchParams.get("q") || "").trim();
+  const requestedPageSize = parsePositiveInteger(currentSearchParams.get("pageSize"), DEFAULT_PAGE_SIZE);
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
+  const requestedPage = parsePositiveInteger(currentSearchParams.get("page"), 1);
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [roleId, setRoleId] = useState("");
+  const [searchInput, setSearchInput] = useState(() => activeSearchQuery);
+  const [searchError, setSearchError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const selectedUser = useMemo(
-    () => users.find((entry) => String(entry.id) === selectedUserId) || null,
-    [users, selectedUserId]
-  );
+  const filteredUsers = useMemo(() => {
+    if (!activeSearchQuery) {
+      return users;
+    }
+    const normalizedQuery = activeSearchQuery.toLowerCase();
+    return users.filter((user) => {
+      return [
+        String(user.email || "").toLowerCase(),
+        String(user.displayName || "").toLowerCase(),
+        String(user.role || "").toLowerCase()
+      ].some((value) => value.includes(normalizedQuery));
+    });
+  }, [users, activeSearchQuery]);
+
+  const totalItems = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pagedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredUsers.slice(startIndex, startIndex + pageSize);
+  }, [filteredUsers, currentPage, pageSize]);
+  const disablePrev = currentPage <= 1 || totalItems <= pageSize;
+  const disableNext = currentPage >= totalPages || totalItems <= pageSize;
+
+  useEffect(() => {
+    setSearchInput(activeSearchQuery);
+  }, [activeSearchQuery]);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadData() {
+    async function loadUsers() {
       setLoading(true);
       setError("");
       try {
-        const [usersResponse, rolesResponse] = await Promise.all([
-          fetch("/api/admin/users", { headers: buildAuthHeaders(token) }),
-          fetch("/api/admin/roles", { headers: buildAuthHeaders(token) })
-        ]);
+        const usersResponse = await fetch("/api/admin/users", { headers: buildAuthHeaders(token) });
         const usersPayload = await usersResponse.json();
-        const rolesPayload = await rolesResponse.json();
-        if (!usersResponse.ok || !rolesResponse.ok) {
-          throw new Error(usersPayload.message || rolesPayload.message || "Unable to load admin user data");
+        if (!usersResponse.ok) {
+          throw new Error(usersPayload.message || "Unable to load admin user data");
         }
         if (!isMounted) {
           return;
         }
-        const nextUsers = usersPayload.users || [];
-        const nextRoles = rolesPayload.roles || [];
-        setUsers(nextUsers);
-        setRoles(nextRoles);
-        if (nextUsers.length > 0) {
-          const firstUser = nextUsers[0];
-          setSelectedUserId(String(firstUser.id));
-          setEmail(firstUser.email || "");
-          setDisplayName(firstUser.displayName || "");
-          setRoleId(String(firstUser.roleId || ""));
-        }
+        setUsers(usersPayload.users || []);
       } catch (loadError) {
         if (isMounted) {
           setError(loadError.message || "Unable to load admin user data");
@@ -81,64 +119,56 @@ export default function UserAdminPage({ token, onBack }) {
       }
     }
 
-    loadData();
+    loadUsers();
     return () => {
       isMounted = false;
     };
   }, [token]);
 
-  function onSelectUser(nextUserId) {
-    setSelectedUserId(nextUserId);
-    const user = users.find((entry) => String(entry.id) === nextUserId);
-    if (!user) {
-      setEmail("");
-      setDisplayName("");
-      setRoleId("");
-      return;
+  useEffect(() => {
+    const normalizedSearch = buildAdminSearch(location.search, currentPage, pageSize, activeSearchQuery);
+    if (location.search !== normalizedSearch) {
+      navigate({ pathname: "/admin/users", search: normalizedSearch }, { replace: true });
     }
-    setEmail(user.email || "");
-    setDisplayName(user.displayName || "");
-    setRoleId(String(user.roleId || ""));
-    setSuccess("");
-    setError("");
+  }, [location.search, currentPage, pageSize, activeSearchQuery, navigate]);
+
+  function goToPage(nextPage, nextPageSize = pageSize, replace = false, nextSearchQuery = activeSearchQuery) {
+    const boundedPageSize = PAGE_SIZE_OPTIONS.includes(nextPageSize) ? nextPageSize : DEFAULT_PAGE_SIZE;
+    const boundedTotalPages = Math.max(1, Math.ceil(filteredUsers.length / boundedPageSize));
+    const boundedPage = Math.min(Math.max(1, nextPage), boundedTotalPages);
+    navigate(
+      {
+        pathname: "/admin/users",
+        search: buildAdminSearch(location.search, boundedPage, boundedPageSize, nextSearchQuery)
+      },
+      { replace }
+    );
   }
 
-  async function onSave(event) {
+  function submitSearch(event) {
     event.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!selectedUserId) {
-      setError("Please select a user");
+    const normalizedQuery = String(searchInput || "").trim();
+    if (!normalizedQuery) {
+      setSearchError("");
+      goToPage(1, pageSize, false, "");
       return;
     }
-
-    setSaving(true);
-    try {
-      const response = await fetch(`/api/admin/users/${encodeURIComponent(selectedUserId)}`, {
-        method: "PUT",
-        headers: buildAuthHeaders(token),
-        body: JSON.stringify({
-          email,
-          displayName,
-          roleId: Number.parseInt(roleId, 10)
-        })
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        setError(payload.message || "Unable to update user");
-        return;
-      }
-      const updatedUser = payload.user;
-      setUsers((current) =>
-        current.map((entry) => (entry.id === updatedUser.id ? { ...entry, ...updatedUser } : entry))
-      );
-      setSuccess(`Updated ${updatedUser.email}`);
-    } catch {
-      setError("Unable to update user");
-    } finally {
-      setSaving(false);
+    if (normalizedQuery.length > 20) {
+      setSearchError("Search query must be 20 characters or fewer");
+      return;
     }
+    if (!isPrintableSearchText(normalizedQuery)) {
+      setSearchError("Search query contains unsupported characters");
+      return;
+    }
+    setSearchError("");
+    goToPage(1, pageSize, false, normalizedQuery);
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setSearchError("");
+    goToPage(1, pageSize, false, "");
   }
 
   if (loading) {
@@ -162,74 +192,117 @@ export default function UserAdminPage({ token, onBack }) {
               Back
             </Button>
           </Stack>
-
+          <Stack
+            alignItems={{ xs: "stretch", md: "center" }}
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Typography variant="body2">
+              Manage users and roles
+            </Typography>
+            <Box component="form" data-cy="admin-users-search-form" onSubmit={submitSearch} sx={{ width: { xs: "100%", md: "auto" } }}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <TextField
+                  inputProps={{ "data-cy": "admin-users-search-input", maxLength: 20 }}
+                  label="Search users"
+                  onChange={(event) => {
+                    setSearchInput(event.target.value);
+                    if (searchError) {
+                      setSearchError("");
+                    }
+                  }}
+                  size="small"
+                  value={searchInput}
+                />
+                <Button data-cy="admin-users-search-submit" type="submit" variant="contained">
+                  Search
+                </Button>
+                <Button
+                  data-cy="admin-users-search-clear"
+                  disabled={!activeSearchQuery && !searchInput}
+                  onClick={clearSearch}
+                  type="button"
+                  variant="outlined"
+                >
+                  Clear
+                </Button>
+              </Stack>
+            </Box>
+          </Stack>
+          {searchError ? <Alert data-cy="admin-users-search-error" severity="error">{searchError}</Alert> : null}
+          {error ? <Alert data-cy="admin-user-error" severity="error">{error}</Alert> : null}
+          {!error && totalItems === 0 ? (
+            <Typography data-cy="admin-users-no-results" variant="body2">No users found</Typography>
+          ) : null}
           <List data-cy="admin-users-list" sx={{ p: 0 }}>
-            {users.map((user) => (
-              <ListItem key={user.id} sx={{ px: 0, py: 0.25 }}>
-                <Typography variant="body2">{user.email} ({user.role})</Typography>
+            {pagedUsers.map((user) => (
+              <ListItem
+                divider
+                key={user.id}
+                sx={{ alignItems: "center", display: "flex", justifyContent: "space-between", gap: 2 }}
+              >
+                <Stack spacing={0.25}>
+                  <Typography data-cy={`admin-user-row-email-${user.id}`} sx={{ fontWeight: 500 }} variant="body2">
+                    {user.email}
+                  </Typography>
+                  <Typography variant="caption">
+                    {user.displayName || "No display name"} ({user.role})
+                  </Typography>
+                </Stack>
+                <Button
+                  data-cy={`admin-user-edit-${user.id}`}
+                  onClick={() => navigate(`/admin/users/${encodeURIComponent(user.id)}/edit`, { state: { fromSearch: location.search } })}
+                  size="small"
+                  startIcon={<EditIcon />}
+                  type="button"
+                  variant="outlined"
+                >
+                  Edit user
+                </Button>
               </ListItem>
             ))}
           </List>
-
-          <FormControl>
-            <InputLabel htmlFor="admin-user-select-native">User</InputLabel>
-            <NativeSelect
-              id="admin-user-select-native"
-              inputProps={{ "data-cy": "admin-user-select", "aria-label": "Select user for editing" }}
-              onChange={(event) => onSelectUser(event.target.value)}
-              value={selectedUserId}
-            >
-              {users.map((user) => (
-                <option key={user.id} value={String(user.id)}>
-                  {user.email}
-                </option>
-              ))}
-            </NativeSelect>
-          </FormControl>
-
-          <Stack component="form" onSubmit={onSave} spacing={2}>
-            <TextField
-              id="admin-user-email"
-              inputProps={{ "data-cy": "admin-user-email" }}
-              label="Email"
-              onChange={(event) => setEmail(event.target.value)}
-              type="email"
-              value={email}
-            />
-            <TextField
-              id="admin-user-display-name"
-              inputProps={{ "data-cy": "admin-user-display-name" }}
-              label="Display name"
-              onChange={(event) => setDisplayName(event.target.value)}
-              value={displayName}
-            />
-            <FormControl>
-              <InputLabel htmlFor="admin-user-role-native">Role</InputLabel>
+          <Stack
+            alignItems="center"
+            data-cy="admin-users-pagination"
+            direction="row"
+            spacing={1}
+            sx={{ flexWrap: "wrap", mt: 1 }}
+          >
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel htmlFor="admin-users-page-size-native">Page size</InputLabel>
               <NativeSelect
-                id="admin-user-role-native"
-                inputProps={{ "data-cy": "admin-user-role", "aria-label": "Select user role" }}
-                onChange={(event) => setRoleId(event.target.value)}
-                value={roleId}
+                id="admin-users-page-size"
+                inputProps={{
+                  "aria-label": "Page size",
+                  "data-cy": "admin-users-page-size",
+                  id: "admin-users-page-size-native"
+                }}
+                onChange={(event) => goToPage(1, Number(event.target.value))}
+                value={String(pageSize)}
               >
-                {roles.map((role) => (
-                  <option key={role.id} value={String(role.id)}>
-                    {role.name}
-                  </option>
-                ))}
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
               </NativeSelect>
             </FormControl>
-            <Button
-              data-cy="admin-user-save"
-              disabled={saving || !selectedUserId}
-              startIcon={<SaveIcon />}
-              type="submit"
-            >
-              {saving ? "Saving..." : "Save user"}
+            <Button data-cy="admin-users-page-first" disabled={disablePrev} onClick={() => goToPage(1)} type="button" variant="outlined">
+              First
+            </Button>
+            <Button data-cy="admin-users-page-prev" disabled={disablePrev} onClick={() => goToPage(currentPage - 1)} type="button" variant="outlined">
+              Previous
+            </Button>
+            <Typography data-cy="admin-users-page-indicator" sx={{ fontWeight: 600 }}>
+              Page {currentPage} of {totalPages}
+            </Typography>
+            <Button data-cy="admin-users-page-next" disabled={disableNext} onClick={() => goToPage(currentPage + 1)} type="button" variant="outlined">
+              Next
+            </Button>
+            <Button data-cy="admin-users-page-last" disabled={disableNext} onClick={() => goToPage(totalPages)} type="button" variant="outlined">
+              Last
             </Button>
           </Stack>
-
-          {success ? <Alert data-cy="admin-user-success" severity="success">{success}</Alert> : null}
-          {error ? <Alert data-cy="admin-user-error" severity="error">{error}</Alert> : null}
         </Stack>
       </CardContent>
     </Card>

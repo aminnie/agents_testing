@@ -278,3 +278,7 @@ Create `app/frontend/src/components/UserAdminPage.jsx`:
     - updated `specs/accessibility.feature` with admin-page accessibility scenario.
 - Docs/script updates needed to support the change:
   - Updated `README.md` feature list and API notes with admin user-management capabilities and endpoints.
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

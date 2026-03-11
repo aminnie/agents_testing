@@ -140,7 +140,8 @@ function runA11yAudit(scope: string, context: string = "body") {
       || String.fromCharCode(80, 97, 115, 115, 119, 111, 114, 100, 49, 50, 51, 33);
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog").as("catalog");
-    cy.intercept("GET", "/api/admin/users").as("adminUsers");
+    cy.intercept({ method: "GET", pathname: "/api/admin/users" }).as("adminUsers");
+    cy.intercept("GET", /\/api\/admin\/users\/[^/]+$/).as("adminUserDetail");
     cy.intercept("GET", "/api/admin/roles").as("adminRoles");
 
     cy.loginUi("admin@example.com", adminPassword);
@@ -149,9 +150,14 @@ function runA11yAudit(scope: string, context: string = "body") {
 
     cy.get('[data-cy="nav-user-admin"]').click();
     cy.location("pathname").should("eq", "/admin/users");
-    cy.wait("@adminUsers").its("response.statusCode").should("eq", 200);
-    cy.wait("@adminRoles").its("response.statusCode").should("eq", 200);
+    cy.wait("@adminUsers").its("response.statusCode").should("be.oneOf", [200, 304]);
     cy.get('[data-cy="admin-users-page"]').should("be.visible");
     runA11yAudit("admin-users");
+
+    cy.get('[data-cy^="admin-user-edit-"]').first().click();
+    cy.wait("@adminUserDetail").its("response.statusCode").should("eq", 200);
+    cy.wait("@adminRoles").its("response.statusCode").should("be.oneOf", [200, 304]);
+    cy.get('[data-cy="admin-user-edit-page"]').should("be.visible");
+    runA11yAudit("admin-user-edit");
   });
 });

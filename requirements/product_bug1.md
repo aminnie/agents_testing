@@ -106,3 +106,7 @@ If the issue is reproducible in a specific UI path, next step is to capture that
    - has a confirmed fix with passing regression tests.
 2. Editor and manager edit paths both pass update + refresh persistence checks.
 3. No regression in authorization (non-manager/non-editor remain forbidden).
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

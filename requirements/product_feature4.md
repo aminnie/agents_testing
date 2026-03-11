@@ -171,3 +171,7 @@ Error handling:
 
 - [x] `README.md`
   - Added docs for in-app Help and help API endpoint.
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

@@ -120,18 +120,33 @@ When implementing changes:
 4. Verify with build/lint/tests as appropriate for the scope.
 5. Update tests/specifications/documentation impacted by the change.
 6. Summarize what changed and why.
+7. Update `## Phase Timeline` in the active `requirements/product_*.md` file with timestamped phase entries, including at minimum:
+   - `Implementation | Started`
+   - `Implementation | Completed`
+8. Include LLM usage tracking in `## Phase Timeline` entries:
+   - required: model/provider identifier used for the phase,
+   - preferred: token usage (`tokens_in` / `tokens_out`) when available,
+   - fallback: if exact token usage is unavailable, record `tokens_in=estimate` and `tokens_out=estimate` with a source note.
 
-### 11.1) When explicit approval is required before implementation
+### 11.1) Implementation start gate (explicit user confirmation required)
 
-Ask for explicit approval before proceeding when work includes:
+Do not start code changes until the user explicitly approves implementation for the active requirement.
 
-- breaking API or schema changes
-- data migrations or destructive data operations
-- authentication/authorization/security-sensitive behavior changes
-- large refactors across many files/modules
-- deleting files or removing major functionality
+Required flow:
 
-For routine, low-risk changes (small bug fixes, copy updates, minor styling, non-breaking test updates), proceed directly.
+1. Complete clarification/analysis first.
+2. Mark status as `Ready for implementation approval`.
+3. Ask: `Implementation is ready. Should I start coding now? (Yes/No)`.
+4. Wait for explicit confirmation before editing files or running implementation commands.
+
+Accepted implementation triggers include clear phrases such as:
+
+- "start implementation"
+- "proceed with coding"
+- "apply the changes now"
+- "yes, implement"
+
+If approval is ambiguous or missing, remain in read-only clarification/analysis mode and ask for confirmation.
 
 ## 12) Verification Minimums
 

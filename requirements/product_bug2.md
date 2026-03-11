@@ -145,3 +145,7 @@ Validation was executed after implementation with dedicated backend/frontend sta
    - Command: `npm run cypress:run:a11y`
    - Result: `5 passing`, `0 failing`
    - Includes Help-page WCAG check under updated guidance-only content.
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

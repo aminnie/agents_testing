@@ -228,3 +228,7 @@ talog rendering
 - [x] Phase 3: preserve query params across store/detail navigation
 - [x] Phase 4: add/extend specs and Cypress coverage
 - [x] Phase 5: update README and `What Changed` with shipped behavior
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

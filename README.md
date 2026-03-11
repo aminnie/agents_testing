@@ -46,6 +46,49 @@ Note:
 - Code review is part of the recommended workflow (`REVIEW-AGENT.md`), but it is not implicitly auto-triggered by code edits unless your orchestration explicitly invokes it (or the user requests a review).
 - `SIMPLIFIER-AGENT.md` is an optional manual step and runs only when explicitly invoked (it is not auto-triggered).
 
+### Phase Timeline Entry Format
+
+For each `requirements/product_*.md` file, maintain a `## Phase Timeline` section and append entries as work progresses.
+
+When creating a new requirements artifact, start from:
+
+- `requirements/product_template.md`
+
+Recommended entry format:
+
+- `<UTC_ISO_TIMESTAMP> | <Phase> | <State> | <Optional note>`
+
+LLM tracking fields (append to each timeline entry):
+
+- required: `model=<provider/model-or-session-id>`
+- preferred: `tokens_in=<n> | tokens_out=<n>`
+- fallback when exact usage is unavailable: `tokens_in=estimate | tokens_out=estimate | token_source=estimate`
+
+Example:
+
+- `2026-03-11T15:02:10Z | Clarification | Started | Open questions identified`
+- `2026-03-11T15:10:44Z | Clarification | Completed | Requirements and acceptance criteria updated`
+- `2026-03-11T15:12:00Z | Analysis | Started`
+- `2026-03-11T15:28:31Z | Analysis | Completed | Implementation plan and test strategy documented`
+- `2026-03-11T15:29:10Z | Implementation | Started`
+- `2026-03-11T16:02:45Z | Testing | Completed | test:e2e and test:a11y passing`
+- `2026-03-11T16:10:22Z | Review | Completed | Ready for handoff`
+- `2026-03-11T16:11:00Z | Review | Completed | model=openai/gpt-5.3 | tokens_in=estimate | tokens_out=estimate | token_source=estimate`
+
+Suggested states:
+
+- `Started`
+- `Completed`
+- `Blocked`
+- `Resumed`
+
+Implementation enforcement:
+
+- During implementation, update the active `requirements/product_*.md` timeline with timestamped entries for:
+  - `Implementation | Started`
+  - `Implementation | Completed`
+- This is enforced as a default change-management requirement in `AGENTS.md`.
+
 See below for more details on the agents and how to invoke from a Chat Agent.
 
 ## Role of `workflow:final-pass`
@@ -596,6 +639,26 @@ What it does:
   - `## What Changed`
   - `## Verification Results`
   - `## Review Results`
+
+## FAQ: Are `product_*.md` Files Used as Context?
+
+Yes. `requirements/product_*.md` artifacts are intended to be active context throughout the workflow (clarification -> analysis -> implementation -> review), but they are not always auto-loaded unless referenced or inferred.
+
+How this works in practice:
+
+- `AGENTS.md` and specialized `*-AGENT.md` templates treat the active `requirements/product_*.md` file as the source-of-truth artifact.
+- `workflow:final-pass` attempts to resolve the relevant requirements file from:
+  - `REQUIREMENTS_REVIEW_PATH`, or
+  - prompt context (`requirements/...md`, `feature <N>`, `bug <N>`).
+- The same file is expected to be updated with:
+  - `## What Changed`
+  - `## Verification Results`
+  - `## Review Results`
+  - `## Phase Timeline`
+
+Recommendation:
+
+- For reliable context, explicitly reference the file in prompts (for example `@requirements/product_bug5.md`) or provide `REQUIREMENTS_REVIEW_PATH=requirements/product_bug5.md`.
 
 ## PR/Release Checklist
 

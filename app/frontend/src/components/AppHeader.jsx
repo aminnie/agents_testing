@@ -42,15 +42,17 @@ export default function AppHeader({
   return (
     <AppBar position="static" sx={{ borderRadius: 3, mt: 2 }}>
       <Toolbar sx={{ gap: 1, flexWrap: "wrap" }}>
-        <Typography
-          component="h1"
-          data-cy="dashboard-title"
-          sx={{ display: "flex", alignItems: "center", fontWeight: 700, mr: 1 }}
-          variant="h6"
+        <Button
+          data-cy="nav-brand-store"
+          onClick={onGoStore}
+          startIcon={<StorefrontIcon />}
+          sx={{ color: "inherit", minWidth: "auto", mr: 1, px: 1, textTransform: "none" }}
+          type="button"
         >
-          <StorefrontIcon sx={{ mr: 1 }} />
-          Happy Vibes
-        </Typography>
+          <Typography component="span" data-cy="dashboard-title" sx={{ fontWeight: 700 }} variant="h6">
+            Happy Vibes
+          </Typography>
+        </Button>
         <Typography
           data-cy="session-user-email"
           sx={{ color: "#ffffff", fontWeight: 500, mr: "auto" }}

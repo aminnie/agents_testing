@@ -218,3 +218,7 @@ This approach extends existing patterns (central app state in `App.jsx`, thin pa
 
 - [x] `README.md`
   - Updated API behavior and role policy docs.
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

@@ -280,6 +280,42 @@ app.get("/api/admin/users", authMiddleware, requireAdminAccess, async (_req, res
   });
 });
 
+app.get("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, res) => {
+  const userId = Number.parseInt(String(req.params.id || ""), 10);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    res.status(400).json({ message: "Invalid user id" });
+    return;
+  }
+
+  const user = await db.get(
+    `SELECT
+      u.id,
+      u.email,
+      u.display_name AS displayName,
+      u.role AS legacyRole,
+      u.role_id AS roleId,
+      rt.name AS role
+    FROM users u
+    LEFT JOIN role_types rt ON rt.id = u.role_id
+    WHERE u.id = ?`,
+    userId
+  );
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName || "",
+      role: user.role || user.legacyRole || "user",
+      roleId: user.roleId || 3
+    }
+  });
+});
+
 app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, res) => {
   const userId = Number.parseInt(String(req.params.id || ""), 10);
   const email = normalizeEmail(req.body?.email);

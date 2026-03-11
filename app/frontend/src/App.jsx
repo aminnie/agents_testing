@@ -10,6 +10,7 @@ import ProductFormPage from "./components/ProductFormPage.jsx";
 import RegisterScreen from "./components/RegisterScreen.jsx";
 import StorePage from "./components/StorePage.jsx";
 import UserAdminPage from "./components/UserAdminPage.jsx";
+import UserEditPage from "./components/UserEditPage.jsx";
 import theme from "./theme.js";
 
 const STORAGE_KEYS = Object.freeze({
@@ -707,6 +708,14 @@ function StoreApp() {
           element={
             isAdmin
               ? <UserAdminPage onBack={() => navigate("/store")} token={token} />
+              : <Navigate replace to="/store" />
+          }
+        />
+        <Route
+          path="/admin/users/:userId/edit"
+          element={
+            isAdmin
+              ? <UserEditPage onBackToList={() => navigate("/admin/users")} token={token} />
               : <Navigate replace to="/store" />
           }
         />

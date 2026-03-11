@@ -58,6 +58,10 @@ Later, after implementation is complete, the same file must include:
 - `## What Changed`
 - `## Verification Results`
 - `## Review Results`
+- `## Phase Timeline`
+
+For newly created requirement artifacts, initialize from:
+- `requirements/product_template.md`
 
 ## Quality Checklist
 
@@ -66,6 +70,7 @@ Later, after implementation is complete, the same file must include:
 - Use concrete, implementation-neutral behavior statements.
 - Keep acceptance criteria objective and automation-friendly.
 - Align language with patterns already used in `requirements/product_feature*.md`.
+- Initialize or append `## Phase Timeline` with timestamped phase updates.
 
 ## Handoff Status
 

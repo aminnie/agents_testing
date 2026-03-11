@@ -261,3 +261,7 @@ If reusable selectors grow, add `cypress/pages/RegisterPage.ts` page object foll
   - Password handling moved to hashed-at-rest flow (bcrypt) for seeded users and new registrations.
   - Legacy/plaintext user passwords are migrated to hashed values during DB initialization.
   - `GET /api/help` no longer returns user passwords; it now exposes only demo user email/role guidance.
+
+## Phase Timeline
+
+- 2026-03-11T14:55:20Z | Timeline | Initialized (backfilled to support phase tracking across clarification, analysis, implementation, testing, and review).

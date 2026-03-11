@@ -53,6 +53,7 @@ Update the same target `product_*` file with these sections:
 - `## Implementation Plan`
 - `## Test Strategy`
 - `## What Changed` (analysis planning updates only, not implementation results)
+- `## Phase Timeline` (append timestamped `Analysis` phase updates)
 
 Each section must be explicit and actionable.
 

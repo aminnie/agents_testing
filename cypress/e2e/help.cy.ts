@@ -31,6 +31,7 @@ describe("Feature: Help", () => {
     cy.location("pathname").should("eq", "/help");
     cy.wait("@helpFromLogin").its("response.statusCode").should("be.oneOf", [200, 304]);
     cy.get('[data-cy="unauth-store-title"]').should("be.visible");
+    cy.get('[data-cy="nav-brand-store"]').should("not.exist");
     cy.get('[data-cy="dashboard-title"]').should("not.exist");
 
     cy.intercept("POST", "/api/login").as("login");
@@ -49,5 +50,7 @@ describe("Feature: Help", () => {
     cy.wait("@helpFromHeader").its("response.statusCode").should("be.oneOf", [200, 304]);
     cy.get('[data-cy="dashboard-title"]').should("be.visible");
     cy.get('[data-cy="unauth-store-title"]').should("not.exist");
+    cy.get('[data-cy="nav-brand-store"]').should("be.visible").click();
+    cy.location("pathname").should("eq", "/store");
   });
 });

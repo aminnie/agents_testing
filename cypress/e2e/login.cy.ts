@@ -9,6 +9,7 @@ describe("Feature: Login", () => {
 
   it("should show store branding on the login page", () => {
     cy.get('[data-cy="unauth-store-title"]').should("be.visible").and("contain", "Happy Vibes");
+    cy.get('[data-cy="nav-brand-store"]').should("not.exist");
     cy.get('[data-cy="login-title"]').should("contain", "Login");
   });
 
