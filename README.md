@@ -15,6 +15,7 @@ This repository contains a small web store application used to develop and valid
   - in-app help page with demo user emails/roles and navigation guidance
   - catalog browsing
   - catalog pagination (page/pageSize query-param deep linking)
+  - catalog search (explicit submit, URL-backed query state, clear-search, and no-results messaging)
   - item detail view
   - add to cart
   - add to cart from item detail and return to catalog
@@ -297,6 +298,7 @@ Role types are normalized in the backend as:
 ## API notes
 
 - `GET /api/catalog` returns catalog items with UUID ids, generated headers, descriptions, and prices.
+  - Optional query parameter: `q` (max 20 printable characters) applies case-insensitive `contains` filtering across item `name`, `header`, and `description`.
 - `GET /api/catalog/:id` returns item detail for a UUID id.
 - `GET /api/help` returns navigation guidance for this demo app (no user listing payload).
 - `GET /api/admin/roles` returns available role types (admin-only).

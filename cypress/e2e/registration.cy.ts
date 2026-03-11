@@ -3,6 +3,31 @@ import { RegisterPage } from "../pages/RegisterPage";
 describe("Feature: Self registration", () => {
   const registerPage = new RegisterPage();
 
+  it("should open registration with empty credentials each time", () => {
+    const loginEmail = "user@example.com";
+    const loginPassword = "CorrectHorseBatteryStaple1!";
+
+    cy.visit("/");
+    cy.get('[data-cy="login-email"]').type(loginEmail);
+    cy.get('[data-cy="login-password"]').type(loginPassword);
+    cy.get('[data-cy="login-register-link"]').click();
+
+    cy.location("pathname").should("eq", "/register");
+    registerPage.displayNameInput().should("have.value", "");
+    registerPage.emailInput().should("have.value", "");
+    registerPage.passwordInput().should("have.value", "");
+
+    registerPage.backToLoginButton().click();
+    cy.location("pathname").should("eq", "/");
+    cy.get('[data-cy="login-email"]').should("have.value", loginEmail);
+    cy.get('[data-cy="login-password"]').should("have.value", loginPassword);
+
+    cy.get('[data-cy="login-register-link"]').click();
+    registerPage.displayNameInput().should("have.value", "");
+    registerPage.emailInput().should("have.value", "");
+    registerPage.passwordInput().should("have.value", "");
+  });
+
   it("should navigate from login page to registration page", () => {
     cy.visit("/");
     cy.get('[data-cy="login-register-link"]').should("be.visible").click();

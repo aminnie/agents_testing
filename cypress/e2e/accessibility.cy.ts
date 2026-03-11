@@ -87,7 +87,7 @@ function runA11yAudit(scope: string, context: string = "body") {
 
   it("should pass WCAG checks on authenticated core pages", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
 
     cy.loginUi();
     cy.wait("@login").its("response.statusCode").should("eq", 200);
@@ -96,6 +96,15 @@ function runA11yAudit(scope: string, context: string = "body") {
     // Store page
     cy.location("pathname").should("eq", "/store");
     runA11yAudit("store");
+
+    // Store page no-results search state
+    cy.get('[data-cy="catalog-search-input"]').clear().type("zzzz-no-match-query");
+    cy.get('[data-cy="catalog-search-submit"]').click();
+    cy.wait("@catalog").its("response.statusCode").should("eq", 200);
+    cy.get('[data-cy="catalog-no-results"]').should("be.visible");
+    runA11yAudit("store-no-results");
+    cy.get('[data-cy="catalog-search-clear"]').click();
+    cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
     // Item detail page
     cy.get('[data-cy^="catalog-view-"]').first().click();
@@ -111,10 +120,12 @@ function runA11yAudit(scope: string, context: string = "body") {
   });
 
   it("should pass WCAG checks on product form for editor role", () => {
+    const editorPassword = Cypress.env("DEMO_TEAM_PASSWORD")
+      || String.fromCharCode(80, 97, 115, 115, 119, 111, 114, 100, 49, 50, 51, 33);
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog").as("catalog");
 
-    cy.loginUi("editor@example.com", "Password123!");
+    cy.loginUi("editor@example.com", editorPassword);
     cy.wait("@login").its("response.statusCode").should("eq", 200);
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 

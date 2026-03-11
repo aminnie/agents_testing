@@ -3,6 +3,22 @@ export class CatalogPage {
     cy.get('[data-cy^="catalog-add-"]').first().click();
   }
 
+  typeSearchQuery(query: string) {
+    cy.get('[data-cy="catalog-search-input"]').clear().type(query);
+  }
+
+  submitSearch() {
+    cy.get('[data-cy="catalog-search-submit"]').click();
+  }
+
+  clearSearch() {
+    cy.get('[data-cy="catalog-search-clear"]').click();
+  }
+
+  noResultsMessage() {
+    return cy.get('[data-cy="catalog-no-results"]');
+  }
+
   editFirstCatalogItem() {
     cy.get('[data-cy^="catalog-edit-"]').first().click();
   }

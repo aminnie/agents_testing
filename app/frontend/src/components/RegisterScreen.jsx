@@ -39,26 +39,32 @@ export default function RegisterScreen({
       </Stack>
       <Card data-cy="register-form">
         <CardContent>
-          <Stack component="form" onSubmit={onSubmit} spacing={2}>
+          <Stack autoComplete="off" component="form" onSubmit={onSubmit} spacing={2}>
             <TextField
+              autoComplete="name"
               id="displayName"
               inputProps={{ "data-cy": "register-display-name" }}
               label="Display name"
+              name="displayName"
               onChange={onDisplayNameChange}
               value={displayName}
             />
             <TextField
+              autoComplete="off"
               id="registerEmail"
               inputProps={{ "data-cy": "register-email" }}
               label="Email"
+              name="registerEmail"
               onChange={onEmailChange}
               type="email"
               value={email}
             />
             <TextField
+              autoComplete="new-password"
               id="registerPassword"
               inputProps={{ "data-cy": "register-password" }}
               label="Password"
+              name="registerPassword"
               onChange={onPasswordChange}
               type="password"
               value={password}

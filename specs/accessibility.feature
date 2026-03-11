@@ -14,6 +14,8 @@ Feature: Accessibility baseline checks
   Scenario: Authenticated core pages pass automated WCAG checks
     Given I am authenticated as "user"
     Then I should see no WCAG accessibility violations on store page
+    When I run a catalog search that produces no matches
+    Then I should see no WCAG accessibility violations on store no-results state
     When I open an item detail page
     Then I should see no WCAG accessibility violations on item detail page
     When I navigate to checkout with one item in cart

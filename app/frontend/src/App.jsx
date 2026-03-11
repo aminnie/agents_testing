@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppHeader from "./components/AppHeader.jsx";
@@ -24,11 +24,21 @@ function parsePositiveInteger(value, fallbackValue) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackValue;
 }
 
-function buildPaginationSearch(currentSearch, page, pageSize) {
+function buildStoreSearch(currentSearch, page, pageSize, query = "") {
   const params = new URLSearchParams(currentSearch);
   params.set("page", String(page));
   params.set("pageSize", String(pageSize));
+  const normalizedQuery = String(query || "").trim();
+  if (normalizedQuery) {
+    params.set("q", normalizedQuery);
+  } else {
+    params.delete("q");
+  }
   return `?${params.toString()}`;
+}
+
+function isPrintableSearchText(value) {
+  return /^[\x20-\x7E]*$/.test(String(value || ""));
 }
 
 function formatPrice(cents) {
@@ -109,8 +119,9 @@ function ProductFormRoute({
 function StoreApp() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState("user@example.com");
-  const [password, setPassword] = useState("CorrectHorseBatteryStaple1!");
+  const previousPathnameRef = useRef(location.pathname);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [registerDisplayName, setRegisterDisplayName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
@@ -120,19 +131,24 @@ function StoreApp() {
   const [token, setToken] = useState(localStorage.getItem(STORAGE_KEYS.auth) || "");
   const [currentUser, setCurrentUser] = useState(readStoredUser);
   const [catalog, setCatalog] = useState([]);
+  const [catalogError, setCatalogError] = useState("");
   const [cart, setCart] = useState([]);
   const [orderMessage, setOrderMessage] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [nameOnCard, setNameOnCard] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const currentSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const [searchInput, setSearchInput] = useState(() => currentSearchParams.get("q") || "");
+  const [searchError, setSearchError] = useState("");
   const [productFormError, setProductFormError] = useState("");
   const [productFormSubmitting, setProductFormSubmitting] = useState(false);
   const isProductManager = ["editor", "manager"].includes(currentUser?.role || "");
   const isAdmin = (currentUser?.role || "") === "admin";
-  const requestedPageSize = parsePositiveInteger(new URLSearchParams(location.search).get("pageSize"), DEFAULT_PAGE_SIZE);
+  const activeSearchQuery = String(currentSearchParams.get("q") || "").trim();
+  const requestedPageSize = parsePositiveInteger(currentSearchParams.get("pageSize"), DEFAULT_PAGE_SIZE);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
-  const requestedPage = parsePositiveInteger(new URLSearchParams(location.search).get("page"), 1);
+  const requestedPage = parsePositiveInteger(currentSearchParams.get("page"), 1);
   const totalItems = catalog.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(requestedPage, totalPages);
@@ -146,18 +162,36 @@ function StoreApp() {
     [cart]
   );
 
+  function resetRegisterFormState() {
+    setRegisterDisplayName("");
+    setRegisterEmail("");
+    setRegisterPassword("");
+    setRegisterError("");
+    setRegisterSubmitting(false);
+  }
+
   function clearSession() {
     localStorage.removeItem(STORAGE_KEYS.auth);
     localStorage.removeItem(STORAGE_KEYS.user);
     setToken("");
     setCurrentUser(null);
     setCatalog([]);
+    setCatalogError("");
+    setSearchError("");
     setCart([]);
     setOrderMessage("");
     setCheckoutError("");
     setNameOnCard("");
     setCardNumber("");
   }
+
+  useEffect(() => {
+    const previousPathname = previousPathnameRef.current;
+    if (location.pathname === "/register" && previousPathname !== "/register") {
+      resetRegisterFormState();
+    }
+    previousPathnameRef.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!token && !["/", "/help", "/register"].includes(location.pathname)) {
@@ -171,14 +205,18 @@ function StoreApp() {
   }, [token, location.pathname, navigate]);
 
   useEffect(() => {
+    setSearchInput(activeSearchQuery);
+  }, [activeSearchQuery]);
+
+  useEffect(() => {
     if (!token || location.pathname !== "/store") {
       return;
     }
-    const normalizedSearch = buildPaginationSearch(location.search, currentPage, pageSize);
+    const normalizedSearch = buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery);
     if (location.search !== normalizedSearch) {
       navigate({ pathname: "/store", search: normalizedSearch }, { replace: true });
     }
-  }, [token, location.pathname, location.search, currentPage, pageSize, navigate]);
+  }, [token, location.pathname, location.search, currentPage, pageSize, activeSearchQuery, navigate]);
 
   useEffect(() => {
     if (!token) {
@@ -186,24 +224,46 @@ function StoreApp() {
     }
 
     setLoadingCatalog(true);
-    fetch("/api/catalog", {
+    const catalogUrl = activeSearchQuery
+      ? `/api/catalog?q=${encodeURIComponent(activeSearchQuery)}`
+      : "/api/catalog";
+
+    fetch(catalogUrl, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     })
       .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("SESSION_INVALID");
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch {
+          payload = {};
         }
-        return response.json();
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("SESSION_INVALID");
+          }
+          throw new Error(payload.message || "Could not load catalog");
+        }
+        return payload;
       })
-      .then((data) => setCatalog(data.items || []))
-      .catch(() => {
-        clearSession();
-        setAuthError("Session expired. Please sign in again.");
+      .then((data) => {
+        setCatalogError("");
+        setCatalog(data.items || []);
+      })
+      .catch((error) => {
+        if (String(error?.message || "") === "SESSION_INVALID") {
+          clearSession();
+          setAuthError("Session expired. Please sign in again.");
+          return;
+        }
+        setCatalog([]);
+        setCatalogError(String(error?.message || "Could not load catalog"));
       })
       .finally(() => setLoadingCatalog(false));
-  }, [token]);
+  }, [token, activeSearchQuery]);
 
   function persistAuth(nextToken, user) {
     localStorage.setItem(STORAGE_KEYS.auth, nextToken);
@@ -307,7 +367,7 @@ function StoreApp() {
   function viewItem(itemId) {
     navigate({
       pathname: `/store/item/${encodeURIComponent(itemId)}`,
-      search: buildPaginationSearch(location.search, currentPage, pageSize)
+      search: buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery)
     });
   }
 
@@ -315,28 +375,57 @@ function StoreApp() {
     addToCart(item);
     navigate({
       pathname: "/store",
-      search: buildPaginationSearch(location.search, currentPage, pageSize)
+      search: buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery)
     });
   }
 
   function goToStore() {
     navigate({
       pathname: "/store",
-      search: buildPaginationSearch(location.search, currentPage, pageSize)
+      search: buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery)
     });
   }
 
-  function goToPage(nextPage, nextPageSize = pageSize, replace = false) {
+  function goToPage(nextPage, nextPageSize = pageSize, replace = false, nextSearchQuery = activeSearchQuery) {
     const boundedPageSize = PAGE_SIZE_OPTIONS.includes(nextPageSize) ? nextPageSize : DEFAULT_PAGE_SIZE;
     const boundedTotalPages = Math.max(1, Math.ceil(totalItems / boundedPageSize));
     const boundedPage = Math.min(Math.max(1, nextPage), boundedTotalPages);
     navigate(
       {
         pathname: "/store",
-        search: buildPaginationSearch(location.search, boundedPage, boundedPageSize)
+        search: buildStoreSearch(location.search, boundedPage, boundedPageSize, nextSearchQuery)
       },
       { replace }
     );
+  }
+
+  function submitCatalogSearch(event) {
+    event.preventDefault();
+    const normalizedQuery = String(searchInput || "").trim();
+    if (!normalizedQuery) {
+      setSearchError("");
+      setCatalogError("");
+      goToPage(1, pageSize, false, "");
+      return;
+    }
+    if (normalizedQuery.length > 20) {
+      setSearchError("Search query must be 20 characters or fewer");
+      return;
+    }
+    if (!isPrintableSearchText(normalizedQuery)) {
+      setSearchError("Search query contains unsupported characters");
+      return;
+    }
+    setSearchError("");
+    setCatalogError("");
+    goToPage(1, pageSize, false, normalizedQuery);
+  }
+
+  function clearCatalogSearch() {
+    setSearchInput("");
+    setSearchError("");
+    setCatalogError("");
+    goToPage(1, pageSize, false, "");
   }
 
   function openNewProductForm() {
@@ -527,8 +616,20 @@ function StoreApp() {
             <StorePage
               cart={cart}
               catalog={pagedCatalog}
+              catalogError={catalogError}
               loadingCatalog={loadingCatalog}
+              searchInput={searchInput}
+              searchError={searchError}
+              isSearchActive={Boolean(activeSearchQuery)}
               onAddToCart={addToCart}
+              onSearchInputChange={(event) => {
+                setSearchInput(event.target.value);
+                if (searchError) {
+                  setSearchError("");
+                }
+              }}
+              onSearchSubmit={submitCatalogSearch}
+              onClearSearch={clearCatalogSearch}
               onEditItem={viewProductEditor}
               onViewItem={viewItem}
               onGoCheckout={() => navigate("/checkout")}

@@ -24,6 +24,10 @@ function normalizeText(value) {
     .replace(/\s+/g, " ");
 }
 
+function isPrintableText(value) {
+  return /^[\x20-\x7E]*$/.test(String(value || ""));
+}
+
 function normalizeEmail(value) {
   return String(value || "")
     .trim()
@@ -65,43 +69,29 @@ async function getUserRole(userId) {
   return user.role || user.legacyRole || "user";
 }
 
-async function requireCatalogWriteAccess(req, res, next) {
+async function requireAnyRole(req, res, next, allowedRoles) {
   const role = await getUserRole(req.userId);
   if (!role) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
-  if (!["editor", "manager"].includes(role)) {
+  if (!allowedRoles.includes(role)) {
     res.status(403).json({ message: "Forbidden" });
     return;
   }
   next();
+}
+
+async function requireCatalogWriteAccess(req, res, next) {
+  return requireAnyRole(req, res, next, ["editor", "manager"]);
 }
 
 async function requireCatalogProductManager(req, res, next) {
-  const role = await getUserRole(req.userId);
-  if (!role) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-  if (!["editor", "manager"].includes(role)) {
-    res.status(403).json({ message: "Forbidden" });
-    return;
-  }
-  next();
+  return requireAnyRole(req, res, next, ["editor", "manager"]);
 }
 
 async function requireAdminAccess(req, res, next) {
-  const role = await getUserRole(req.userId);
-  if (!role) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-  if (role !== "admin") {
-    res.status(403).json({ message: "Forbidden" });
-    return;
-  }
-  next();
+  return requireAnyRole(req, res, next, ["admin"]);
 }
 
 function mapCatalogItem(row) {
@@ -374,10 +364,34 @@ app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
   });
 });
 
-app.get("/api/catalog", authMiddleware, async (_req, res) => {
-  const items = await db.all(
-    "SELECT id, public_id AS publicId, sku, name, header, description, price_cents AS priceCents FROM catalog_items ORDER BY id"
-  );
+app.get("/api/catalog", authMiddleware, async (req, res) => {
+  const rawSearchQuery = String(req.query?.q || "").trim();
+  if (rawSearchQuery.length > 20) {
+    res.status(400).json({ message: "Search query must be 20 characters or fewer" });
+    return;
+  }
+  if (!isPrintableText(rawSearchQuery)) {
+    res.status(400).json({ message: "Search query contains unsupported characters" });
+    return;
+  }
+
+  const normalizedQuery = rawSearchQuery.toLowerCase();
+  const hasSearchQuery = normalizedQuery.length > 0;
+  const items = hasSearchQuery
+    ? await db.all(
+      `SELECT id, public_id AS publicId, sku, name, header, description, price_cents AS priceCents
+       FROM catalog_items
+       WHERE lower(name) LIKE ?
+          OR lower(header) LIKE ?
+          OR lower(description) LIKE ?
+       ORDER BY id`,
+      `%${normalizedQuery}%`,
+      `%${normalizedQuery}%`,
+      `%${normalizedQuery}%`
+    )
+    : await db.all(
+      "SELECT id, public_id AS publicId, sku, name, header, description, price_cents AS priceCents FROM catalog_items ORDER BY id"
+    );
   res.json({ items: items.map(mapCatalogItem) });
 });
 

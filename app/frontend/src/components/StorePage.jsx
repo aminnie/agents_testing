@@ -14,15 +14,23 @@ import {
   ListItem,
   NativeSelect,
   Stack,
+  TextField,
   Typography
 } from "@mui/material";
 
 export default function StorePage({
   loadingCatalog,
+  catalogError,
   catalog,
+  searchInput,
+  searchError,
+  isSearchActive,
   cart,
   totalLabel,
   onAddToCart,
+  onSearchInputChange,
+  onSearchSubmit,
+  onClearSearch,
   onViewItem,
   onEditItem,
   onGoCheckout,
@@ -47,12 +55,61 @@ export default function StorePage({
     <Stack spacing={3} sx={{ mt: 2 }}>
       <Card>
         <CardContent>
-          <Typography sx={{ mb: 2 }} variant="h5">Catalog</Typography>
+          <Stack
+            alignItems={{ xs: "stretch", md: "center" }}
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            spacing={2}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="h5">Catalog</Typography>
+            <Box component="form" data-cy="catalog-search-form" onSubmit={onSearchSubmit} sx={{ width: { xs: "100%", md: "auto" } }}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <TextField
+                  inputProps={{
+                    "data-cy": "catalog-search-input",
+                    maxLength: 20
+                  }}
+                  label="Search items"
+                  onChange={onSearchInputChange}
+                  size="small"
+                  value={searchInput}
+                />
+                <Button data-cy="catalog-search-submit" type="submit" variant="contained">
+                  Search
+                </Button>
+                <Button
+                  data-cy="catalog-search-clear"
+                  disabled={!isSearchActive && !searchInput}
+                  onClick={onClearSearch}
+                  type="button"
+                  variant="outlined"
+                >
+                  Clear
+                </Button>
+              </Stack>
+            </Box>
+          </Stack>
           {loadingCatalog ? (
             <Box data-cy="catalog-loading" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
               <CircularProgress size={18} />
               <Typography variant="body2">Loading...</Typography>
             </Box>
+          ) : null}
+          {searchError ? (
+            <Typography color="error" data-cy="catalog-search-error" sx={{ mb: 2 }} variant="body2">
+              {searchError}
+            </Typography>
+          ) : null}
+          {catalogError ? (
+            <Typography color="error" data-cy="catalog-error" sx={{ mb: 2 }} variant="body2">
+              {catalogError}
+            </Typography>
+          ) : null}
+          {!loadingCatalog && !catalogError && isSearchActive && catalog.length === 0 ? (
+            <Typography data-cy="catalog-no-results" sx={{ mb: 2 }} variant="body2">
+              No results
+            </Typography>
           ) : null}
           <List data-cy="catalog-list" sx={{ p: 0 }}>
           {catalog.map((item) => (

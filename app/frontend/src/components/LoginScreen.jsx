@@ -31,19 +31,23 @@ export default function LoginScreen({
       </Stack>
       <Card data-cy="login-form">
         <CardContent>
-          <Stack component="form" onSubmit={onSubmit} spacing={2}>
+          <Stack autoComplete="on" component="form" onSubmit={onSubmit} spacing={2}>
             <TextField
+              autoComplete="username"
               id="email"
               inputProps={{ "data-cy": "login-email" }}
               label="Email"
+              name="email"
               onChange={onEmailChange}
               type="email"
               value={email}
             />
             <TextField
+              autoComplete="current-password"
               id="password"
               inputProps={{ "data-cy": "login-password" }}
               label="Password"
+              name="password"
               onChange={onPasswordChange}
               type="password"
               value={password}
