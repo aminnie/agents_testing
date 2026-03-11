@@ -32,6 +32,7 @@ describe("Feature: Self registration", () => {
     cy.visit("/");
     cy.get('[data-cy="login-register-link"]').should("be.visible").click();
     cy.location("pathname").should("eq", "/register");
+    cy.get('[data-cy="unauth-store-title"]').should("be.visible").and("contain", "Happy Vibes");
     cy.get('[data-cy="register-title"]').should("be.visible");
   });
 

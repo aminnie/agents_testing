@@ -1,13 +1,16 @@
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import LoginIcon from "@mui/icons-material/Login";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 import {
   Alert,
+  AppBar,
   Box,
   Button,
   Card,
   CardContent,
   Stack,
   TextField,
+  Toolbar,
   Typography
 } from "@mui/material";
 
@@ -23,12 +26,25 @@ export default function LoginScreen({
 }) {
   return (
     <Box className="container">
-      <Stack direction="row" justifyContent="space-between" spacing={2} sx={{ mb: 2 }}>
-        <Typography data-cy="login-title" variant="h4">Mini Store Login</Typography>
-        <Button data-cy="login-help" onClick={onGoHelp} startIcon={<HelpOutlineIcon />} type="button" variant="outlined">
-          Help
-        </Button>
-      </Stack>
+      <AppBar position="static" sx={{ borderRadius: 3, mt: 2, mb: 2 }}>
+        <Toolbar sx={{ gap: 1, flexWrap: "wrap" }}>
+          <Typography
+            component="h1"
+            data-cy="unauth-store-title"
+            sx={{ display: "flex", alignItems: "center", fontWeight: 700, mr: 1 }}
+            variant="h6"
+          >
+            <StorefrontIcon sx={{ mr: 1 }} />
+            Happy Vibes
+          </Typography>
+          <Box sx={{ ml: "auto" }}>
+            <Button data-cy="login-help" onClick={onGoHelp} startIcon={<HelpOutlineIcon />} type="button">
+              Help
+            </Button>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Typography data-cy="login-title" sx={{ mb: 2 }} variant="h4">Login</Typography>
       <Card data-cy="login-form">
         <CardContent>
           <Stack autoComplete="on" component="form" onSubmit={onSubmit} spacing={2}>

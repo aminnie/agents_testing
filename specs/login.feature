@@ -23,7 +23,7 @@ Feature: Login
     And I fill "password" with "wrong-password"
     And I click "Sign in"
     Then I should see error "Invalid email or password"
-    And I should still see "Mini Store Login"
+    And I should still see "Login"
 
   @regression
   Scenario: Required field validation
@@ -44,5 +44,5 @@ Feature: Login
     Given I am on "/"
     And I log in with valid credentials
     When I click "Logout"
-    Then I should see "Mini Store Login"
+    Then I should see "Login"
     And token should be removed from local storage

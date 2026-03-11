@@ -7,6 +7,11 @@ describe("Feature: Login", () => {
     loginPage.visit();
   });
 
+  it("should show store branding on the login page", () => {
+    cy.get('[data-cy="unauth-store-title"]').should("be.visible").and("contain", "Happy Vibes");
+    cy.get('[data-cy="login-title"]').should("contain", "Login");
+  });
+
   it("should allow login with valid credentials", () => {
     cy.intercept("POST", "/api/login").as("login");
 

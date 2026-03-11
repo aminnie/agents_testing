@@ -116,6 +116,12 @@ This is the smallest safe change because it is localized to existing state owner
 - Frontend/UI updates shipped:
   - Updated `app/frontend/src/App.jsx` so login controls start empty on initial page load (`email` and `password` state now initialize to empty strings).
   - Kept registration route-entry reset behavior in `app/frontend/src/App.jsx` so opening `/register` clears `displayName`, `email`, and `password` for registration only.
+  - Added consistent unauthenticated store branding on `app/frontend/src/components/LoginScreen.jsx` and `app/frontend/src/components/RegisterScreen.jsx` by rendering the same `Happy Vibes` heading with storefront icon in matching app-bar styling (`AppBar`/`Toolbar`) used on store pages.
+  - Updated login title copy from `Mini Store Login` to `Login` in `app/frontend/src/components/LoginScreen.jsx`.
+  - Moved unauthenticated page actions into the new header action area for consistency with store-page patterns:
+    - `Help` now appears in the login header app bar.
+    - `Back to login` now appears in the registration header app bar.
+  - Updated `app/frontend/src/components/HelpPage.jsx` to use the same branded app-bar header (`Happy Vibes` + storefront icon), and moved the `Back` action into the header action area when navigation back is available.
   - Updated auth form input semantics:
     - `app/frontend/src/components/LoginScreen.jsx` now uses explicit `name` and login-friendly `autoComplete` values (`username`, `current-password`).
     - `app/frontend/src/components/RegisterScreen.jsx` now uses registration-specific `name` and `autoComplete` values (`off`/`new-password`) to prevent unintended credential reuse on Create Account.
@@ -127,6 +133,9 @@ This is the smallest safe change because it is localized to existing state owner
     - verifies `/register` opens with empty `displayName`, `email`, and `password`,
     - verifies returning to login preserves login values,
     - verifies reopening `/register` clears registration fields again.
+    - verifies store branding heading appears on registration page.
+  - Added `cypress/e2e/login.cy.ts` coverage to verify store branding heading appears on login page.
+  - Updated login-title assertions to match new copy (`Login`) in Cypress/spec behavior documentation.
 
 ## Verification Results
 
