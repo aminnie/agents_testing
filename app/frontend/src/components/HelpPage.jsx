@@ -16,7 +16,7 @@ import {
   Typography
 } from "@mui/material";
 
-export default function HelpPage({ onBack }) {
+export default function HelpPage({ onBack, showSimpleHeader = true }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [helpData, setHelpData] = useState(null);
@@ -39,26 +39,28 @@ export default function HelpPage({ onBack }) {
 
   return (
     <Box>
-      <AppBar position="static" sx={{ borderRadius: 3, mt: 2, mb: 2 }}>
-        <Toolbar sx={{ gap: 1, flexWrap: "wrap" }}>
-          <Typography
-            component="h1"
-            data-cy="unauth-store-title"
-            sx={{ display: "flex", alignItems: "center", fontWeight: 700, mr: 1 }}
-            variant="h6"
-          >
-            <StorefrontIcon sx={{ mr: 1 }} />
-            Happy Vibes
-          </Typography>
-          {onBack ? (
-            <Box sx={{ ml: "auto" }}>
-              <Button data-cy="help-back" onClick={onBack} startIcon={<ArrowBackIcon />} type="button">
-                Back
-              </Button>
-            </Box>
-          ) : null}
-        </Toolbar>
-      </AppBar>
+      {showSimpleHeader ? (
+        <AppBar position="static" sx={{ borderRadius: 3, mt: 2, mb: 2 }}>
+          <Toolbar sx={{ gap: 1, flexWrap: "wrap" }}>
+            <Typography
+              component="h1"
+              data-cy="unauth-store-title"
+              sx={{ display: "flex", alignItems: "center", fontWeight: 700, mr: 1 }}
+              variant="h6"
+            >
+              <StorefrontIcon sx={{ mr: 1 }} />
+              Happy Vibes
+            </Typography>
+            {onBack ? (
+              <Box sx={{ ml: "auto" }}>
+                <Button data-cy="help-back" onClick={onBack} startIcon={<ArrowBackIcon />} type="button">
+                  Back
+                </Button>
+              </Box>
+            ) : null}
+          </Toolbar>
+        </AppBar>
+      ) : null}
 
       {loading ? (
         <Card data-cy="help-page-loading" sx={{ mt: 2 }}>

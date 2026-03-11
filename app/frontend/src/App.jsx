@@ -556,7 +556,7 @@ function StoreApp() {
     return (
       <main className="container">
         <Routes>
-          <Route path="/help" element={<HelpPage onBack={() => navigate("/")} />} />
+          <Route path="/help" element={<HelpPage onBack={() => navigate("/")} showSimpleHeader />} />
           <Route
             path="/register"
             element={
@@ -699,7 +699,7 @@ function StoreApp() {
         <Route
           path="/help"
           element={
-            <HelpPage onBack={() => navigate("/store")} />
+            <HelpPage onBack={() => navigate("/store")} showSimpleHeader={false} />
           }
         />
         <Route

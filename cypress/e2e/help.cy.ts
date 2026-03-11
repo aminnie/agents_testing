@@ -30,6 +30,8 @@ describe("Feature: Help", () => {
     cy.get('[data-cy="login-help"]').click();
     cy.location("pathname").should("eq", "/help");
     cy.wait("@helpFromLogin").its("response.statusCode").should("be.oneOf", [200, 304]);
+    cy.get('[data-cy="unauth-store-title"]').should("be.visible");
+    cy.get('[data-cy="dashboard-title"]').should("not.exist");
 
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog").as("catalog");
@@ -45,5 +47,7 @@ describe("Feature: Help", () => {
     cy.get('[data-cy="nav-help"]').click();
     cy.location("pathname").should("eq", "/help");
     cy.wait("@helpFromHeader").its("response.statusCode").should("be.oneOf", [200, 304]);
+    cy.get('[data-cy="dashboard-title"]').should("be.visible");
+    cy.get('[data-cy="unauth-store-title"]').should("not.exist");
   });
 });
