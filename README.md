@@ -10,7 +10,7 @@ This project includes the following agent guidance files used to drive the devel
 - `CLARIFICATION-AGENT.md` - refines ambiguous requirement or bug requests into explicit, testable requirements and acceptance criteria before build work starts.
 - `ANALYSIS-AGENT.md` - produces technical analysis, architecture decisions, implementation map, and risk/test strategy for a selected requirement file.
 - `CYRPRESS-AGENT.md` - defines Cypress generation/maintenance standards, selector rules, and spec-driven test workflow for `specs/*.feature`.
-- `SIMPLIFIER-AGENT.md` - runs behavior-preserving refactor/simplification passes on changed code to improve readability and maintainability.
+- `SIMPLIFIER-AGENT.md` - runs behavior-preserving refactor/simplification passes on changed code to improve readability and maintainability (optional manual step).
 - `REVIEW-AGENT.md` - performs final review with findings-first reporting focused on correctness, regression risk, and security.
 
 Recommended workflow order:
@@ -20,7 +20,7 @@ Recommended workflow order:
 3. `ANALYSIS-AGENT.md` - create implementation-ready technical blueprint.
 4. Implement code changes (following `AGENTS.md` baseline rules).
 5. `CYRPRESS-AGENT.md` - generate/update Cypress/spec and code artifacts and validate behavior.
-6. `SIMPLIFIER-AGENT.md` (optional but recommended) - simplify changed code without altering behavior.
+6. `SIMPLIFIER-AGENT.md` (optional manual step) - manually invoke when you want a behavior-preserving simplification pass before final review.
 7. `REVIEW-AGENT.md` - run final pass review before handoff/PR.
 
 ### Code Implementation Trigger Summary
@@ -42,7 +42,9 @@ When code implementation is triggered (step 4 in the workflow), the agent should
   - `## Review Results`
 
 Note:
+
 - Code review is part of the recommended workflow (`REVIEW-AGENT.md`), but it is not implicitly auto-triggered by code edits unless your orchestration explicitly invokes it (or the user requests a review).
+- `SIMPLIFIER-AGENT.md` is an optional manual step and runs only when explicitly invoked (it is not auto-triggered).
 
 See below for more details on the agents and how to invoke from a Chat Agent.
 
@@ -53,20 +55,28 @@ The `workflow:final-pass` script is the final workflow gate before handoff/PR. I
 What it does:
 
 1. Resolves the target requirements review file:
-   - uses `REQUIREMENTS_REVIEW_PATH` when provided,
-   - otherwise attempts prompt-based inference (direct `requirements/...md` path, `feature <N>`, or `bug <N>`).
+  - uses `REQUIREMENTS_REVIEW_PATH` when provided,
+  - otherwise attempts prompt-based inference (direct `requirements/...md` path, `feature <N>`, or `bug <N>`).
 2. Runs `npm run test:e2e`.
 3. Runs `npm run test:a11y`.
 4. Validates that the requirements review file exists, is non-empty, and contains:
-   - `## What Changed`
-   - `## Verification Results`
-   - `## Review Results`
+  - `## What Changed`
+  - `## Verification Results`
+  - `## Review Results`
 5. Fails fast with actionable guidance if any step is missing or failing.
 
 Why it matters:
 
 - prevents incomplete handoff by enforcing core regression and accessibility checks,
 - ensures the requirements artifact documents what shipped and how it was validated.
+
+
+
+Next Up:
+
+- Explore agent skills and plug-ins to provide more advanced guidance and capabilities (e.g. Jira integration). 
+
+
 
 ## What is included in the Web Store Application
 
