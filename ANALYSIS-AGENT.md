@@ -3,8 +3,8 @@
 Use this template to produce a complete technical and architectural analysis before implementation.
 
 This analysis flow must work for both:
-- `requirements/product_feature<N>.md`
-- `requirements/product_bug<N>.md`
+- `requirements/feature_<N>.md`
+- `requirements/bug_<N>.md`
 
 ## Purpose
 
@@ -53,7 +53,7 @@ If analysis output is incomplete, inconsistent, or missing required sections:
 
 ## Required Output in the Requirements File
 
-Update the same target `product_*` file with these sections:
+Update the same target `feature_*`/`bug_*` file with these sections:
 - `## Technical Analysis`
 - `## Implementation Plan`
 - `## Test Strategy`
@@ -89,7 +89,7 @@ and wait for explicit confirmation before any implementation edits/commands.
 ## Prompt Template
 
 ```text
-Please proceed to analyze requirements/product_feature<N>.md.
+Please proceed to analyze requirements/feature_<N>.md.
 
 Use AGENTS.md and existing project patterns.
 Update the same requirements file with:
@@ -104,7 +104,7 @@ If unresolved decisions remain, return numbered blocking questions and stop.
 ## Bug Variant Template
 
 ```text
-Please proceed to analyze requirements/product_bug<N>.md.
+Please proceed to analyze requirements/bug_<N>.md.
 
 Use AGENTS.md and existing project patterns.
 Update the same requirements file with:

@@ -81,7 +81,7 @@ This is the smallest safe change because it preserves existing shared authentica
    - Add/update assertions to ensure:
      - unauthenticated `/help` shows simplified header.
      - authenticated `/help` does not show simplified header (only global authenticated header remains).
-4. `requirements/product_bug4.md`
+4. `requirements/bug_4.md`
    - Update `## What Changed`, `## Verification Results`, and `## Review Results` after implementation.
 
 ### Build Sequence

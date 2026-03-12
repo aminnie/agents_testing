@@ -3,8 +3,8 @@
 Use this template to finalize requirement decisions into an implementation-ready, testable requirements artifact.
 
 This clarification flow must work for both:
-- `requirements/product_feature<N>.md`
-- `requirements/product_bug<N>.md`
+- `requirements/feature_<N>.md`
+- `requirements/bug_<N>.md`
 
 ## Purpose
 
@@ -46,7 +46,7 @@ If key decisions are still missing or conflicting:
 
 ## Required Output in the Requirements File
 
-Ensure the target `product_*` file includes:
+Ensure the target `feature_*`/`bug_*` file includes:
 - `## Clarification Decisions`
   - `### Decisions Applied`
   - `### Requirements Updates`
@@ -61,7 +61,7 @@ Later, after implementation is complete, the same file must include:
 - `## Phase Timeline`
 
 For newly created requirement artifacts, initialize from:
-- `requirements/product_template.md`
+- `requirements/template.md`
 
 ## Quality Checklist
 
@@ -69,7 +69,7 @@ For newly created requirement artifacts, initialize from:
 - Rewrite/expand requirements; do not only append decision bullets.
 - Use concrete, implementation-neutral behavior statements.
 - Keep acceptance criteria objective and automation-friendly.
-- Align language with patterns already used in `requirements/product_feature*.md`.
+- Align language with patterns already used in `requirements/feature_*.md`.
 - Initialize or append `## Phase Timeline` with timestamped phase updates.
 
 ## Handoff Status
@@ -81,7 +81,7 @@ End with one of:
 ## Prompt Template
 
 ```text
-Please proceed to clarify requirements/product_feature<N>.md.
+Please proceed to clarify requirements/feature_<N>.md.
 
 Use AGENTS.md and convert all open decisions into explicit requirements.
 Update the same requirements file with:
@@ -103,7 +103,7 @@ If unresolved decisions remain, return numbered blocking questions and stop.
 ## Bug Variant Template
 
 ```text
-Please proceed to clarify requirements/product_bug<N>.md.
+Please proceed to clarify requirements/bug_<N>.md.
 
 Use AGENTS.md and convert all open decisions into explicit requirements.
 Update the same requirements file with:

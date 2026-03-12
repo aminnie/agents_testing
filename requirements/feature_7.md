@@ -212,7 +212,7 @@ Add `data-cy` hooks in `StorePage`:
   - helper methods for pagination interactions
 - `README.md`
   - brief note describing catalog pagination and deep-link behavior
-- `requirements/product_feature7.md`
+- `requirements/feature_7.md`
   - keep this file updated with implementation outcomes
 
 #### Files to Create

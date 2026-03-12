@@ -34,7 +34,7 @@ async function resolveRequirementsReviewPath() {
   if (featureMatch) {
     const featureNumber = featureMatch[1];
     const candidates = [
-      path.join(REQUIREMENTS_DIR, `product_feature${featureNumber}.md`),
+      path.join(REQUIREMENTS_DIR, `feature_${featureNumber}.md`),
       path.join(REQUIREMENTS_DIR, `requirements_feature${featureNumber}.md`),
       path.join(REQUIREMENTS_DIR, `analysis_feature${featureNumber}.md`)
     ];
@@ -49,7 +49,7 @@ async function resolveRequirementsReviewPath() {
   if (bugMatch) {
     const bugNumber = bugMatch[1];
     const candidates = [
-      path.join(REQUIREMENTS_DIR, `product_bug${bugNumber}.md`)
+      path.join(REQUIREMENTS_DIR, `bug_${bugNumber}.md`)
     ];
     for (const candidate of candidates) {
       if (await fileExists(candidate)) {
@@ -85,7 +85,7 @@ async function ensureRequirementsReviewExists(requirementsReviewPath) {
       [
         "Could not infer the requirements review file from the chat prompt.",
         "Provide REQUIREMENTS_REVIEW_PATH with the relevant feature/bug requirements markdown file.",
-        "Example: REQUIREMENTS_REVIEW_PATH=requirements/product_feature11.md."
+        "Example: REQUIREMENTS_REVIEW_PATH=requirements/feature_11.md."
       ].join(" ")
     );
   }

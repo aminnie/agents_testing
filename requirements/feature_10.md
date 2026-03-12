@@ -197,7 +197,7 @@ If reusable selectors grow, add `cypress/pages/RegisterPage.ts` page object foll
    - Add registration CTA below login submit button.
 5. `README.md`
    - Document registration flow and any new run/test notes.
-6. `requirements/product_feature10.md`
+6. `requirements/feature_10.md`
    - Update `What Changed` after implementation is complete.
 
 #### Files to Create

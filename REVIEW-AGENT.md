@@ -75,7 +75,7 @@ Use this agent at the end of implementation:
 2. Verification passes (`npm run test:e2e`, `npm run test:a11y`, and any feature-specific checks).
 3. Run review against changed files.
 4. Fix all unresolved `Critical`/`High` findings.
-5. Write/update `## Review Results` in the active `requirements/product_*.md` file.
+5. Write/update `## Review Results` in the active `requirements/*.md` file.
 6. Re-run verification and provide final review status.
 
 ## Trigger Rule

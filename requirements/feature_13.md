@@ -78,7 +78,7 @@ Why this approach:
    - Keep assertion that unauthenticated help shows only non-link simplified brand.
 3. `cypress/e2e/login.cy.ts` (or registration/help specs as needed)
    - Add/adjust assertion that unauthenticated brand (`data-cy="unauth-store-title"`) is not an interactive `/store` control.
-4. `requirements/product_feature13.md`
+4. `requirements/feature_13.md`
    - After implementation: update `## What Changed`, `## Verification Results`, and `## Review Results`.
 
 ### Build Sequence
@@ -90,7 +90,7 @@ Why this approach:
 3. Run verification:
    - `npm run test:e2e`
    - `npm run test:a11y`
-   - `npm run workflow:final-pass` (with `REQUIREMENTS_REVIEW_PATH=requirements/product_feature13.md` if needed).
+   - `npm run workflow:final-pass` (with `REQUIREMENTS_REVIEW_PATH=requirements/feature_13.md` if needed).
 4. Update requirements artifact sections and append timeline entries for implementation/testing/review phases.
 
 ## Test Strategy
@@ -141,8 +141,8 @@ Why this approach:
   - Result: pass (40 tests passing; PDF generated at `reports/cypress-report-20260311-101941.pdf`).
 - `BACKEND_PORT=4316 FRONTEND_PORT=5216 npm run test:a11y`
   - Result: pass (5 tests passing in `cypress/e2e/accessibility.cy.ts`).
-- `BACKEND_PORT=4316 FRONTEND_PORT=5216 REQUIREMENTS_REVIEW_PATH=requirements/product_feature13.md npm run workflow:final-pass`
-  - Result: pass (final pass complete; requirements artifact resolved to `requirements/product_feature13.md`, PDF generated at `reports/cypress-report-20260311-102158.pdf`).
+- `BACKEND_PORT=4316 FRONTEND_PORT=5216 REQUIREMENTS_REVIEW_PATH=requirements/feature_13.md npm run workflow:final-pass`
+  - Result: pass (final pass complete; requirements artifact resolved to `requirements/feature_13.md`, PDF generated at `reports/cypress-report-20260311-102158.pdf`).
 
 ## Review Results
 

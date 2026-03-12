@@ -198,7 +198,7 @@ Implement top nav + account dropdown pattern:
 - `app/frontend/src/components/HelpPage.jsx`
 - `app/frontend/src/styles.css` (reduce/cleanup legacy CSS)
 - `README.md` (UI stack and style-system note)
-- `requirements/product_feature8.md` (implementation outcomes)
+- `requirements/feature_8.md` (implementation outcomes)
 
 #### Files likely to create
 

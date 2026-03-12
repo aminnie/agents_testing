@@ -82,7 +82,7 @@ This is the smallest safe change because it is localized to existing state owner
      - opening `/register` from login shows empty controls,
      - returning to login then opening `/register` again shows empty controls,
      - login values remain unaffected.
-3. `requirements/product_bug3.md`
+3. `requirements/bug_3.md`
    - Update `## What Changed`, `## Verification Results`, and `## Review Results` after implementation.
 
 ### Build Sequence
@@ -143,8 +143,8 @@ This is the smallest safe change because it is localized to existing state owner
   - Result: pass (39 tests passing; PDF generated at `reports/cypress-report-20260310-221652.pdf`).
 - `npm run test:a11y`
   - Result: pass (5 tests passing in `cypress/e2e/accessibility.cy.ts`).
-- `REQUIREMENTS_REVIEW_PATH=requirements/product_bug3.md npm run workflow:final-pass`
-  - Result: pass (final pass complete; requirements artifact resolved to `requirements/product_bug3.md`, PDF generated at `reports/cypress-report-20260310-222208.pdf`).
+- `REQUIREMENTS_REVIEW_PATH=requirements/bug_3.md npm run workflow:final-pass`
+  - Result: pass (final pass complete; requirements artifact resolved to `requirements/bug_3.md`, PDF generated at `reports/cypress-report-20260310-222208.pdf`).
 
 ## Review Results
 

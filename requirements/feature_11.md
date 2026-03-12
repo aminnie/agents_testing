@@ -211,7 +211,7 @@ Create `app/frontend/src/components/UserAdminPage.jsx`:
    - add admin-only nav action.
 4. `README.md`
    - document admin user-management feature + new admin API notes.
-5. `requirements/product_feature11.md`
+5. `requirements/feature_11.md`
    - update `## What Changed` after implementation.
 
 ### Files to Create

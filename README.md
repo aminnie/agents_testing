@@ -18,7 +18,7 @@ Recommended workflow order:
 1. `AGENTS.md` - start with default project standards and instruction precedence.
 2. `CLARIFICATION-AGENT.md` - finalize requirement details and decisions.
 3. `ANALYSIS-AGENT.md` - create implementation-ready technical blueprint.
-4. Implement code changes (following `AGENTS.md` baseline rules) only after the active `requirements/product_*.md` includes a completed `## Technical Analysis`, status is `Ready for implementation approval`, and the user explicitly confirms implementation.
+4. Implement code changes (following `AGENTS.md` baseline rules) only after the active `requirements/*.md` includes a completed `## Technical Analysis`, status is `Ready for implementation approval`, and the user explicitly confirms implementation.
 5. `CYRPRESS-AGENT.md` - generate/update Cypress/spec and code artifacts and validate behavior.
 6. `SIMPLIFIER-AGENT.md` (optional manual step) - manually invoke when you want a behavior-preserving simplification pass before final review.
 7. `REVIEW-AGENT.md` - run final pass review before handoff/PR.
@@ -29,10 +29,10 @@ When code implementation is triggered (step 4 in the workflow), the agent should
 
 1. Use the clarified requirements and technical analysis as the implementation source of truth.
 2. Confirm the analysis lock is satisfied before coding:
-  - `## Technical Analysis` is complete in the active `requirements/product_*.md`,
+  - `## Technical Analysis` is complete in the active `requirements/*.md`,
   - status is `Ready for implementation approval`,
   - user has explicitly approved implementation in the current thread.
-3. Apply scoped backend/frontend/test/documentation changes required to satisfy the target `requirements/product_feature*.md` or `requirements/product_bug*.md` file.
+3. Apply scoped backend/frontend/test/documentation changes required to satisfy the target `requirements/feature_*.md` or `requirements/bug_*.md` file.
 4. Preserve baseline guardrails from `AGENTS.md` (small safe changes, no destructive operations, no unrelated edits).
 5. Update Cypress/spec artifacts as needed (following `CYRPRESS-AGENT.md`) so behavior is validated and regression-safe.
 6. Run verification commands before handoff:
@@ -52,11 +52,11 @@ Note:
 
 ### Phase Timeline Entry Format
 
-For each `requirements/product_*.md` file, maintain a `## Phase Timeline` section and append entries as work progresses.
+For each `requirements/*.md` file, maintain a `## Phase Timeline` section and append entries as work progresses.
 
 When creating a new requirements artifact, start from:
 
-- `requirements/product_template.md`
+- `requirements/template.md`
 
 Recommended entry format:
 
@@ -88,7 +88,7 @@ Suggested states:
 
 Implementation enforcement:
 
-- During implementation, update the active `requirements/product_*.md` timeline with timestamped entries for:
+- During implementation, update the active `requirements/*.md` timeline with timestamped entries for:
   - `Implementation | Started`
   - `Implementation | Completed`
 - This is enforced as a default change-management requirement in `AGENTS.md`.
@@ -436,24 +436,24 @@ Role types are normalized in the backend as:
 
 Use these prompts to drive the standard feature workflow.  
 
-Start by creating a product_features or product_bug markdown file with the requirements for the change to be applied to the code base.
+Start by creating a feature_<N> or bug_<N> markdown file with the requirements for the change to be applied to the code base.
 
 Feature analysis prompt:
 
 ```text
-Please proceed to analyze requirements/product_feature<N>.md
+Please proceed to analyze requirements/feature_<N>.md
 ```
 
 Bug analysis prompt:
 
 ```text
-Please proceed to analyze requirements/product_bug<N>.md
+Please proceed to analyze requirements/bug_<N>.md
 ```
 
 Example:
 
 ```text
-Please proceed to analyze requirements/product_feature4.md
+Please proceed to analyze requirements/feature_4.md
 ```
 
 Feature implementation prompt:
@@ -487,7 +487,7 @@ Focus on changed files, report findings first by severity, then list open questi
 Requirements clarification / decision finalization prompt:
 
 ```text
-Please update requirements/product_feature<N>.md with the following decisions:
+Please update requirements/feature_<N>.md with the following decisions:
 
 For the Open Questions:
 1. <decision 1>
@@ -504,7 +504,7 @@ If anything is still unclear, return numbered blocking questions and stop.
 Example:
 
 ```text
-Please update requirements/product_feature4.md with the following decisions:
+Please update requirements/feature_4.md with the following decisions:
 
 For the Open Questions:
 1. Also allow manual header override.
@@ -521,7 +521,7 @@ If anything is still unclear, return numbered blocking questions and stop.
 Bug variant:
 
 ```text
-Please update requirements/product_bug<N>.md with the following decisions:
+Please update requirements/bug_<N>.md with the following decisions:
 
 For the Open Questions:
 1. <decision 1>
@@ -541,8 +541,8 @@ Template file:
 End-to-end workflow example:
 
 ```text
-Please proceed to analyze requirements/product_feature4.md
-Please update requirements/product_feature4.md with the following decisions:
+Please proceed to analyze requirements/feature_4.md
+Please update requirements/feature_4.md with the following decisions:
 For the Open Questions:
 1. <decision 1>
 2. <decision 2>
@@ -558,12 +558,12 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
   - If guidance conflicts, `AGENTS.md` is the baseline policy unless a direct user instruction overrides it.
 - `CLARIFICATION-AGENT.md`
   - Use after analysis when open questions need decisions finalized.
-  - Supports both `requirements/product_feature<N>.md` and `requirements/product_bug<N>.md`.
+  - Supports both `requirements/feature_<N>.md` and `requirements/bug_<N>.md`.
   - Output writes decisions into `## Clarification Decisions` in the same requirements file.
   - If unresolved items remain, return numbered blocking questions and hard stop (no assumptions).
   - Example prompt:
     ```text
-    Please update requirements/product_feature5.md with the following decisions:
+    Please update requirements/feature_5.md with the following decisions:
 
     For the Open Questions:
     1. Keep manager/admin access.
@@ -577,7 +577,7 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     ```
 - `ANALYSIS-AGENT.md`
   - Use when you want a full architecture analysis before coding.
-  - Supports both `requirements/product_feature<N>.md` and `requirements/product_bug<N>.md`.
+  - Supports both `requirements/feature_<N>.md` and `requirements/bug_<N>.md`.
   - Output updates the same requirements file with:
     - `## Technical Analysis`
     - `## Implementation Plan`
@@ -586,7 +586,7 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
   - If unresolved requirements remain, return numbered blocking questions and hard stop.
   - Example prompt:
     ```text
-    Please proceed to analyze requirements/product_feature5.md
+    Please proceed to analyze requirements/feature_5.md
     ```
     Notes on what to typically expect of the analysis run:
     - current-state gap analysis vs requested behavior
@@ -615,7 +615,7 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
 
 Recommended sequence once a new feature requirement is written:
 
-1. Run analysis against `requirements/product_feature<N>.md` or `requirements/product_bug<N>.md` (architecture + plan); if blocking questions remain, stop for clarification answers.
+1. Run analysis against `requirements/feature_<N>.md` or `requirements/bug_<N>.md` (architecture + plan); if blocking questions remain, stop for clarification answers.
 2. Run clarification to resolve open questions and finalize decisions in `## Clarification Decisions`; if blocking questions remain, stop until answers are provided.
 3. Implement Feature `<N>` in code.
 4. Use Cypress agent guidance to add/update E2E coverage as needed.
@@ -644,13 +644,13 @@ What it does:
   - `## Verification Results`
   - `## Review Results`
 
-## FAQ: Are `product_*.md` Files Used as Context?
+## FAQ: Are `feature_*.md / bug_*.md` Files Used as Context?
 
-Yes. `requirements/product_*.md` artifacts are intended to be active context throughout the workflow (clarification -> analysis -> implementation -> review), but they are not always auto-loaded unless referenced or inferred.
+Yes. `requirements/*.md` artifacts are intended to be active context throughout the workflow (clarification -> analysis -> implementation -> review), but they are not always auto-loaded unless referenced or inferred.
 
 How this works in practice:
 
-- `AGENTS.md` and specialized `*-AGENT.md` templates treat the active `requirements/product_*.md` file as the source-of-truth artifact.
+- `AGENTS.md` and specialized `*-AGENT.md` templates treat the active `requirements/*.md` file as the source-of-truth artifact.
 - `workflow:final-pass` attempts to resolve the relevant requirements file from:
   - `REQUIREMENTS_REVIEW_PATH`, or
   - prompt context (`requirements/...md`, `feature <N>`, `bug <N>`).
@@ -662,7 +662,7 @@ How this works in practice:
 
 Recommendation:
 
-- For reliable context, explicitly reference the file in prompts (for example `@requirements/product_bug5.md`) or provide `REQUIREMENTS_REVIEW_PATH=requirements/product_bug5.md`.
+- For reliable context, explicitly reference the file in prompts (for example `@requirements/bug_5.md`) or provide `REQUIREMENTS_REVIEW_PATH=requirements/bug_5.md`.
 
 ## PR/Release Checklist
 

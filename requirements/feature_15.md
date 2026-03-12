@@ -195,7 +195,7 @@ Implemented and verified
     - Add address prefill/edit/validation scenarios.
 15. `specs/admin-user-management.feature`
     - Add admin address edit behavior scenario.
-16. `requirements/product_feature15.md`
+16. `requirements/feature_15.md`
     - Update `## What Changed`, `## Verification Results`, and `## Review Results` after implementation/testing/review.
 
 ### Build Sequence
@@ -286,8 +286,8 @@ Implemented and verified
   - Result: pass (45/45 tests). PDF generated at `reports/cypress-report-20260311-121157.pdf`.
 - `npm run test:a11y`
   - Result: pass (5/5 tests in `cypress/e2e/accessibility.cy.ts`).
-- `REQUIREMENTS_REVIEW_PATH=requirements/product_feature15.md npm run workflow:final-pass`
-  - Result: pass. Final-pass completed with `requirements/product_feature15.md`.
+- `REQUIREMENTS_REVIEW_PATH=requirements/feature_15.md npm run workflow:final-pass`
+  - Result: pass. Final-pass completed with `requirements/feature_15.md`.
 - `snyk_code_scan` on `/Users/anton.minnie/agents_testing`
   - Result: pass (`issueCount: 0`) after remediating one medium hardcoded-password finding in a modified Cypress spec.
 

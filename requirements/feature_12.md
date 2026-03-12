@@ -115,7 +115,7 @@ This approach minimizes risk by reusing current list/pagination design while mee
    - Add search + pagination interaction scenarios or create dedicated search spec.
 8. `README.md`
    - Document catalog search behavior, URL parameter usage, and validation notes.
-9. `requirements/product_feature12.md`
+9. `requirements/feature_12.md`
    - Update `## What Changed` and `## Verification Results` after implementation.
 
 ### Files to Create

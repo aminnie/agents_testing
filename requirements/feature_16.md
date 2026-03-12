@@ -208,7 +208,7 @@ Trade-offs:
 
 1. `BACKEND_PORT=4100 FRONTEND_PORT=5180 npm run test:e2e` -> Passed (all 10 specs, 45 tests).
 2. `BACKEND_PORT=4100 FRONTEND_PORT=5180 npm run test:a11y` -> Passed (accessibility baseline spec, 5 tests).
-3. `BACKEND_PORT=4100 FRONTEND_PORT=5180 REQUIREMENTS_REVIEW_PATH=requirements/product_requirements16.md npm run workflow:final-pass` -> Passed.
+3. `BACKEND_PORT=4100 FRONTEND_PORT=5180 REQUIREMENTS_REVIEW_PATH=requirements/feature_16.md npm run workflow:final-pass` -> Passed.
 4. `snyk_code_scan` on changed source scope:
    - `/Users/anton.minnie/agents_testing/app/backend/src` -> `issueCount: 0`
    - `/Users/anton.minnie/agents_testing/cypress/e2e/checkout.cy.ts` -> `issueCount: 0`

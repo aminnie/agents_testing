@@ -1,4 +1,4 @@
-As a store Product Owner, I would like to refactor the admin User edit page to function and be styled in the same fashion as the Catalog items list and search we implemented in @requirements\product_requirements8.md.
+As a store Product Owner, I would like to refactor the admin User edit page to function and be styled in the same fashion as the Catalog items list and search we implemented in @requirements/feature_8.md.
 
 Please proceed to refactor the User list and edit Page to:
 1. Present an initial list of users in a pages format with the same page list behaviors as the Catalog list page
@@ -171,7 +171,7 @@ Why this approach:
 3. Run full verification gates before handoff:
    - `npm run test:e2e`
    - `npm run test:a11y`
-   - `REQUIREMENTS_REVIEW_PATH=requirements/product_feature14.md npm run workflow:final-pass`
+   - `REQUIREMENTS_REVIEW_PATH=requirements/feature_14.md npm run workflow:final-pass`
 
 ## What Changed
 
@@ -197,8 +197,8 @@ Why this approach:
   - Result: pass (42 tests passing; PDF generated at `reports/cypress-report-20260311-111931.pdf`).
 - `BACKEND_PORT=4333 FRONTEND_PORT=5233 npm run test:a11y`
   - Result: pass (5 tests passing in `cypress/e2e/accessibility.cy.ts`).
-- `BACKEND_PORT=4334 FRONTEND_PORT=5234 REQUIREMENTS_REVIEW_PATH=requirements/product_feature14.md npm run workflow:final-pass`
-  - Result: pass (final-pass completed with artifact `requirements/product_feature14.md`; PDF generated at `reports/cypress-report-20260311-112451.pdf`).
+- `BACKEND_PORT=4334 FRONTEND_PORT=5234 REQUIREMENTS_REVIEW_PATH=requirements/feature_14.md npm run workflow:final-pass`
+  - Result: pass (final-pass completed with artifact `requirements/feature_14.md`; PDF generated at `reports/cypress-report-20260311-112451.pdf`).
 
 ## Review Results
 

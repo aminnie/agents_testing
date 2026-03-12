@@ -131,7 +131,7 @@ When implementing changes:
 4. Verify with build/lint/tests as appropriate for the scope.
 5. Update tests/specifications/documentation impacted by the change.
 6. Summarize what changed and why.
-7. Update `## Phase Timeline` in the active `requirements/product_*.md` file with timestamped phase entries, including at minimum:
+7. Update `## Phase Timeline` in the active `requirements/*.md` file with timestamped phase entries, including at minimum:
    - `Implementation | Started`
    - `Implementation | Completed`
 8. Include LLM usage tracking in `## Phase Timeline` entries:
@@ -143,7 +143,7 @@ When implementing changes:
 
 Do not start code changes until the user explicitly approves implementation for the active requirement.
 
-Implementation is only eligible to start after a completed technical analysis is documented in the active `requirements/product_*.md` file.
+Implementation is only eligible to start after a completed technical analysis is documented in the active `requirements/*.md` file.
 
 Required flow:
 
@@ -164,7 +164,7 @@ If approval is ambiguous or missing, remain in read-only clarification/analysis 
 
 ### 11.2) Technical analysis lock (mandatory before implementation)
 
-No implementation commands or code edits are allowed until all of the following are true in the active `requirements/product_*.md` file:
+No implementation commands or code edits are allowed until all of the following are true in the active `requirements/*.md` file:
 
 1. `## Technical Analysis` exists and is populated (not a placeholder).
 2. Analysis contains at minimum:
