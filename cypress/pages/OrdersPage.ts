@@ -1,0 +1,17 @@
+export class OrdersPage {
+  title() {
+    return cy.get('[data-cy="orders-page-title"]');
+  }
+
+  list() {
+    return cy.get('[data-cy="orders-list"]');
+  }
+
+  emptyState() {
+    return cy.get('[data-cy="orders-empty"]');
+  }
+
+  errorMessage() {
+    return cy.get('[data-cy="orders-error"]');
+  }
+}

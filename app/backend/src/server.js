@@ -777,6 +777,28 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
   });
 });
 
+app.get("/api/orders", authMiddleware, async (req, res) => {
+  const rows = await db.all(
+    `SELECT
+      id,
+      public_order_id AS publicOrderId,
+      total_cents AS totalCents,
+      created_at AS createdAt
+    FROM orders
+    WHERE user_id = ?
+    ORDER BY created_at DESC, id DESC`,
+    req.userId
+  );
+
+  res.json({
+    orders: rows.map((row) => ({
+      orderId: row.publicOrderId || createPublicOrderId(row.id, row.createdAt),
+      createdAt: row.createdAt,
+      totalCents: row.totalCents
+    }))
+  });
+});
+
 initDb()
   .then((database) => {
     db = database;

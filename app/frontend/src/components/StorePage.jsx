@@ -1,6 +1,7 @@
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import {
   Box,
@@ -34,6 +35,7 @@ export default function StorePage({
   onViewItem,
   onEditItem,
   onGoCheckout,
+  onGoOrders,
   isProductManagementEnabled,
   pagination,
   onFirstPage,
@@ -86,6 +88,15 @@ export default function StorePage({
                   variant="outlined"
                 >
                   Clear
+                </Button>
+                <Button
+                  data-cy="go-to-orders"
+                  onClick={onGoOrders}
+                  startIcon={<ReceiptLongIcon />}
+                  type="button"
+                  variant="outlined"
+                >
+                  View orders
                 </Button>
               </Stack>
             </Box>

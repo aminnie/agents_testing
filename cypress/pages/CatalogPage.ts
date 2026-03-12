@@ -31,6 +31,10 @@ export class CatalogPage {
     cy.get('[data-cy="catalog-new-product"]').click();
   }
 
+  goToOrders() {
+    cy.get('[data-cy="go-to-orders"]').click();
+  }
+
   openNewProductFromHeader() {
     cy.get('[data-cy="nav-new-product"]').click();
   }

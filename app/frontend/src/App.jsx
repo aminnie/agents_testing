@@ -6,6 +6,7 @@ import CheckoutPage from "./components/CheckoutPage.jsx";
 import HelpPage from "./components/HelpPage.jsx";
 import ItemDetailPage from "./components/ItemDetailPage.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
+import OrdersPage from "./components/OrdersPage.jsx";
 import ProductFormPage from "./components/ProductFormPage.jsx";
 import RegisterScreen from "./components/RegisterScreen.jsx";
 import StorePage from "./components/StorePage.jsx";
@@ -185,6 +186,9 @@ function StoreApp() {
   const [cardNumber, setCardNumber] = useState("");
   const [checkoutAddress, setCheckoutAddress] = useState(() => normalizeAddress(currentUser));
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersError, setOrdersError] = useState("");
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const currentSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const [searchInput, setSearchInput] = useState(() => currentSearchParams.get("q") || "");
   const [searchError, setSearchError] = useState("");
@@ -232,6 +236,9 @@ function StoreApp() {
     setNameOnCard("");
     setCardNumber("");
     setCheckoutAddress(createEmptyAddress());
+    setOrders([]);
+    setOrdersError("");
+    setLoadingOrders(false);
   }
 
   useEffect(() => {
@@ -313,6 +320,49 @@ function StoreApp() {
       })
       .finally(() => setLoadingCatalog(false));
   }, [token, activeSearchQuery]);
+
+  useEffect(() => {
+    if (!token || location.pathname !== "/orders") {
+      return;
+    }
+
+    setLoadingOrders(true);
+    fetch("/api/orders", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then(async (response) => {
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch {
+          payload = {};
+        }
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("SESSION_INVALID");
+          }
+          throw new Error(payload.message || "Could not load orders");
+        }
+        return payload;
+      })
+      .then((data) => {
+        setOrdersError("");
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
+      })
+      .catch((error) => {
+        if (String(error?.message || "") === "SESSION_INVALID") {
+          clearSession();
+          setAuthError("Session expired. Please sign in again.");
+          return;
+        }
+        setOrders([]);
+        setOrdersError(String(error?.message || "Could not load orders"));
+      })
+      .finally(() => setLoadingOrders(false));
+  }, [token, location.pathname]);
 
   function persistAuth(nextToken, user) {
     localStorage.setItem(STORAGE_KEYS.auth, nextToken);
@@ -717,6 +767,7 @@ function StoreApp() {
               onEditItem={viewProductEditor}
               onViewItem={viewItem}
               onGoCheckout={() => navigate("/checkout")}
+              onGoOrders={() => navigate("/orders")}
               pagination={{
                 currentPage,
                 totalPages,
@@ -730,6 +781,17 @@ function StoreApp() {
               onPageSizeChange={(nextPageSize) => goToPage(1, nextPageSize)}
               isProductManagementEnabled={isProductManager}
               totalLabel={formatPrice}
+            />
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <OrdersPage
+              errorMessage={ordersError}
+              formatPrice={formatPrice}
+              loading={loadingOrders}
+              orders={orders}
             />
           }
         />

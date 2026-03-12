@@ -88,6 +88,7 @@ function runA11yAudit(scope: string, context: string = "body") {
   it("should pass WCAG checks on authenticated core pages", () => {
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog*").as("catalog");
+    cy.intercept("GET", "/api/orders").as("orders");
 
     cy.loginUi();
     cy.wait("@login").its("response.statusCode").should("eq", 200);
@@ -106,7 +107,15 @@ function runA11yAudit(scope: string, context: string = "body") {
     cy.get('[data-cy="catalog-search-clear"]').click();
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
+    // Orders list page
+    cy.get('[data-cy="go-to-orders"]').click();
+    cy.location("pathname").should("eq", "/orders");
+    cy.wait("@orders").its("response.statusCode").should("be.oneOf", [200, 304]);
+    cy.get('[data-cy="orders-page-title"]').should("be.visible");
+    runA11yAudit("orders");
+
     // Item detail page
+    cy.get('[data-cy="nav-store"]').click();
     cy.get('[data-cy^="catalog-view-"]').first().click();
     cy.get('[data-cy="item-detail-page"]').should("be.visible");
     runA11yAudit("item-detail");
