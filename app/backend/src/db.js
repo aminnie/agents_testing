@@ -61,6 +61,17 @@ function looksHashedPassword(password) {
   return /^\$2[abxy]\$\d{2}\$/.test(String(password || ""));
 }
 
+async function addMissingColumns(db, tableName, columns) {
+  const tableColumns = await db.all(`PRAGMA table_info(${tableName})`);
+  const existingColumns = new Set(tableColumns.map((column) => column.name));
+  for (const column of columns) {
+    if (existingColumns.has(column.name)) {
+      continue;
+    }
+    await db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${column.definition}`);
+  }
+}
+
 const DEFAULT_PRIMARY_DEMO_PASSWORD = process.env.DEMO_USER_PASSWORD
   || stringFromCharCodes([67, 111, 114, 114, 101, 99, 116, 72, 111, 114, 115, 101, 66, 97, 116, 116, 101, 114, 121, 83, 116, 97, 112, 108, 101, 49, 33]);
 const DEFAULT_SECONDARY_DEMO_PASSWORD = process.env.DEMO_TEAM_PASSWORD
@@ -216,57 +227,23 @@ export async function initDb() {
     );
   }
 
-  const userColumns = await db.all("PRAGMA table_info(users)");
-  const hasRoleId = userColumns.some((column) => column.name === "role_id");
-  const hasDisplayName = userColumns.some((column) => column.name === "display_name");
-  const hasStreet = userColumns.some((column) => column.name === "street");
-  const hasCity = userColumns.some((column) => column.name === "city");
-  const hasPostalCode = userColumns.some((column) => column.name === "postal_code");
-  const hasCountry = userColumns.some((column) => column.name === "country");
-  if (!hasRoleId) {
-    await db.exec("ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES role_types(id)");
-  }
-  if (!hasDisplayName) {
-    await db.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
-  }
-  if (!hasStreet) {
-    await db.exec("ALTER TABLE users ADD COLUMN street TEXT");
-  }
-  if (!hasCity) {
-    await db.exec("ALTER TABLE users ADD COLUMN city TEXT");
-  }
-  if (!hasPostalCode) {
-    await db.exec("ALTER TABLE users ADD COLUMN postal_code TEXT");
-  }
-  if (!hasCountry) {
-    await db.exec("ALTER TABLE users ADD COLUMN country TEXT");
-  }
+  await addMissingColumns(db, "users", [
+    { name: "role_id", definition: "role_id INTEGER REFERENCES role_types(id)" },
+    { name: "display_name", definition: "display_name TEXT" },
+    { name: "street", definition: "street TEXT" },
+    { name: "city", definition: "city TEXT" },
+    { name: "postal_code", definition: "postal_code TEXT" },
+    { name: "country", definition: "country TEXT" }
+  ]);
 
-  const orderColumns = await db.all("PRAGMA table_info(orders)");
-  const hasPublicOrderId = orderColumns.some((column) => column.name === "public_order_id");
-  const hasShippingStreet = orderColumns.some((column) => column.name === "shipping_street");
-  const hasShippingCity = orderColumns.some((column) => column.name === "shipping_city");
-  const hasShippingPostalCode = orderColumns.some((column) => column.name === "shipping_postal_code");
-  const hasShippingCountry = orderColumns.some((column) => column.name === "shipping_country");
-  const hasPaymentNameOnCard = orderColumns.some((column) => column.name === "payment_name_on_card");
-  if (!hasPublicOrderId) {
-    await db.exec("ALTER TABLE orders ADD COLUMN public_order_id TEXT");
-  }
-  if (!hasShippingStreet) {
-    await db.exec("ALTER TABLE orders ADD COLUMN shipping_street TEXT");
-  }
-  if (!hasShippingCity) {
-    await db.exec("ALTER TABLE orders ADD COLUMN shipping_city TEXT");
-  }
-  if (!hasShippingPostalCode) {
-    await db.exec("ALTER TABLE orders ADD COLUMN shipping_postal_code TEXT");
-  }
-  if (!hasShippingCountry) {
-    await db.exec("ALTER TABLE orders ADD COLUMN shipping_country TEXT");
-  }
-  if (!hasPaymentNameOnCard) {
-    await db.exec("ALTER TABLE orders ADD COLUMN payment_name_on_card TEXT");
-  }
+  await addMissingColumns(db, "orders", [
+    { name: "public_order_id", definition: "public_order_id TEXT" },
+    { name: "shipping_street", definition: "shipping_street TEXT" },
+    { name: "shipping_city", definition: "shipping_city TEXT" },
+    { name: "shipping_postal_code", definition: "shipping_postal_code TEXT" },
+    { name: "shipping_country", definition: "shipping_country TEXT" },
+    { name: "payment_name_on_card", definition: "payment_name_on_card TEXT" }
+  ]);
 
   await db.exec("CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)");
   await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_public_order_id ON orders(public_order_id)");

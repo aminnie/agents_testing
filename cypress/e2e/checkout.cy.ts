@@ -6,6 +6,11 @@ describe("Feature: Checkout", () => {
   const catalogPage = new CatalogPage();
   const publicOrderIdPattern = /^[0-1][0-9][0-3][0-9][0-9]{4}-[0-9]{5}$/;
 
+  function assertCheckoutResponseSuccess(response: Cypress.Response<any> | undefined) {
+    expect(response?.statusCode).to.eq(201);
+    expect(response?.body?.orderId).to.match(publicOrderIdPattern);
+  }
+
   function assertCheckoutSuccessOnlyMessage() {
     checkoutPage.successMessage().should("contain", "Order confirmed");
     cy.get('[data-cy="checkout-form"]').should("not.exist");
@@ -34,8 +39,7 @@ describe("Feature: Checkout", () => {
     checkoutPage.submit();
 
     cy.wait("@checkout").then(({ request, response }) => {
-      expect(response?.statusCode).to.eq(201);
-      expect(response?.body?.orderId).to.match(publicOrderIdPattern);
+      assertCheckoutResponseSuccess(response);
       expect(request.body.address).to.deep.equal({
         street: "101 Test Street",
         city: "Austin",
@@ -70,8 +74,7 @@ describe("Feature: Checkout", () => {
     checkoutPage.submit();
 
     cy.wait("@checkout").then(({ request, response }) => {
-      expect(response?.statusCode).to.eq(201);
-      expect(response?.body?.orderId).to.match(publicOrderIdPattern);
+      assertCheckoutResponseSuccess(response);
       expect(request.body.payment).to.deep.include({
         nameOnCard: "Anton Minnie",
         cardNumber: "4242424242424242"
@@ -90,8 +93,7 @@ describe("Feature: Checkout", () => {
     checkoutPage.submit();
 
     cy.wait("@checkout").then(({ request, response }) => {
-      expect(response?.statusCode).to.eq(201);
-      expect(response?.body?.orderId).to.match(publicOrderIdPattern);
+      assertCheckoutResponseSuccess(response);
       expect(request.body.payment).to.deep.include({
         nameOnCard: "Anton Minnie",
         cardNumber: "12345"
