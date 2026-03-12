@@ -5,7 +5,7 @@ This folder is the source of truth for behavior-level E2E scenarios.
 ## Workflow
 
 1. Write or update a `.feature` file in `specs/`.
-2. Ask your AI agent to generate Cypress tests using `CYRPRESS-AGENT.md`.
+2. Ask your AI agent to generate Cypress tests using `AGENT-CYRPRESS.md`.
 3. Review generated files in:
    - `cypress/e2e/`
    - `cypress/pages/`

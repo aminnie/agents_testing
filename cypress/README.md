@@ -15,6 +15,6 @@ cypress/
 ## Spec-Driven Flow
 
 1. Author behavior in `specs/*.feature`.
-2. Generate tests with `CYRPRESS-AGENT.md`.
+2. Generate tests with `AGENT-CYRPRESS.md`.
 3. Save generated tests under `cypress/e2e/`.
 4. Keep reusable interaction code in `cypress/pages/`.

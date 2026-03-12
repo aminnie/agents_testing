@@ -1,4 +1,4 @@
-To help validate the consolidated CYRPRESS-AGENT.md guidance, we plan to create a small ecommerce application.
+To help validate the consolidated AGENT-CYRPRESS.md guidance, we plan to create a small ecommerce application.
 
 The application supports the following Application Features:
 - A storefront web application that enables a user to:

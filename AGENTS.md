@@ -4,17 +4,17 @@ Project-wide guidance for human contributors and AI coding agents.
 
 This file defines baseline engineering standards for this repository.
 
-For a quick summary of each `*-AGENT.md` file and the recommended execution sequence, see `README.md` under `Agent Files and Workflow Order`.
+For a quick summary of each `AGENT-*.md` file and the recommended execution sequence, see `README.md` under `Agent Files and Workflow Order`.
 
 ## Agent Entry Points
 
 Use these files by intent:
 
 - `AGENTS.md` - high-level, cross-tool project standards and guardrails.
-- `ANALYSIS-AGENT.md` - technical/architecture analysis workflow.
-- `CLARIFICATION-AGENT.md` - requirements decision-finalization workflow.
-- `CYRPRESS-AGENT.md` - Cypress generation and test-maintenance workflow.
-- `REVIEW-AGENT.md` - final code review workflow and reporting format.
+- `AGENT-ANALYSIS.md` - technical/architecture analysis workflow.
+- `AGENT-CLARIFICATION.md` - requirements decision-finalization workflow.
+- `AGENT-CYRPRESS.md` - Cypress generation and test-maintenance workflow.
+- `AGENT-REVIEW.md` - final code review workflow and reporting format.
 
 ## Instruction Precedence (When Instructions Conflict)
 
@@ -22,7 +22,7 @@ Apply instructions in this order:
 
 1. direct user instruction for the current task
 2. `AGENTS.md` project-wide policy
-3. specialized `*-AGENT.md` workflow files
+3. specialized `AGENT-*.md` workflow files
 4. README/examples/reference docs
 
 If conflict remains after this order, stop and ask the user for a decision.
@@ -105,7 +105,7 @@ Prefer small, reversible changes over broad risky rewrites.
 
 For Cypress conventions, selectors, and generation flow, use:
 
-- `CYRPRESS-AGENT.md`
+- `AGENT-CYRPRESS.md`
 
 ## 9) API and Data Guidelines
 
@@ -204,7 +204,7 @@ Run these scripts before final handoff (when applicable):
 AI agents working in this repo should:
 
 - follow this file for general engineering behavior
-- follow `CYRPRESS-AGENT.md` for Cypress-related work
+- follow `AGENT-CYRPRESS.md` for Cypress-related work
 - preserve existing user changes and avoid unrelated edits
 - avoid destructive operations unless explicitly requested
 - prefer reproducible, script-based workflows
@@ -213,7 +213,7 @@ AI agents working in this repo should:
 
 When the user asks for a code review (for example: "review this", "run review", "final review"), agents should:
 
-1. use `REVIEW-AGENT.md` as the default review rubric,
+1. use `AGENT-REVIEW.md` as the default review rubric,
 2. present findings first in severity order,
 3. prioritize correctness/security/regression risks,
 4. include residual test gaps and assumptions.

@@ -7,11 +7,11 @@ Pasted source: `Agent Guidelines for incident-escalation`
 Compared against current project agent docs:
 
 - `AGENTS.md`
-- `ANALYSIS-AGENT.md`
-- `CLARIFICATION-AGENT.md`
-- `CYRPRESS-AGENT.md`
-- `SIMPLIFIER-AGENT.md`
-- `REVIEW-AGENT.md`
+- `AGENT-ANALYSIS.md`
+- `AGENT-CLARIFICATION.md`
+- `AGENT-CYRPRESS.md`
+- `AGENT-SIMPLIFIER.md`
+- `AGENT-REVIEW.md`
 
 ## 1) Comparison Summary
 

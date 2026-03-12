@@ -20,4 +20,4 @@ Use these standards for any Cypress-related code or guidance in this repository.
 For detailed project guidance:
 
 - Use `AGENTS.md` for general engineering and change-management standards.
-- Use `CYRPRESS-AGENT.md` for Cypress-specific standards and generation workflow.
+- Use `AGENT-CYRPRESS.md` for Cypress-specific standards and generation workflow.

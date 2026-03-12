@@ -17,6 +17,6 @@ When asked to create or update Cypress tests, treat `specs/*.feature` as the beh
 - Keep generated outputs modular; do not create one oversized test file.
 - Ensure outputs comply with:
   - `AGENTS.md` for project-wide standards.
-  - `CYRPRESS-AGENT.md` for Cypress testing/generation standards.
+  - `AGENT-CYRPRESS.md` for Cypress testing/generation standards.
 
 If a feature has multiple workflows, split into multiple Cypress spec files.

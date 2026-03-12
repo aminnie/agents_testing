@@ -131,7 +131,7 @@ This approach minimizes risk by reusing current list/pagination design while mee
 4. Cypress page object updates + new catalog search spec/tests.
 5. Accessibility coverage update for search/no-results states.
 6. Documentation + requirements `## What Changed` / `## Verification Results`.
-7. Final verification via `npm run workflow:final-pass` and review via `REVIEW-AGENT.md`.
+7. Final verification via `npm run workflow:final-pass` and review via `AGENT-REVIEW.md`.
 
 ## Test Strategy
 

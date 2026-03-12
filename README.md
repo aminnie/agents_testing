@@ -7,21 +7,21 @@ This repository contains a small web store application that is used to develop a
 This project includes the following agent guidance files used to drive the development process:
 
 - `AGENTS.md` - default baseline engineering policy and instruction precedence for all work in this repository.
-- `CLARIFICATION-AGENT.md` - refines ambiguous requirement or bug requests into explicit, testable requirements and acceptance criteria before build work starts.
-- `ANALYSIS-AGENT.md` - produces technical analysis, architecture decisions, implementation map, and risk/test strategy for a selected requirement file.
-- `CYRPRESS-AGENT.md` - defines Cypress generation/maintenance standards, selector rules, and spec-driven test workflow for `specs/*.feature`.
-- `SIMPLIFIER-AGENT.md` - runs behavior-preserving refactor/simplification passes on changed code to improve readability and maintainability (optional manual step).
-- `REVIEW-AGENT.md` - performs final review with findings-first reporting focused on correctness, regression risk, and security.
+- `AGENT-CLARIFICATION.md` - refines ambiguous requirement or bug requests into explicit, testable requirements and acceptance criteria before build work starts.
+- `AGENT-ANALYSIS.md` - produces technical analysis, architecture decisions, implementation map, and risk/test strategy for a selected requirement file.
+- `AGENT-CYRPRESS.md` - defines Cypress generation/maintenance standards, selector rules, and spec-driven test workflow for `specs/*.feature`.
+- `AGENT-SIMPLIFIER.md` - runs behavior-preserving refactor/simplification passes on changed code to improve readability and maintainability (optional manual step).
+- `AGENT-REVIEW.md` - performs final review with findings-first reporting focused on correctness, regression risk, and security.
 
 Recommended workflow order:
 
 1. `AGENTS.md` - start with default project standards and instruction precedence.
-2. `CLARIFICATION-AGENT.md` - finalize requirement details and decisions.
-3. `ANALYSIS-AGENT.md` - create implementation-ready technical blueprint.
+2. `AGENT-CLARIFICATION.md` - finalize requirement details and decisions.
+3. `AGENT-ANALYSIS.md` - create implementation-ready technical blueprint.
 4. Implement code changes (following `AGENTS.md` baseline rules) only after the active `requirements/*.md` includes a completed `## Technical Analysis`, status is `Ready for implementation approval`, and the user explicitly confirms implementation.
-5. `CYRPRESS-AGENT.md` - generate/update Cypress/spec and code artifacts and validate behavior.
-6. `SIMPLIFIER-AGENT.md` (optional manual step) - manually invoke when you want a behavior-preserving simplification pass before final review.
-7. `REVIEW-AGENT.md` - run final pass review before handoff/PR.
+5. `AGENT-CYRPRESS.md` - generate/update Cypress/spec and code artifacts and validate behavior.
+6. `AGENT-SIMPLIFIER.md` (optional manual step) - manually invoke when you want a behavior-preserving simplification pass before final review.
+7. `AGENT-REVIEW.md` - run final pass review before handoff/PR.
 
 ### Code Implementation Trigger Summary
 
@@ -34,7 +34,7 @@ When code implementation is triggered (step 4 in the workflow), the agent should
   - user has explicitly approved implementation in the current thread.
 3. Apply scoped backend/frontend/test/documentation changes required to satisfy the target `requirements/feature_*.md` or `requirements/bug_*.md` file.
 4. Preserve baseline guardrails from `AGENTS.md` (small safe changes, no destructive operations, no unrelated edits).
-5. Update Cypress/spec artifacts as needed (following `CYRPRESS-AGENT.md`) so behavior is validated and regression-safe.
+5. Update Cypress/spec artifacts as needed (following `AGENT-CYRPRESS.md`) so behavior is validated and regression-safe.
 6. Run verification commands before handoff:
   - `npm run test:e2e (spec driven smoke and regression tests)`
   - `npm run test:a11y (accessibility testing portfolio)`
@@ -47,8 +47,8 @@ When code implementation is triggered (step 4 in the workflow), the agent should
 
 Note:
 
-- Code review is part of the recommended workflow (`REVIEW-AGENT.md`), but it is not implicitly auto-triggered by code edits unless your orchestration explicitly invokes it (or the user requests a review).
-- `SIMPLIFIER-AGENT.md` is an optional manual step and runs only when explicitly invoked (it is not auto-triggered).
+- Code review is part of the recommended workflow (`AGENT-REVIEW.md`), but it is not implicitly auto-triggered by code edits unless your orchestration explicitly invokes it (or the user requests a review).
+- `AGENT-SIMPLIFIER.md` is an optional manual step and runs only when explicitly invoked (it is not auto-triggered).
 
 ### Phase Timeline Entry Format
 
@@ -117,17 +117,13 @@ Why it matters:
 - prevents incomplete handoff by enforcing core regression and accessibility checks,
 - ensures the requirements artifact documents what shipped and how it was validated.
 
-
-
 Next Up:
 
-- Explore agent skills and plug-ins to provide more advanced guidance and capabilities (e.g. Jira integration). 
-
-
+- Explore agent skills and plug-ins to provide more advanced guidance and capabilities (e.g. Jira integration).
 
 ## What is included in the Web Store Application
 
-- Backend API (`app/backend`) with SQLite seed data:
+- Backend API (`app/backend`) with SQLite seed data (initial specifications):
   - 20 catalog items
   - 5 login users
 - React frontend (`app/frontend`) for:
@@ -436,7 +432,7 @@ Role types are normalized in the backend as:
 
 Use these prompts to drive the standard feature workflow.  
 
-Start by creating a feature_<N> or bug_<N> markdown file with the requirements for the change to be applied to the code base.
+Start by creating a feature_ or bug_ markdown file with the requirements for the change to be applied to the code base.
 
 Feature analysis prompt:
 
@@ -472,7 +468,7 @@ Feature implementation + end-of-build review prompt:
 
 ```text
 Please proceed to implement Feature <N>.
-After coding and tests pass, run a final code review using REVIEW-AGENT.md guidance focused on changed files.
+After coding and tests pass, run a final code review using AGENT-REVIEW.md guidance focused on changed files.
 Report findings by severity (`Critical`, `High`, `Medium`, `Low`), fix unresolved `Critical`/`High` issues, and summarize remaining medium/low recommendations.
 If unresolved `Critical`/`High` findings remain, set `Status: Blocked pending fixes or explicit approval`.
 ```
@@ -480,7 +476,7 @@ If unresolved `Critical`/`High` findings remain, set `Status: Blocked pending fi
 Code review request prompt (standalone):
 
 ```text
-Please run a code review using REVIEW-AGENT.md.
+Please run a code review using AGENT-REVIEW.md.
 Focus on changed files, report findings first by severity, then list open questions and test gaps.
 ```
 
@@ -536,7 +532,7 @@ If anything is still unclear, return numbered blocking questions and stop.
 
 Template file:
 
-- `CLARIFICATION-AGENT.md`
+- `AGENT-CLARIFICATION.md`
 
 End-to-end workflow example:
 
@@ -551,12 +547,12 @@ Please proceed to implement Feature 4
 
 ## Agent Files and Sequence
 
-Use these `*-AGENT.md` files for different stages of feature delivery:
+Use these `AGENT-*.md` files for different stages of feature delivery:
 
 - `AGENTS.md`
   - Use for high-level, cross-tool project standards and guardrails.
   - If guidance conflicts, `AGENTS.md` is the baseline policy unless a direct user instruction overrides it.
-- `CLARIFICATION-AGENT.md`
+- `AGENT-CLARIFICATION.md`
   - Use after analysis when open questions need decisions finalized.
   - Supports both `requirements/feature_<N>.md` and `requirements/bug_<N>.md`.
   - Output writes decisions into `## Clarification Decisions` in the same requirements file.
@@ -575,7 +571,7 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
 
     If anything is still unclear, return numbered blocking questions and stop.
     ```
-- `ANALYSIS-AGENT.md`
+- `AGENT-ANALYSIS.md`
   - Use when you want a full architecture analysis before coding.
   - Supports both `requirements/feature_<N>.md` and `requirements/bug_<N>.md`.
   - Output updates the same requirements file with:
@@ -596,20 +592,20 @@ Use these `*-AGENT.md` files for different stages of feature delivery:
     - detailed file-by-file implementation map
     - data flow, phased build sequence, and critical details
     - `Status: Ready for implementation` or `Status: Blocked pending clarification`
-- `CYRPRESS-AGENT.md`
+- `AGENT-CYRPRESS.md`
   - Use when generating or refining Cypress artifacts from feature behavior.
   - Output should include/adjust specs, page objects, and E2E tests aligned with project rules.
   - Example prompt:
     ```text
-    Please use CYRPRESS-AGENT.md guidance to generate Cypress coverage for Feature 5 from specs/feature5.feature
+    Please use AGENT-CYRPRESS.md guidance to generate Cypress coverage for Feature 5 from specs/feature5.feature
     ```
-- `REVIEW-AGENT.md`
+- `AGENT-REVIEW.md`
   - Use at the end of implementation as a quality/security review gate.
   - Output should list findings first by severity (`Critical`, `High`, `Medium`, `Low`), followed by open questions, residual risks/test gaps, fix plan, and final status.
   - If unresolved `Critical`/`High` findings remain, set `Status: Blocked pending fixes or explicit approval`.
   - Example prompt:
     ```text
-    Please run a final review for Feature 10 using REVIEW-AGENT.md.
+    Please run a final review for Feature 10 using AGENT-REVIEW.md.
     Focus on changed files only, fix unresolved `Critical`/`High` findings, and summarize medium/low follow-ups.
     ```
 
@@ -625,7 +621,7 @@ Recommended sequence once a new feature requirement is written:
     - `specs/accessibility.feature`
     - feature requirements `## What Changed`
 6. Run verification (`npm run test:e2e`) and ensure the requirements file has updated `## What Changed`, `## Verification Results`, and `## Review Results`.
-7. Run end-of-build review using `REVIEW-AGENT.md`; unresolved `Critical`/`High` findings must be fixed (or explicitly approved) before final handoff.
+7. Run end-of-build review using `AGENT-REVIEW.md`; unresolved `Critical`/`High` findings must be fixed (or explicitly approved) before final handoff.
 
 Workflow helper command:
 
@@ -650,7 +646,7 @@ Yes. `requirements/*.md` artifacts are intended to be active context throughout 
 
 How this works in practice:
 
-- `AGENTS.md` and specialized `*-AGENT.md` templates treat the active `requirements/*.md` file as the source-of-truth artifact.
+- `AGENTS.md` and specialized `AGENT-*.md` templates treat the active `requirements/*.md` file as the source-of-truth artifact.
 - `workflow:final-pass` attempts to resolve the relevant requirements file from:
   - `REQUIREMENTS_REVIEW_PATH`, or
   - prompt context (`requirements/...md`, `feature <N>`, `bug <N>`).
@@ -671,7 +667,7 @@ Use this checklist before opening a PR or preparing a release:
 - Requirements file for the feature is updated, including `## What Changed`.
 - A11y portfolio artifacts are updated for new feature pages/workflows (`cypress/e2e/accessibility.cy.ts`, `specs/accessibility.feature`, requirements `## What Changed`).
 - End-to-end verification completed via `npm run workflow:final-pass`.
-- Final code review completed using `REVIEW-AGENT.md`.
+- Final code review completed using `AGENT-REVIEW.md`.
 - Relevant requirements artifact is referenced via `REQUIREMENTS_REVIEW_PATH` and includes non-empty `## What Changed` + `## Verification Results` + `## Review Results`.
 - Unresolved `Critical`/`High` review findings are fixed (or explicitly approved); remaining medium/low items are documented.
 - Latest generated reports are available in `reports/` (PDF and a11y JSON as applicable).

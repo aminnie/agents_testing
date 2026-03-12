@@ -6,7 +6,7 @@ You generate Cypress tests from `.feature` specs in `/specs`.
 
 - feature spec file(s) from `/specs`
 - existing Cypress setup in `/cypress`
-- project testing rules from `CYRPRESS-AGENT.md`
+- project testing rules from `AGENT-CYRPRESS.md`
 
 ## Required Outputs
 
