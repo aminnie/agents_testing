@@ -38,8 +38,16 @@ describe("Feature: Admin user management", () => {
     cy.wait("@adminRoles").its("response.statusCode").should("be.oneOf", [200, 304]);
 
     const updatedDisplayName = `Shopper Updated ${Date.now()}`;
+    const updatedStreet = "14 Admin Edit Way";
+    const updatedCity = "Portland";
+    const updatedPostalCode = "97205";
+    const updatedCountry = "USA";
     userEditPage.emailInput().clear().type("shopper@example.com");
     userEditPage.displayNameInput().clear().type(updatedDisplayName);
+    userEditPage.streetInput().clear().type(updatedStreet);
+    userEditPage.cityInput().clear().type(updatedCity);
+    userEditPage.postalCodeInput().clear().type(updatedPostalCode);
+    userEditPage.countryInput().clear().type(updatedCountry);
     userEditPage.roleSelect().select("4");
     userEditPage.saveButton().click();
 
@@ -48,7 +56,11 @@ describe("Feature: Admin user management", () => {
       expect(request.body).to.deep.include({
         email: "shopper@example.com",
         displayName: updatedDisplayName,
-        roleId: 4
+        roleId: 4,
+        street: updatedStreet,
+        city: updatedCity,
+        postalCode: updatedPostalCode,
+        country: updatedCountry
       });
     });
     userEditPage.successAlert().should("contain", "Updated shopper@example.com");
@@ -120,8 +132,16 @@ describe("Feature: Admin user management", () => {
     userEditPage.emailInput().invoke("val").then((originalEmail) => {
       userEditPage.displayNameInput().invoke("val").then((originalDisplayName) => {
         userEditPage.roleSelect().invoke("val").then((originalRoleId) => {
+          userEditPage.streetInput().invoke("val").then((originalStreet) => {
+            userEditPage.cityInput().invoke("val").then((originalCity) => {
+              userEditPage.postalCodeInput().invoke("val").then((originalPostalCode) => {
+                userEditPage.countryInput().invoke("val").then((originalCountry) => {
           userEditPage.emailInput().clear().type("shopper-updated@example.com");
           userEditPage.displayNameInput().clear().type(`Unsaved Name ${Date.now()}`);
+          userEditPage.streetInput().clear().type("99 Unsaved Street");
+          userEditPage.cityInput().clear().type("Unsaved City");
+          userEditPage.postalCodeInput().clear().type("12345");
+          userEditPage.countryInput().clear().type("Unsaved Country");
           userEditPage.roleSelect().select("4");
           userEditPage.cancelButton().click();
 
@@ -131,7 +151,15 @@ describe("Feature: Admin user management", () => {
           cy.wait("@adminUserDetail");
           userEditPage.emailInput().should("have.value", String(originalEmail || ""));
           userEditPage.displayNameInput().should("have.value", String(originalDisplayName || ""));
+          userEditPage.streetInput().should("have.value", String(originalStreet || ""));
+          userEditPage.cityInput().should("have.value", String(originalCity || ""));
+          userEditPage.postalCodeInput().should("have.value", String(originalPostalCode || ""));
+          userEditPage.countryInput().should("have.value", String(originalCountry || ""));
           userEditPage.roleSelect().should("have.value", String(originalRoleId || ""));
+                });
+              });
+            });
+          });
         });
       });
     });
@@ -154,6 +182,10 @@ describe("Feature: Admin user management", () => {
       userAdminPage.editButtonByEmail("admin@example.com").click();
       cy.wait("@adminUserDetail");
       cy.wait("@adminRoles");
+      userEditPage.streetInput().clear().type("1 Admin Square");
+      userEditPage.cityInput().clear().type("New York");
+      userEditPage.postalCodeInput().clear().type("10001");
+      userEditPage.countryInput().clear().type("USA");
       userEditPage.roleSelect().select("3");
       userEditPage.saveButton().click();
 

@@ -27,6 +27,10 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 }
 
+function isValidPostalCode(value) {
+  return /^[0-9-]{1,15}$/.test(String(value || ""));
+}
+
 export default function UserEditPage({ token, onBackToList }) {
   const { userId = "" } = useParams();
   const [loading, setLoading] = useState(true);
@@ -35,12 +39,20 @@ export default function UserEditPage({ token, onBackToList }) {
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [roleId, setRoleId] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [initialValues, setInitialValues] = useState({
     email: "",
     displayName: "",
-    roleId: ""
+    roleId: "",
+    street: "",
+    city: "",
+    postalCode: "",
+    country: ""
   });
 
   useEffect(() => {
@@ -68,10 +80,18 @@ export default function UserEditPage({ token, onBackToList }) {
         setEmail(String(loadedUser.email || ""));
         setDisplayName(String(loadedUser.displayName || ""));
         setRoleId(loadedRoleId);
+        setStreet(String(loadedUser.street || ""));
+        setCity(String(loadedUser.city || ""));
+        setPostalCode(String(loadedUser.postalCode || ""));
+        setCountry(String(loadedUser.country || ""));
         setInitialValues({
           email: String(loadedUser.email || ""),
           displayName: String(loadedUser.displayName || ""),
-          roleId: loadedRoleId
+          roleId: loadedRoleId,
+          street: String(loadedUser.street || ""),
+          city: String(loadedUser.city || ""),
+          postalCode: String(loadedUser.postalCode || ""),
+          country: String(loadedUser.country || "")
         });
       } catch (loadError) {
         if (isMounted) {
@@ -93,6 +113,10 @@ export default function UserEditPage({ token, onBackToList }) {
   function validateInputs() {
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const normalizedDisplayName = String(displayName || "").trim().replace(/\s+/g, " ");
+    const normalizedStreet = String(street || "").trim().replace(/\s+/g, " ");
+    const normalizedCity = String(city || "").trim().replace(/\s+/g, " ");
+    const normalizedPostalCode = String(postalCode || "").trim();
+    const normalizedCountry = String(country || "").trim().replace(/\s+/g, " ");
     const nextRoleId = Number.parseInt(String(roleId || ""), 10);
 
     if (!normalizedEmail || !isValidEmail(normalizedEmail)) {
@@ -107,11 +131,43 @@ export default function UserEditPage({ token, onBackToList }) {
       setError("A role selection is required");
       return null;
     }
+    if (!normalizedStreet) {
+      setError("Street is required");
+      return null;
+    }
+    if (normalizedStreet.length > 50) {
+      setError("Street must be 50 characters or fewer");
+      return null;
+    }
+    if (!normalizedCity) {
+      setError("City is required");
+      return null;
+    }
+    if (normalizedCity.length > 30) {
+      setError("City must be 30 characters or fewer");
+      return null;
+    }
+    if (!normalizedPostalCode || !isValidPostalCode(normalizedPostalCode)) {
+      setError("Postal code must contain only digits and '-' and be 15 characters or fewer");
+      return null;
+    }
+    if (!normalizedCountry) {
+      setError("Country is required");
+      return null;
+    }
+    if (normalizedCountry.length > 30) {
+      setError("Country must be 30 characters or fewer");
+      return null;
+    }
 
     return {
       email: normalizedEmail,
       displayName: normalizedDisplayName,
-      roleId: nextRoleId
+      roleId: nextRoleId,
+      street: normalizedStreet,
+      city: normalizedCity,
+      postalCode: normalizedPostalCode,
+      country: normalizedCountry
     };
   }
 
@@ -141,10 +197,18 @@ export default function UserEditPage({ token, onBackToList }) {
       setEmail(String(updatedUser.email || payload.email));
       setDisplayName(String(updatedUser.displayName || payload.displayName));
       setRoleId(nextRoleId);
+      setStreet(String(updatedUser.street || payload.street));
+      setCity(String(updatedUser.city || payload.city));
+      setPostalCode(String(updatedUser.postalCode || payload.postalCode));
+      setCountry(String(updatedUser.country || payload.country));
       setInitialValues({
         email: String(updatedUser.email || payload.email),
         displayName: String(updatedUser.displayName || payload.displayName),
-        roleId: nextRoleId
+        roleId: nextRoleId,
+        street: String(updatedUser.street || payload.street),
+        city: String(updatedUser.city || payload.city),
+        postalCode: String(updatedUser.postalCode || payload.postalCode),
+        country: String(updatedUser.country || payload.country)
       });
       setSuccess(`Updated ${updatedUser.email || payload.email}`);
     } catch {
@@ -158,6 +222,10 @@ export default function UserEditPage({ token, onBackToList }) {
     setEmail(initialValues.email);
     setDisplayName(initialValues.displayName);
     setRoleId(initialValues.roleId);
+    setStreet(initialValues.street);
+    setCity(initialValues.city);
+    setPostalCode(initialValues.postalCode);
+    setCountry(initialValues.country);
     setSuccess("");
     setError("");
     onBackToList();
@@ -198,6 +266,34 @@ export default function UserEditPage({ token, onBackToList }) {
             label="Display name"
             onChange={(event) => setDisplayName(event.target.value)}
             value={displayName}
+          />
+          <TextField
+            id="admin-user-street"
+            inputProps={{ "data-cy": "admin-user-street" }}
+            label="Street"
+            onChange={(event) => setStreet(event.target.value)}
+            value={street}
+          />
+          <TextField
+            id="admin-user-city"
+            inputProps={{ "data-cy": "admin-user-city" }}
+            label="City"
+            onChange={(event) => setCity(event.target.value)}
+            value={city}
+          />
+          <TextField
+            id="admin-user-postal-code"
+            inputProps={{ "data-cy": "admin-user-postal-code" }}
+            label="Zip/Postal code"
+            onChange={(event) => setPostalCode(event.target.value)}
+            value={postalCode}
+          />
+          <TextField
+            id="admin-user-country"
+            inputProps={{ "data-cy": "admin-user-country" }}
+            label="Country"
+            onChange={(event) => setCountry(event.target.value)}
+            value={country}
           />
           <FormControl>
             <InputLabel htmlFor="admin-user-role-native">Role</InputLabel>

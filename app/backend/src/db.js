@@ -78,11 +78,51 @@ function createCatalogItems() {
 }
 
 const seedUsers = [
-  { email: "user@example.com", password: DEFAULT_PRIMARY_DEMO_PASSWORD, role: "user" },
-  { email: "shopper@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "user" },
-  { email: "manager@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "manager" },
-  { email: "editor@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "editor" },
-  { email: "admin@example.com", password: DEFAULT_SECONDARY_DEMO_PASSWORD, role: "admin" }
+  {
+    email: "user@example.com",
+    password: DEFAULT_PRIMARY_DEMO_PASSWORD,
+    role: "user",
+    street: "101 Market Street",
+    city: "Austin",
+    postalCode: "78701",
+    country: "USA"
+  },
+  {
+    email: "shopper@example.com",
+    password: DEFAULT_SECONDARY_DEMO_PASSWORD,
+    role: "user",
+    street: "500 Shopper Lane",
+    city: "Dallas",
+    postalCode: "75201",
+    country: "USA"
+  },
+  {
+    email: "manager@example.com",
+    password: DEFAULT_SECONDARY_DEMO_PASSWORD,
+    role: "manager",
+    street: "88 Team Plaza",
+    city: "Chicago",
+    postalCode: "60601",
+    country: "USA"
+  },
+  {
+    email: "editor@example.com",
+    password: DEFAULT_SECONDARY_DEMO_PASSWORD,
+    role: "editor",
+    street: "42 Studio Road",
+    city: "Seattle",
+    postalCode: "98101",
+    country: "USA"
+  },
+  {
+    email: "admin@example.com",
+    password: DEFAULT_SECONDARY_DEMO_PASSWORD,
+    role: "admin",
+    street: "1 Admin Square",
+    city: "New York",
+    postalCode: "10001",
+    country: "USA"
+  }
 ];
 
 function deriveRoleIdFromUser(user) {
@@ -173,11 +213,27 @@ export async function initDb() {
   const userColumns = await db.all("PRAGMA table_info(users)");
   const hasRoleId = userColumns.some((column) => column.name === "role_id");
   const hasDisplayName = userColumns.some((column) => column.name === "display_name");
+  const hasStreet = userColumns.some((column) => column.name === "street");
+  const hasCity = userColumns.some((column) => column.name === "city");
+  const hasPostalCode = userColumns.some((column) => column.name === "postal_code");
+  const hasCountry = userColumns.some((column) => column.name === "country");
   if (!hasRoleId) {
     await db.exec("ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES role_types(id)");
   }
   if (!hasDisplayName) {
     await db.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
+  }
+  if (!hasStreet) {
+    await db.exec("ALTER TABLE users ADD COLUMN street TEXT");
+  }
+  if (!hasCity) {
+    await db.exec("ALTER TABLE users ADD COLUMN city TEXT");
+  }
+  if (!hasPostalCode) {
+    await db.exec("ALTER TABLE users ADD COLUMN postal_code TEXT");
+  }
+  if (!hasCountry) {
+    await db.exec("ALTER TABLE users ADD COLUMN country TEXT");
   }
 
   await db.exec("CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)");
@@ -187,12 +243,16 @@ export async function initDb() {
     for (const user of seedUsers) {
       const hashedPassword = await bcrypt.hash(user.password, PASSWORD_HASH_ROUNDS);
       await db.run(
-        "INSERT INTO users (email, password, role, role_id, display_name) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO users (email, password, role, role_id, display_name, street, city, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         user.email,
         hashedPassword,
         user.role,
         deriveRoleIdFromUser(user),
-        deriveDisplayNameFromEmail(user.email)
+        deriveDisplayNameFromEmail(user.email),
+        user.street,
+        user.city,
+        user.postalCode,
+        user.country
       );
     }
   }

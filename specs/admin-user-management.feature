@@ -12,6 +12,10 @@ Feature: Admin user management
     Then I should be on "/admin/users/:id/edit"
     And I update email to "shopper@example.com"
     And I update display name
+    And I update street to "14 Admin Edit Way"
+    And I update city to "Portland"
+    And I update zip/postal code to "97205"
+    And I update country to "USA"
     And I select role "editor"
     And I click "Save user"
     Then API "PUT @adminUpdateUser" should return "200"

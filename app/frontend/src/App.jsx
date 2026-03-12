@@ -19,6 +19,16 @@ const STORAGE_KEYS = Object.freeze({
 });
 const PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50]);
 const DEFAULT_PAGE_SIZE = 10;
+const POSTAL_CODE_PATTERN = /^[0-9-]{1,15}$/;
+
+function createEmptyAddress() {
+  return {
+    street: "",
+    city: "",
+    postalCode: "",
+    country: ""
+  };
+}
 
 function parsePositiveInteger(value, fallbackValue) {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -58,6 +68,40 @@ function readStoredUser() {
     localStorage.removeItem(STORAGE_KEYS.user);
     return null;
   }
+}
+
+function normalizeAddress(rawAddress) {
+  return {
+    street: String(rawAddress?.street || "").trim().replace(/\s+/g, " "),
+    city: String(rawAddress?.city || "").trim().replace(/\s+/g, " "),
+    postalCode: String(rawAddress?.postalCode || "").trim(),
+    country: String(rawAddress?.country || "").trim().replace(/\s+/g, " ")
+  };
+}
+
+function validateAddress(address) {
+  const errors = {};
+  if (!address.street) {
+    errors.street = "Street is required";
+  } else if (address.street.length > 50) {
+    errors.street = "Street must be 50 characters or fewer";
+  }
+  if (!address.city) {
+    errors.city = "City is required";
+  } else if (address.city.length > 30) {
+    errors.city = "City must be 30 characters or fewer";
+  }
+  if (!address.postalCode) {
+    errors.postalCode = "Postal code is required";
+  } else if (!POSTAL_CODE_PATTERN.test(address.postalCode)) {
+    errors.postalCode = "Postal code must contain only digits and '-' and be 15 characters or fewer";
+  }
+  if (!address.country) {
+    errors.country = "Country is required";
+  } else if (address.country.length > 30) {
+    errors.country = "Country must be 30 characters or fewer";
+  }
+  return errors;
 }
 
 function ItemDetailRoute({
@@ -127,6 +171,7 @@ function StoreApp() {
   const [registerDisplayName, setRegisterDisplayName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
+  const [registerAddress, setRegisterAddress] = useState(createEmptyAddress);
   const [registerError, setRegisterError] = useState("");
   const [registerSubmitting, setRegisterSubmitting] = useState(false);
   const [token, setToken] = useState(localStorage.getItem(STORAGE_KEYS.auth) || "");
@@ -138,6 +183,7 @@ function StoreApp() {
   const [checkoutError, setCheckoutError] = useState("");
   const [nameOnCard, setNameOnCard] = useState("");
   const [cardNumber, setCardNumber] = useState("");
+  const [checkoutAddress, setCheckoutAddress] = useState(() => normalizeAddress(currentUser));
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const currentSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const [searchInput, setSearchInput] = useState(() => currentSearchParams.get("q") || "");
@@ -167,6 +213,7 @@ function StoreApp() {
     setRegisterDisplayName("");
     setRegisterEmail("");
     setRegisterPassword("");
+    setRegisterAddress(createEmptyAddress());
     setRegisterError("");
     setRegisterSubmitting(false);
   }
@@ -184,6 +231,7 @@ function StoreApp() {
     setCheckoutError("");
     setNameOnCard("");
     setCardNumber("");
+    setCheckoutAddress(createEmptyAddress());
   }
 
   useEffect(() => {
@@ -271,6 +319,7 @@ function StoreApp() {
     localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
     setToken(nextToken);
     setCurrentUser(user);
+    setCheckoutAddress(normalizeAddress(user));
   }
 
   async function onLoginSubmit(event) {
@@ -305,9 +354,12 @@ function StoreApp() {
     const normalizedDisplayName = registerDisplayName.trim().replace(/\s+/g, " ");
     const normalizedEmail = registerEmail.trim().toLowerCase();
     const normalizedPassword = registerPassword.trim();
+    const normalizedAddress = normalizeAddress(registerAddress);
+    const addressErrors = validateAddress(normalizedAddress);
 
-    if (!normalizedDisplayName || !normalizedEmail || !normalizedPassword) {
-      setRegisterError("Display name, email, and password are required");
+    if (!normalizedDisplayName || !normalizedEmail || !normalizedPassword || Object.keys(addressErrors).length > 0) {
+      const firstAddressError = Object.values(addressErrors)[0];
+      setRegisterError(firstAddressError || "Display name, email, password, and address are required");
       return;
     }
 
@@ -324,7 +376,8 @@ function StoreApp() {
         body: JSON.stringify({
           displayName: normalizedDisplayName,
           email: normalizedEmail,
-          password: normalizedPassword
+          password: normalizedPassword,
+          ...normalizedAddress
         })
       });
       const payload = await response.json();
@@ -511,10 +564,18 @@ function StoreApp() {
       .trim();
     const submittedCard = String(formData.get("cardNumber") || "")
       .replace(/\D/g, "");
+    const normalizedAddress = normalizeAddress({
+      street: formData.get("street"),
+      city: formData.get("city"),
+      postalCode: formData.get("postalCode"),
+      country: formData.get("country")
+    });
+    const addressErrors = validateAddress(normalizedAddress);
 
     // Keep state synchronized with the submitted values (including autofill/manual browser fills).
     setNameOnCard(submittedName);
     setCardNumber(submittedCard);
+    setCheckoutAddress(normalizedAddress);
 
     if (cart.length === 0) {
       setCheckoutError("Cart cannot be empty");
@@ -523,6 +584,10 @@ function StoreApp() {
 
     if (!submittedName || submittedCard.length <= 4) {
       setCheckoutError("Payment details are required");
+      return;
+    }
+    if (Object.keys(addressErrors).length > 0) {
+      setCheckoutError(String(Object.values(addressErrors)[0]));
       return;
     }
 
@@ -537,7 +602,8 @@ function StoreApp() {
         payment: {
           nameOnCard: submittedName,
           cardNumber: submittedCard
-        }
+        },
+        address: normalizedAddress
       })
     });
 
@@ -548,6 +614,15 @@ function StoreApp() {
     }
 
     setOrderMessage(`Order confirmed (#${payload.orderId})`);
+    if (payload.user) {
+      const nextUser = {
+        ...(currentUser || {}),
+        ...payload.user
+      };
+      localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(nextUser));
+      setCurrentUser(nextUser);
+      setCheckoutAddress(normalizeAddress(nextUser));
+    }
     setCart([]);
     setNameOnCard("");
     setCardNumber("");
@@ -565,11 +640,19 @@ function StoreApp() {
                 displayName={registerDisplayName}
                 email={registerEmail}
                 password={registerPassword}
+                street={registerAddress.street}
+                city={registerAddress.city}
+                postalCode={registerAddress.postalCode}
+                country={registerAddress.country}
                 registerError={registerError}
                 isSubmitting={registerSubmitting}
                 onDisplayNameChange={(event) => setRegisterDisplayName(event.target.value)}
                 onEmailChange={(event) => setRegisterEmail(event.target.value)}
                 onPasswordChange={(event) => setRegisterPassword(event.target.value)}
+                onStreetChange={(event) => setRegisterAddress((current) => ({ ...current, street: event.target.value }))}
+                onCityChange={(event) => setRegisterAddress((current) => ({ ...current, city: event.target.value }))}
+                onPostalCodeChange={(event) => setRegisterAddress((current) => ({ ...current, postalCode: event.target.value }))}
+                onCountryChange={(event) => setRegisterAddress((current) => ({ ...current, country: event.target.value }))}
                 onSubmit={onRegisterSubmit}
                 onBackToLogin={() => navigate("/", { replace: true })}
               />
@@ -731,6 +814,14 @@ function StoreApp() {
               onCardChange={(event) =>
                 setCardNumber(event.target.value.replace(/\D/g, ""))
               }
+              street={checkoutAddress.street}
+              city={checkoutAddress.city}
+              postalCode={checkoutAddress.postalCode}
+              country={checkoutAddress.country}
+              onStreetChange={(event) => setCheckoutAddress((current) => ({ ...current, street: event.target.value }))}
+              onCityChange={(event) => setCheckoutAddress((current) => ({ ...current, city: event.target.value }))}
+              onPostalCodeChange={(event) => setCheckoutAddress((current) => ({ ...current, postalCode: event.target.value }))}
+              onCountryChange={(event) => setCheckoutAddress((current) => ({ ...current, country: event.target.value }))}
               onNameChange={(event) => setNameOnCard(event.target.value)}
               onSubmit={submitCheckout}
               orderMessage={orderMessage}

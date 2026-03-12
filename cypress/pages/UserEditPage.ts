@@ -7,6 +7,22 @@ export class UserEditPage {
     return cy.get('[data-cy="admin-user-display-name"]');
   }
 
+  streetInput() {
+    return cy.get('[data-cy="admin-user-street"]');
+  }
+
+  cityInput() {
+    return cy.get('[data-cy="admin-user-city"]');
+  }
+
+  postalCodeInput() {
+    return cy.get('[data-cy="admin-user-postal-code"]');
+  }
+
+  countryInput() {
+    return cy.get('[data-cy="admin-user-country"]');
+  }
+
   roleSelect() {
     return cy.get('[data-cy="admin-user-role"]');
   }

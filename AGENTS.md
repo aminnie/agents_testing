@@ -77,6 +77,17 @@ Prefer small, reversible changes over broad risky rewrites.
 - Sanitize and validate untrusted input.
 - Follow least-privilege principles for integrations and runtime behavior.
 
+### 6.1) Snyk scope control (prevent scope creep)
+
+- Default Snyk scans must be limited to the active feature scope (changed files/directories only).
+- Do not run repo-wide Snyk scans unless the user explicitly requests a repository-wide security pass.
+- Remediate only vulnerabilities in files modified for the current feature.
+- If scan output includes out-of-scope findings:
+  - report them as out-of-scope in review/results notes,
+  - do not implement unrelated fixes automatically.
+- Expand remediation scope only with explicit user approval.
+- Exception: if a critical and clearly exploitable issue is found outside current scope, stop and ask the user whether to widen scope immediately.
+
 ## 7) Dependency and Tooling Policy
 
 - Use package managers to add/update dependencies.

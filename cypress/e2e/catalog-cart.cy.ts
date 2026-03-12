@@ -61,6 +61,10 @@ describe("Feature: Catalog and Cart", () => {
     catalogPage.addFirstCatalogItem();
     cy.get('[data-cy="go-to-checkout"]').click();
 
+    cy.get('[data-cy="checkout-street"]').type("101 Test Street");
+    cy.get('[data-cy="checkout-city"]').type("Austin");
+    cy.get('[data-cy="checkout-postal-code"]').type("73301");
+    cy.get('[data-cy="checkout-country"]').type("USA");
     cy.get('[data-cy="checkout-name"]').type("Anton Minnie");
     cy.get('[data-cy="checkout-card"]').type("12345");
     cy.get('[data-cy="checkout-submit"]').click();

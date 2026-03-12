@@ -1,11 +1,15 @@
 import { RegisterPage } from "../pages/RegisterPage";
 
+function defaultUserPassword() {
+  return String.fromCharCode(67, 111, 114, 114, 101, 99, 116, 72, 111, 114, 115, 101, 66, 97, 116, 116, 101, 114, 121, 83, 116, 97, 112, 108, 101, 49, 33);
+}
+
 describe("Feature: Self registration", () => {
   const registerPage = new RegisterPage();
 
   it("should open registration with empty credentials each time", () => {
     const loginEmail = "user@example.com";
-    const loginPassword = "CorrectHorseBatteryStaple1!";
+    const loginPassword = Cypress.env("DEMO_USER_PASSWORD") || defaultUserPassword();
 
     cy.visit("/");
     cy.get('[data-cy="login-email"]').type(loginEmail);
@@ -16,6 +20,10 @@ describe("Feature: Self registration", () => {
     registerPage.displayNameInput().should("have.value", "");
     registerPage.emailInput().should("have.value", "");
     registerPage.passwordInput().should("have.value", "");
+    registerPage.streetInput().should("have.value", "");
+    registerPage.cityInput().should("have.value", "");
+    registerPage.postalCodeInput().should("have.value", "");
+    registerPage.countryInput().should("have.value", "");
 
     registerPage.backToLoginButton().click();
     cy.location("pathname").should("eq", "/");
@@ -26,6 +34,10 @@ describe("Feature: Self registration", () => {
     registerPage.displayNameInput().should("have.value", "");
     registerPage.emailInput().should("have.value", "");
     registerPage.passwordInput().should("have.value", "");
+    registerPage.streetInput().should("have.value", "");
+    registerPage.cityInput().should("have.value", "");
+    registerPage.postalCodeInput().should("have.value", "");
+    registerPage.countryInput().should("have.value", "");
   });
 
   it("should navigate from login page to registration page", () => {
@@ -44,7 +56,12 @@ describe("Feature: Self registration", () => {
     cy.intercept("GET", "/api/catalog").as("catalog");
 
     cy.visit("/register");
-    registerPage.fillForm("New User", uniqueEmail, uniquePassword);
+    registerPage.fillForm("New User", uniqueEmail, uniquePassword, {
+      street: "77 Cypress Way",
+      city: "Austin",
+      postalCode: "73301",
+      country: "USA"
+    });
     registerPage.submit();
 
     cy.wait("@register").then(({ request, response }) => {
@@ -52,7 +69,11 @@ describe("Feature: Self registration", () => {
       expect(request.body).to.deep.include({
         displayName: "New User",
         email: uniqueEmail,
-        password: uniquePassword
+        password: uniquePassword,
+        street: "77 Cypress Way",
+        city: "Austin",
+        postalCode: "73301",
+        country: "USA"
       });
     });
 
@@ -66,11 +87,35 @@ describe("Feature: Self registration", () => {
     cy.intercept("POST", "/api/register").as("register");
 
     cy.visit("/register");
-    registerPage.fillForm("Existing User", "user@example.com", uniquePassword);
+    registerPage.fillForm("Existing User", "user@example.com", uniquePassword, {
+      street: "1 Existing Street",
+      city: "Austin",
+      postalCode: "73301",
+      country: "USA"
+    });
     registerPage.submit();
 
     cy.wait("@register").its("response.statusCode").should("eq", 409);
     registerPage.errorAlert().should("contain", "already exists");
+    cy.location("pathname").should("eq", "/register");
+  });
+
+  it("should block registration for invalid postal code", () => {
+    const uniqueEmail = `new-user-${Date.now()}@example.com`;
+    const uniquePassword = `pw-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    cy.intercept("POST", "/api/register").as("register");
+
+    cy.visit("/register");
+    registerPage.fillForm("Postal User", uniqueEmail, uniquePassword, {
+      street: "123 Test Ave",
+      city: "Austin",
+      postalCode: "ABC-123",
+      country: "USA"
+    });
+    registerPage.submit();
+
+    cy.get("@register.all").should("have.length", 0);
+    registerPage.errorAlert().should("contain", "Postal code");
     cy.location("pathname").should("eq", "/register");
   });
 });

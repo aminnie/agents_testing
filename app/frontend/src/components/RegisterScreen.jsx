@@ -18,11 +18,19 @@ export default function RegisterScreen({
   displayName,
   email,
   password,
+  street,
+  city,
+  postalCode,
+  country,
   registerError,
   isSubmitting,
   onDisplayNameChange,
   onEmailChange,
   onPasswordChange,
+  onStreetChange,
+  onCityChange,
+  onPostalCodeChange,
+  onCountryChange,
   onSubmit,
   onBackToLogin
 }) {
@@ -83,6 +91,42 @@ export default function RegisterScreen({
               onChange={onPasswordChange}
               type="password"
               value={password}
+            />
+            <TextField
+              autoComplete="address-line1"
+              id="registerStreet"
+              inputProps={{ "data-cy": "register-street" }}
+              label="Street"
+              name="registerStreet"
+              onChange={onStreetChange}
+              value={street}
+            />
+            <TextField
+              autoComplete="address-level2"
+              id="registerCity"
+              inputProps={{ "data-cy": "register-city" }}
+              label="City"
+              name="registerCity"
+              onChange={onCityChange}
+              value={city}
+            />
+            <TextField
+              autoComplete="postal-code"
+              id="registerPostalCode"
+              inputProps={{ "data-cy": "register-postal-code" }}
+              label="Zip/Postal code"
+              name="registerPostalCode"
+              onChange={onPostalCodeChange}
+              value={postalCode}
+            />
+            <TextField
+              autoComplete="country-name"
+              id="registerCountry"
+              inputProps={{ "data-cy": "register-country" }}
+              label="Country"
+              name="registerCountry"
+              onChange={onCountryChange}
+              value={country}
             />
             <Button
               data-cy="register-submit"

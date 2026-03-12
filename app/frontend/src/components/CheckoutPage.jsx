@@ -16,8 +16,16 @@ export default function CheckoutPage({
   cart,
   totalCents,
   formatPrice,
+  street,
+  city,
+  postalCode,
+  country,
   nameOnCard,
   cardNumber,
+  onStreetChange,
+  onCityChange,
+  onPostalCodeChange,
+  onCountryChange,
   onNameChange,
   onCardChange,
   onSubmit,
@@ -61,6 +69,42 @@ export default function CheckoutPage({
         <CardContent>
           <Typography gutterBottom variant="h5">Payment</Typography>
           <Stack component="form" data-cy="checkout-form" onSubmit={onSubmit} spacing={2}>
+            <TextField
+              id="street"
+              name="street"
+              autoComplete="address-line1"
+              inputProps={{ "data-cy": "checkout-street" }}
+              label="Street"
+              onChange={onStreetChange}
+              value={street}
+            />
+            <TextField
+              id="city"
+              name="city"
+              autoComplete="address-level2"
+              inputProps={{ "data-cy": "checkout-city" }}
+              label="City"
+              onChange={onCityChange}
+              value={city}
+            />
+            <TextField
+              id="postalCode"
+              name="postalCode"
+              autoComplete="postal-code"
+              inputProps={{ "data-cy": "checkout-postal-code" }}
+              label="Zip/Postal code"
+              onChange={onPostalCodeChange}
+              value={postalCode}
+            />
+            <TextField
+              id="country"
+              name="country"
+              autoComplete="country-name"
+              inputProps={{ "data-cy": "checkout-country" }}
+              label="Country"
+              onChange={onCountryChange}
+              value={country}
+            />
             <TextField
             id="nameOnCard"
             name="nameOnCard"

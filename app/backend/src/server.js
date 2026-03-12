@@ -38,6 +38,70 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || ""));
 }
 
+function normalizeAddressField(value) {
+  return normalizeText(value);
+}
+
+function validateAddressInput(rawAddress) {
+  const address = {
+    street: normalizeAddressField(rawAddress?.street),
+    city: normalizeAddressField(rawAddress?.city),
+    postalCode: normalizeAddressField(rawAddress?.postalCode),
+    country: normalizeAddressField(rawAddress?.country)
+  };
+  const errors = {};
+
+  if (!address.street) {
+    errors.street = "Street is required";
+  } else if (address.street.length > 50) {
+    errors.street = "Street must be 50 characters or fewer";
+  }
+
+  if (!address.city) {
+    errors.city = "City is required";
+  } else if (address.city.length > 30) {
+    errors.city = "City must be 30 characters or fewer";
+  }
+
+  if (!address.postalCode) {
+    errors.postalCode = "Postal code is required";
+  } else if (!/^[0-9-]{1,15}$/.test(address.postalCode)) {
+    errors.postalCode = "Postal code must contain only digits and '-' and be 15 characters or fewer";
+  }
+
+  if (!address.country) {
+    errors.country = "Country is required";
+  } else if (address.country.length > 30) {
+    errors.country = "Country must be 30 characters or fewer";
+  }
+
+  return {
+    address,
+    errors,
+    hasErrors: Object.keys(errors).length > 0
+  };
+}
+
+function mapUserPayload(user) {
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName || "",
+    role: user.role || user.legacyRole || "user",
+    roleId: user.roleId || 3,
+    legacyRole: user.legacyRole,
+    street: user.street || "",
+    city: user.city || "",
+    postalCode: user.postalCode || "",
+    country: user.country || ""
+  };
+}
+
+function firstValidationMessage(errors, fallbackMessage) {
+  const firstError = Object.values(errors || {})[0];
+  return String(firstError || fallbackMessage);
+}
+
 function deriveHeaderFromDescription(description) {
   const normalized = normalizeText(description);
   if (!normalized) {
@@ -158,6 +222,10 @@ app.post("/api/login", async (req, res) => {
       u.email,
       u.password,
       u.display_name AS displayName,
+      u.street AS street,
+      u.city AS city,
+      u.postal_code AS postalCode,
+      u.country AS country,
       u.role AS legacyRole,
       u.role_id AS roleId,
       rt.name AS role
@@ -183,14 +251,7 @@ app.post("/api/login", async (req, res) => {
 
   res.json({
     token,
-    user: {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName || "",
-      role: user.role || user.legacyRole || "user",
-      roleId: user.roleId || 3,
-      legacyRole: user.legacyRole
-    }
+    user: mapUserPayload(user)
   });
 });
 
@@ -198,9 +259,24 @@ app.post("/api/register", async (req, res) => {
   const displayName = normalizeText(req.body?.displayName);
   const email = normalizeEmail(req.body?.email);
   const password = String(req.body?.password || "").trim();
+  const { address, errors: addressErrors, hasErrors: hasAddressErrors } = validateAddressInput(req.body);
 
-  if (!displayName || !email || !password) {
-    res.status(400).json({ message: "Display name, email, and password are required" });
+  if (!displayName || !email || !password || hasAddressErrors) {
+    const errors = {};
+    if (!displayName) {
+      errors.displayName = "Display name is required";
+    }
+    if (!email) {
+      errors.email = "Email is required";
+    }
+    if (!password) {
+      errors.password = "Password is required";
+    }
+    Object.assign(errors, addressErrors);
+    res.status(400).json({
+      message: firstValidationMessage(errors, "Registration input is invalid"),
+      errors
+    });
     return;
   }
 
@@ -219,12 +295,16 @@ app.post("/api/register", async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     result = await db.run(
-      "INSERT INTO users (email, password, role, role_id, display_name) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO users (email, password, role, role_id, display_name, street, city, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       email,
       hashedPassword,
       "user",
       3,
-      displayName
+      displayName,
+      address.street,
+      address.city,
+      address.postalCode,
+      address.country
     );
   } catch (error) {
     if (String(error?.message || "").includes("UNIQUE constraint failed: users.email")) {
@@ -246,7 +326,11 @@ app.post("/api/register", async (req, res) => {
       displayName,
       role: "user",
       roleId: 3,
-      legacyRole: "user"
+      legacyRole: "user",
+      street: address.street,
+      city: address.city,
+      postalCode: address.postalCode,
+      country: address.country
     }
   });
 });
@@ -262,6 +346,10 @@ app.get("/api/admin/users", authMiddleware, requireAdminAccess, async (_req, res
       u.id,
       u.email,
       u.display_name AS displayName,
+      u.street AS street,
+      u.city AS city,
+      u.postal_code AS postalCode,
+      u.country AS country,
       u.role AS legacyRole,
       u.role_id AS roleId,
       rt.name AS role
@@ -270,13 +358,7 @@ app.get("/api/admin/users", authMiddleware, requireAdminAccess, async (_req, res
     ORDER BY u.id`
   );
   res.json({
-    users: users.map((user) => ({
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName || "",
-      role: user.role || user.legacyRole || "user",
-      roleId: user.roleId || 3
-    }))
+    users: users.map((user) => mapUserPayload(user))
   });
 });
 
@@ -292,6 +374,10 @@ app.get("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
       u.id,
       u.email,
       u.display_name AS displayName,
+      u.street AS street,
+      u.city AS city,
+      u.postal_code AS postalCode,
+      u.country AS country,
       u.role AS legacyRole,
       u.role_id AS roleId,
       rt.name AS role
@@ -306,13 +392,7 @@ app.get("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
   }
 
   res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName || "",
-      role: user.role || user.legacyRole || "user",
-      roleId: user.roleId || 3
-    }
+    user: mapUserPayload(user)
   });
 });
 
@@ -321,6 +401,7 @@ app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
   const email = normalizeEmail(req.body?.email);
   const displayName = normalizeText(req.body?.displayName);
   const roleId = Number.parseInt(String(req.body?.roleId ?? ""), 10);
+  const { address, errors: addressErrors, hasErrors: hasAddressErrors } = validateAddressInput(req.body);
 
   if (!Number.isInteger(userId) || userId <= 0) {
     res.status(400).json({ message: "Invalid user id" });
@@ -336,6 +417,13 @@ app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
   }
   if (!Number.isInteger(roleId) || roleId <= 0) {
     res.status(400).json({ message: "A valid roleId is required" });
+    return;
+  }
+  if (hasAddressErrors) {
+    res.status(400).json({
+      message: firstValidationMessage(addressErrors, "Address input is invalid"),
+      errors: addressErrors
+    });
     return;
   }
 
@@ -381,11 +469,15 @@ app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
   }
 
   await db.run(
-    "UPDATE users SET email = ?, display_name = ?, role_id = ?, role = ? WHERE id = ?",
+    "UPDATE users SET email = ?, display_name = ?, role_id = ?, role = ?, street = ?, city = ?, postal_code = ?, country = ? WHERE id = ?",
     email,
     displayName,
     selectedRole.id,
     selectedRole.name,
+    address.street,
+    address.city,
+    address.postalCode,
+    address.country,
     userId
   );
 
@@ -395,7 +487,11 @@ app.put("/api/admin/users/:id", authMiddleware, requireAdminAccess, async (req, 
       email,
       displayName,
       role: selectedRole.name,
-      roleId: selectedRole.id
+      roleId: selectedRole.id,
+      street: address.street,
+      city: address.city,
+      postalCode: address.postalCode,
+      country: address.country
     }
   });
 });
@@ -536,7 +632,8 @@ app.put("/api/catalog/:id", authMiddleware, requireCatalogProductManager, async 
 });
 
 app.post("/api/checkout", authMiddleware, async (req, res) => {
-  const { items, payment } = req.body;
+  const { items, payment, address: submittedAddress } = req.body;
+  const { address, errors: addressErrors, hasErrors: hasAddressErrors } = validateAddressInput(submittedAddress);
 
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ message: "Cart cannot be empty" });
@@ -545,6 +642,13 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
 
   if (!payment?.cardNumber || !payment?.nameOnCard) {
     res.status(400).json({ message: "Payment details are required" });
+    return;
+  }
+  if (hasAddressErrors) {
+    res.status(400).json({
+      message: firstValidationMessage(addressErrors, "Address input is invalid"),
+      errors: addressErrors
+    });
     return;
   }
 
@@ -605,11 +709,26 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
       item.unitPriceCents
     );
   }
+  await db.run(
+    "UPDATE users SET street = ?, city = ?, postal_code = ?, country = ? WHERE id = ?",
+    address.street,
+    address.city,
+    address.postalCode,
+    address.country,
+    req.userId
+  );
 
   res.status(201).json({
     orderId: result.lastID,
     totalCents,
-    paymentLast4
+    paymentLast4,
+    user: {
+      id: req.userId,
+      street: address.street,
+      city: address.city,
+      postalCode: address.postalCode,
+      country: address.country
+    }
   });
 });
 
