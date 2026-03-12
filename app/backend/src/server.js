@@ -102,6 +102,15 @@ function firstValidationMessage(errors, fallbackMessage) {
   return String(firstError || fallbackMessage);
 }
 
+function createPublicOrderId(sequenceValue, timestamp = new Date()) {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const year = String(date.getUTCFullYear());
+  const sequence = String(Number(sequenceValue) || 0).padStart(5, "0");
+  return `${month}${day}${year}-${sequence}`;
+}
+
 function deriveHeaderFromDescription(description) {
   const normalized = normalizeText(description);
   if (!normalized) {
@@ -634,13 +643,15 @@ app.put("/api/catalog/:id", authMiddleware, requireCatalogProductManager, async 
 app.post("/api/checkout", authMiddleware, async (req, res) => {
   const { items, payment, address: submittedAddress } = req.body;
   const { address, errors: addressErrors, hasErrors: hasAddressErrors } = validateAddressInput(submittedAddress);
+  const normalizedCardNumber = String(payment?.cardNumber || "").replace(/\D/g, "");
+  const nameOnCard = normalizeText(payment?.nameOnCard);
 
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ message: "Cart cannot be empty" });
     return;
   }
 
-  if (!payment?.cardNumber || !payment?.nameOnCard) {
+  if (!nameOnCard || normalizedCardNumber.length <= 4) {
     res.status(400).json({ message: "Payment details are required" });
     return;
   }
@@ -689,37 +700,71 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
     0
   );
 
-  const paymentLast4 = String(payment.cardNumber).slice(-4);
+  const paymentLast4 = normalizedCardNumber.slice(-4);
   const createdAt = new Date().toISOString();
-
-  const result = await db.run(
-    "INSERT INTO orders (user_id, total_cents, payment_last4, created_at) VALUES (?, ?, ?, ?)",
-    req.userId,
-    totalCents,
-    paymentLast4,
-    createdAt
-  );
-
-  for (const item of normalizedItems) {
-    await db.run(
-      "INSERT INTO order_items (order_id, catalog_item_id, quantity, unit_price_cents) VALUES (?, ?, ?, ?)",
-      result.lastID,
-      item.catalogItemId,
-      item.quantity,
-      item.unitPriceCents
+  let publicOrderId = "";
+  try {
+    await db.run("BEGIN TRANSACTION");
+    const result = await db.run(
+      `INSERT INTO orders (
+        public_order_id,
+        user_id,
+        shipping_street,
+        shipping_city,
+        shipping_postal_code,
+        shipping_country,
+        payment_name_on_card,
+        total_cents,
+        payment_last4,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      null,
+      req.userId,
+      address.street,
+      address.city,
+      address.postalCode,
+      address.country,
+      nameOnCard,
+      totalCents,
+      paymentLast4,
+      createdAt
     );
+    publicOrderId = createPublicOrderId(result.lastID, createdAt);
+    await db.run(
+      "UPDATE orders SET public_order_id = ? WHERE id = ?",
+      publicOrderId,
+      result.lastID
+    );
+    for (const item of normalizedItems) {
+      await db.run(
+        "INSERT INTO order_items (order_id, catalog_item_id, quantity, unit_price_cents) VALUES (?, ?, ?, ?)",
+        result.lastID,
+        item.catalogItemId,
+        item.quantity,
+        item.unitPriceCents
+      );
+    }
+    await db.run(
+      "UPDATE users SET street = ?, city = ?, postal_code = ?, country = ? WHERE id = ?",
+      address.street,
+      address.city,
+      address.postalCode,
+      address.country,
+      req.userId
+    );
+    await db.run("COMMIT");
+  } catch (error) {
+    try {
+      await db.run("ROLLBACK");
+    } catch {
+      // Ignore rollback failures and report the original checkout failure.
+    }
+    res.status(500).json({ message: "Checkout failed" });
+    return;
   }
-  await db.run(
-    "UPDATE users SET street = ?, city = ?, postal_code = ?, country = ? WHERE id = ?",
-    address.street,
-    address.city,
-    address.postalCode,
-    address.country,
-    req.userId
-  );
 
   res.status(201).json({
-    orderId: result.lastID,
+    orderId: publicOrderId,
     totalCents,
     paymentLast4,
     user: {

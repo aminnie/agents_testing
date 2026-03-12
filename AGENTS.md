@@ -143,12 +143,15 @@ When implementing changes:
 
 Do not start code changes until the user explicitly approves implementation for the active requirement.
 
+Implementation is only eligible to start after a completed technical analysis is documented in the active `requirements/product_*.md` file.
+
 Required flow:
 
 1. Complete clarification/analysis first.
-2. Mark status as `Ready for implementation approval`.
-3. Ask: `Implementation is ready. Should I start coding now? (Yes/No)`.
-4. Wait for explicit confirmation before editing files or running implementation commands.
+2. Ensure the active requirements file contains `## Technical Analysis` with concrete architecture, risk, and verification details.
+3. Mark status as `Ready for implementation approval`.
+4. Ask: `Implementation is ready. Should I start coding now? (Yes/No)`.
+5. Wait for explicit confirmation before editing files or running implementation commands.
 
 Accepted implementation triggers include clear phrases such as:
 
@@ -158,6 +161,24 @@ Accepted implementation triggers include clear phrases such as:
 - "yes, implement"
 
 If approval is ambiguous or missing, remain in read-only clarification/analysis mode and ask for confirmation.
+
+### 11.2) Technical analysis lock (mandatory before implementation)
+
+No implementation commands or code edits are allowed until all of the following are true in the active `requirements/product_*.md` file:
+
+1. `## Technical Analysis` exists and is populated (not a placeholder).
+2. Analysis contains at minimum:
+   - architecture decision and trade-offs,
+   - API/data contract impact (or explicit no-change statement),
+   - risk controls and verification/test plan.
+3. Status is explicitly `Ready for implementation approval`.
+
+If the user requests coding before these conditions are met, the agent must:
+
+1. complete technical analysis first, or
+2. ask for an explicit override confirming they want to bypass the analysis gate.
+
+If an override is granted, record the override decision in the active requirements file before implementation begins.
 
 ## 12) Verification Minimums
 

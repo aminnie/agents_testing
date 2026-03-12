@@ -184,7 +184,13 @@ export async function initDb() {
 
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      public_order_id TEXT UNIQUE,
       user_id INTEGER NOT NULL,
+      shipping_street TEXT,
+      shipping_city TEXT,
+      shipping_postal_code TEXT,
+      shipping_country TEXT,
+      payment_name_on_card TEXT,
       total_cents INTEGER NOT NULL,
       payment_last4 TEXT NOT NULL,
       created_at TEXT NOT NULL,
@@ -236,7 +242,34 @@ export async function initDb() {
     await db.exec("ALTER TABLE users ADD COLUMN country TEXT");
   }
 
+  const orderColumns = await db.all("PRAGMA table_info(orders)");
+  const hasPublicOrderId = orderColumns.some((column) => column.name === "public_order_id");
+  const hasShippingStreet = orderColumns.some((column) => column.name === "shipping_street");
+  const hasShippingCity = orderColumns.some((column) => column.name === "shipping_city");
+  const hasShippingPostalCode = orderColumns.some((column) => column.name === "shipping_postal_code");
+  const hasShippingCountry = orderColumns.some((column) => column.name === "shipping_country");
+  const hasPaymentNameOnCard = orderColumns.some((column) => column.name === "payment_name_on_card");
+  if (!hasPublicOrderId) {
+    await db.exec("ALTER TABLE orders ADD COLUMN public_order_id TEXT");
+  }
+  if (!hasShippingStreet) {
+    await db.exec("ALTER TABLE orders ADD COLUMN shipping_street TEXT");
+  }
+  if (!hasShippingCity) {
+    await db.exec("ALTER TABLE orders ADD COLUMN shipping_city TEXT");
+  }
+  if (!hasShippingPostalCode) {
+    await db.exec("ALTER TABLE orders ADD COLUMN shipping_postal_code TEXT");
+  }
+  if (!hasShippingCountry) {
+    await db.exec("ALTER TABLE orders ADD COLUMN shipping_country TEXT");
+  }
+  if (!hasPaymentNameOnCard) {
+    await db.exec("ALTER TABLE orders ADD COLUMN payment_name_on_card TEXT");
+  }
+
   await db.exec("CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)");
+  await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_public_order_id ON orders(public_order_id)");
 
   const existingUsers = await db.get("SELECT COUNT(*) AS count FROM users");
   if (existingUsers.count === 0) {

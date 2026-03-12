@@ -4,6 +4,7 @@ import { CatalogPage } from "../pages/CatalogPage";
 describe("Feature: Checkout", () => {
   const checkoutPage = new CheckoutPage();
   const catalogPage = new CatalogPage();
+  const publicOrderIdPattern = /^[0-1][0-9][0-3][0-9][0-9]{4}-[0-9]{5}$/;
 
   function assertCheckoutSuccessOnlyMessage() {
     checkoutPage.successMessage().should("contain", "Order confirmed");
@@ -34,6 +35,7 @@ describe("Feature: Checkout", () => {
 
     cy.wait("@checkout").then(({ request, response }) => {
       expect(response?.statusCode).to.eq(201);
+      expect(response?.body?.orderId).to.match(publicOrderIdPattern);
       expect(request.body.address).to.deep.equal({
         street: "101 Test Street",
         city: "Austin",
@@ -69,6 +71,7 @@ describe("Feature: Checkout", () => {
 
     cy.wait("@checkout").then(({ request, response }) => {
       expect(response?.statusCode).to.eq(201);
+      expect(response?.body?.orderId).to.match(publicOrderIdPattern);
       expect(request.body.payment).to.deep.include({
         nameOnCard: "Anton Minnie",
         cardNumber: "4242424242424242"
@@ -88,6 +91,7 @@ describe("Feature: Checkout", () => {
 
     cy.wait("@checkout").then(({ request, response }) => {
       expect(response?.statusCode).to.eq(201);
+      expect(response?.body?.orderId).to.match(publicOrderIdPattern);
       expect(request.body.payment).to.deep.include({
         nameOnCard: "Anton Minnie",
         cardNumber: "12345"

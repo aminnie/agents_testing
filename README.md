@@ -18,7 +18,7 @@ Recommended workflow order:
 1. `AGENTS.md` - start with default project standards and instruction precedence.
 2. `CLARIFICATION-AGENT.md` - finalize requirement details and decisions.
 3. `ANALYSIS-AGENT.md` - create implementation-ready technical blueprint.
-4. Implement code changes (following `AGENTS.md` baseline rules).
+4. Implement code changes (following `AGENTS.md` baseline rules) only after the active `requirements/product_*.md` includes a completed `## Technical Analysis`, status is `Ready for implementation approval`, and the user explicitly confirms implementation.
 5. `CYRPRESS-AGENT.md` - generate/update Cypress/spec and code artifacts and validate behavior.
 6. `SIMPLIFIER-AGENT.md` (optional manual step) - manually invoke when you want a behavior-preserving simplification pass before final review.
 7. `REVIEW-AGENT.md` - run final pass review before handoff/PR.
@@ -28,15 +28,19 @@ Recommended workflow order:
 When code implementation is triggered (step 4 in the workflow), the agent should:
 
 1. Use the clarified requirements and technical analysis as the implementation source of truth.
-2. Apply scoped backend/frontend/test/documentation changes required to satisfy the target `requirements/product_feature*.md` or `requirements/product_bug*.md` file.
-3. Preserve baseline guardrails from `AGENTS.md` (small safe changes, no destructive operations, no unrelated edits).
-4. Update Cypress/spec artifacts as needed (following `CYRPRESS-AGENT.md`) so behavior is validated and regression-safe.
-5. Run verification commands before handoff:
+2. Confirm the analysis lock is satisfied before coding:
+  - `## Technical Analysis` is complete in the active `requirements/product_*.md`,
+  - status is `Ready for implementation approval`,
+  - user has explicitly approved implementation in the current thread.
+3. Apply scoped backend/frontend/test/documentation changes required to satisfy the target `requirements/product_feature*.md` or `requirements/product_bug*.md` file.
+4. Preserve baseline guardrails from `AGENTS.md` (small safe changes, no destructive operations, no unrelated edits).
+5. Update Cypress/spec artifacts as needed (following `CYRPRESS-AGENT.md`) so behavior is validated and regression-safe.
+6. Run verification commands before handoff:
   - `npm run test:e2e (spec driven smoke and regression tests)`
   - `npm run test:a11y (accessibility testing portfolio)`
   - `npm run workflow:final-pass`
-6. Run a Snyk code scan on changed first-party code; when Snyk is installed/configured as an MCP in the IDE, this scan is automatically triggered as part of the implementation flow (using `snyk_code_scan` on the affected frontend/backend source path). Resolve any new findings before handoff.
-7. Update the requirements artifact with delivered outcomes:
+7. Run a Snyk code scan on changed first-party code; when Snyk is installed/configured as an MCP in the IDE, this scan is automatically triggered as part of the implementation flow (using `snyk_code_scan` on the affected frontend/backend source path). Resolve any new findings before handoff.
+8. Update the requirements artifact with delivered outcomes:
   - `## What Changed`
   - `## Verification Results`
   - `## Review Results`

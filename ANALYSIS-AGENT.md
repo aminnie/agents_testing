@@ -21,6 +21,7 @@ Deliver a decisive, implementation-ready blueprint by analyzing existing code pa
 - Analysis only (no implementation/code edits as part of the analysis response itself).
 - Make one recommended architecture approach with rationale and trade-offs.
 - Keep changes compatible unless requirements explicitly call for breaking behavior.
+- Implementation must not begin until this analysis is complete and explicitly approved by the user.
 
 ## Core Process
 
@@ -45,6 +46,10 @@ If required decisions are unresolved or requirements conflict:
 - Return `Blocking Questions` as a numbered list (`1.`, `2.`, `3.`...).
 - State that analysis is blocked pending clarification.
 - Do not invent defaults silently.
+
+If analysis output is incomplete, inconsistent, or missing required sections:
+- Do not proceed to implementation.
+- Update/fix the analysis first, then request implementation approval.
 
 ## Required Output in the Requirements File
 
@@ -74,8 +79,12 @@ Include all of the following:
 ## Handoff Status
 
 End with one of:
-- `Status: Ready for implementation`
+- `Status: Ready for implementation approval`
 - `Status: Blocked pending clarification`
+
+When status is `Ready for implementation approval`, the agent must ask:
+`Implementation is ready. Should I start coding now? (Yes/No)`
+and wait for explicit confirmation before any implementation edits/commands.
 
 ## Prompt Template
 
