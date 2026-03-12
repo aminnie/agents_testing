@@ -7,6 +7,10 @@ export class OrdersPage {
     return cy.get('[data-cy="orders-list"]');
   }
 
+  firstOrderLink() {
+    return cy.get('[data-cy^="orders-link-"]').first();
+  }
+
   emptyState() {
     return cy.get('[data-cy="orders-empty"]');
   }

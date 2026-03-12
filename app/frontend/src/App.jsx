@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppHeader from "./components/AppHeader.jsx";
@@ -6,6 +6,7 @@ import CheckoutPage from "./components/CheckoutPage.jsx";
 import HelpPage from "./components/HelpPage.jsx";
 import ItemDetailPage from "./components/ItemDetailPage.jsx";
 import LoginScreen from "./components/LoginScreen.jsx";
+import OrderDetailsPage from "./components/OrderDetailsPage.jsx";
 import OrdersPage from "./components/OrdersPage.jsx";
 import ProductFormPage from "./components/ProductFormPage.jsx";
 import RegisterScreen from "./components/RegisterScreen.jsx";
@@ -162,6 +163,81 @@ function ProductFormRoute({
   );
 }
 
+function OrderDetailsRoute({
+  token,
+  formatPrice,
+  onSessionInvalid
+}) {
+  const { orderId = "" } = useParams();
+  const [order, setOrder] = useState(null);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (!token || !orderId) {
+      setOrder(null);
+      setItems([]);
+      setErrorMessage("Order not found");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then(async (response) => {
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch {
+          payload = {};
+        }
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("SESSION_INVALID");
+          }
+          if (response.status === 404) {
+            throw new Error("ORDER_NOT_FOUND");
+          }
+          throw new Error(payload.message || "Could not load order details");
+        }
+        return payload;
+      })
+      .then((data) => {
+        setOrder(data.order || null);
+        setItems(Array.isArray(data.items) ? data.items : []);
+        setErrorMessage("");
+      })
+      .catch((error) => {
+        const message = String(error?.message || "");
+        if (message === "SESSION_INVALID") {
+          onSessionInvalid();
+          return;
+        }
+        setOrder(null);
+        setItems([]);
+        setErrorMessage(message === "ORDER_NOT_FOUND" ? "Order not found" : message || "Could not load order details");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [token, orderId, onSessionInvalid]);
+
+  return (
+    <OrderDetailsPage
+      errorMessage={errorMessage}
+      formatPrice={formatPrice}
+      items={items}
+      loading={loading}
+      order={order}
+    />
+  );
+}
+
 function StoreApp() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -181,6 +257,7 @@ function StoreApp() {
   const [catalogError, setCatalogError] = useState("");
   const [cart, setCart] = useState([]);
   const [orderMessage, setOrderMessage] = useState("");
+  const [orderId, setOrderId] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [nameOnCard, setNameOnCard] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -222,7 +299,7 @@ function StoreApp() {
     setRegisterSubmitting(false);
   }
 
-  function clearSession() {
+  const clearSession = useCallback(() => {
     localStorage.removeItem(STORAGE_KEYS.auth);
     localStorage.removeItem(STORAGE_KEYS.user);
     setToken("");
@@ -232,6 +309,7 @@ function StoreApp() {
     setSearchError("");
     setCart([]);
     setOrderMessage("");
+    setOrderId("");
     setCheckoutError("");
     setNameOnCard("");
     setCardNumber("");
@@ -239,7 +317,12 @@ function StoreApp() {
     setOrders([]);
     setOrdersError("");
     setLoadingOrders(false);
-  }
+  }, []);
+
+  const handleSessionInvalid = useCallback(() => {
+    clearSession();
+    setAuthError("Session expired. Please sign in again.");
+  }, [clearSession]);
 
   useEffect(() => {
     const previousPathname = previousPathnameRef.current;
@@ -311,15 +394,14 @@ function StoreApp() {
       })
       .catch((error) => {
         if (String(error?.message || "") === "SESSION_INVALID") {
-          clearSession();
-          setAuthError("Session expired. Please sign in again.");
+          handleSessionInvalid();
           return;
         }
         setCatalog([]);
         setCatalogError(String(error?.message || "Could not load catalog"));
       })
       .finally(() => setLoadingCatalog(false));
-  }, [token, activeSearchQuery]);
+  }, [token, activeSearchQuery, handleSessionInvalid]);
 
   useEffect(() => {
     if (!token || location.pathname !== "/orders") {
@@ -354,15 +436,14 @@ function StoreApp() {
       })
       .catch((error) => {
         if (String(error?.message || "") === "SESSION_INVALID") {
-          clearSession();
-          setAuthError("Session expired. Please sign in again.");
+          handleSessionInvalid();
           return;
         }
         setOrders([]);
         setOrdersError(String(error?.message || "Could not load orders"));
       })
       .finally(() => setLoadingOrders(false));
-  }, [token, location.pathname]);
+  }, [token, location.pathname, handleSessionInvalid]);
 
   function persistAuth(nextToken, user) {
     localStorage.setItem(STORAGE_KEYS.auth, nextToken);
@@ -456,6 +537,7 @@ function StoreApp() {
 
   function addToCart(item) {
     setOrderMessage("");
+    setOrderId("");
     setCheckoutError("");
     setCart((current) => {
       const existing = current.find((entry) => entry.id === item.id);
@@ -608,6 +690,7 @@ function StoreApp() {
     event.preventDefault();
     setCheckoutError("");
     setOrderMessage("");
+    setOrderId("");
 
     const formData = new FormData(event.currentTarget);
     const submittedName = String(formData.get("nameOnCard") || "")
@@ -664,6 +747,7 @@ function StoreApp() {
     }
 
     setOrderMessage(`Order confirmed (#${payload.orderId})`);
+    setOrderId(String(payload.orderId || ""));
     if (payload.user) {
       const nextUser = {
         ...(currentUser || {}),
@@ -796,6 +880,16 @@ function StoreApp() {
           }
         />
         <Route
+          path="/orders/:orderId"
+          element={
+            <OrderDetailsRoute
+              formatPrice={formatPrice}
+              onSessionInvalid={handleSessionInvalid}
+              token={token}
+            />
+          }
+        />
+        <Route
           path="/store/item/:itemId"
           element={
             <ItemDetailRoute
@@ -886,6 +980,7 @@ function StoreApp() {
               onCountryChange={(event) => setCheckoutAddress((current) => ({ ...current, country: event.target.value }))}
               onNameChange={(event) => setNameOnCard(event.target.value)}
               onSubmit={submitCheckout}
+              orderId={orderId}
               orderMessage={orderMessage}
               totalCents={totalCents}
             />

@@ -18,6 +18,8 @@ Feature: Accessibility baseline checks
     Then I should see no WCAG accessibility violations on store no-results state
     When I open the orders list from the catalog page
     Then I should see no WCAG accessibility violations on orders page
+    When I open an order details page from the orders list
+    Then I should see no WCAG accessibility violations on order details page
     When I open an item detail page
     Then I should see no WCAG accessibility violations on item detail page
     When I navigate to checkout with one item in cart

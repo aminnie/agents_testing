@@ -1,4 +1,6 @@
 import { Card, CardContent, CircularProgress, List, ListItem, Stack, Typography } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
+import Link from "@mui/material/Link";
 
 function formatOrderDate(value) {
   const date = new Date(value);
@@ -38,7 +40,14 @@ export default function OrdersPage({ loading, errorMessage, orders, formatPrice 
                 <ListItem data-cy={`orders-item-${order.orderId}`} divider key={order.orderId} sx={{ px: 0 }}>
                   <Stack spacing={0.5}>
                     <Typography data-cy={`orders-id-${order.orderId}`} variant="body1">
-                      Order #{order.orderId}
+                      <Link
+                        component={RouterLink}
+                        data-cy={`orders-link-${order.orderId}`}
+                        to={`/orders/${encodeURIComponent(order.orderId)}`}
+                        underline="hover"
+                      >
+                        Order #{order.orderId}
+                      </Link>
                     </Typography>
                     <Typography data-cy={`orders-date-${order.orderId}`} variant="body2">
                       Date: {formatOrderDate(order.createdAt)}

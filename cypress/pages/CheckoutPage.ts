@@ -19,6 +19,10 @@ export class CheckoutPage {
     return cy.get('[data-cy="checkout-success"]');
   }
 
+  successOrderLink() {
+    return cy.get('[data-cy="checkout-order-link"]');
+  }
+
   errorMessage() {
     return cy.get('[data-cy="checkout-error"]');
   }

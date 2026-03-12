@@ -799,6 +799,99 @@ app.get("/api/orders", authMiddleware, async (req, res) => {
   });
 });
 
+app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
+  const requestedOrderId = String(req.params.orderId || "").trim();
+  if (!requestedOrderId) {
+    res.status(404).json({ message: "Order not found" });
+    return;
+  }
+
+  const byPublicId = await db.get(
+    `SELECT
+      id,
+      public_order_id AS publicOrderId,
+      created_at AS createdAt,
+      total_cents AS totalCents,
+      shipping_street AS shippingStreet,
+      shipping_city AS shippingCity,
+      shipping_postal_code AS shippingPostalCode,
+      shipping_country AS shippingCountry,
+      payment_name_on_card AS paymentNameOnCard,
+      payment_last4 AS paymentLast4
+    FROM orders
+    WHERE user_id = ? AND public_order_id = ?
+    LIMIT 1`,
+    req.userId,
+    requestedOrderId
+  );
+
+  let order = byPublicId;
+  if (!order) {
+    const legacyRows = await db.all(
+      `SELECT
+        id,
+        public_order_id AS publicOrderId,
+        created_at AS createdAt,
+        total_cents AS totalCents,
+        shipping_street AS shippingStreet,
+        shipping_city AS shippingCity,
+        shipping_postal_code AS shippingPostalCode,
+        shipping_country AS shippingCountry,
+        payment_name_on_card AS paymentNameOnCard,
+        payment_last4 AS paymentLast4
+      FROM orders
+      WHERE user_id = ?
+      ORDER BY created_at DESC, id DESC`,
+      req.userId
+    );
+    order = legacyRows.find((row) => createPublicOrderId(row.id, row.createdAt) === requestedOrderId);
+  }
+
+  if (!order) {
+    res.status(404).json({ message: "Order not found" });
+    return;
+  }
+
+  const itemRows = await db.all(
+    `SELECT
+      oi.catalog_item_id AS catalogItemId,
+      oi.quantity AS quantity,
+      oi.unit_price_cents AS unitPriceCents,
+      ci.public_id AS publicItemId,
+      COALESCE(ci.header, ci.name, 'Catalog item') AS itemName
+    FROM order_items oi
+    LEFT JOIN catalog_items ci ON ci.id = oi.catalog_item_id
+    WHERE oi.order_id = ?
+    ORDER BY oi.id`,
+    order.id
+  );
+
+  res.json({
+    order: {
+      orderId: order.publicOrderId || createPublicOrderId(order.id, order.createdAt),
+      createdAt: order.createdAt,
+      totalCents: order.totalCents,
+      shipping: {
+        street: order.shippingStreet || "",
+        city: order.shippingCity || "",
+        postalCode: order.shippingPostalCode || "",
+        country: order.shippingCountry || ""
+      },
+      paymentSummary: {
+        nameOnCard: order.paymentNameOnCard || "",
+        last4: order.paymentLast4 || ""
+      }
+    },
+    items: itemRows.map((item) => ({
+      itemId: item.publicItemId || String(item.catalogItemId || ""),
+      headerOrName: item.itemName || "Catalog item",
+      quantity: item.quantity,
+      unitPriceCents: item.unitPriceCents,
+      lineTotalCents: item.quantity * item.unitPriceCents
+    }))
+  });
+});
+
 initDb()
   .then((database) => {
     db = database;

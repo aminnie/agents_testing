@@ -114,6 +114,14 @@ function runA11yAudit(scope: string, context: string = "body") {
     cy.get('[data-cy="orders-page-title"]').should("be.visible");
     runA11yAudit("orders");
 
+    // Order details page
+    cy.intercept("GET", /\/api\/orders\/[^/]+$/).as("orderDetails");
+    cy.get('[data-cy^="orders-link-"]').first().click();
+    cy.location("pathname").should("match", /^\/orders\/.+$/);
+    cy.wait("@orderDetails").its("response.statusCode").should("be.oneOf", [200, 304]);
+    cy.get('[data-cy="order-details-page-title"]').should("be.visible");
+    runA11yAudit("order-details");
+
     // Item detail page
     cy.get('[data-cy="nav-store"]').click();
     cy.get('[data-cy^="catalog-view-"]').first().click();

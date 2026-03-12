@@ -1,10 +1,12 @@
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PaymentIcon from "@mui/icons-material/Payment";
+import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Button,
   Card,
   CardContent,
+  Link,
   List,
   ListItem,
   Stack,
@@ -30,7 +32,8 @@ export default function CheckoutPage({
   onCardChange,
   onSubmit,
   checkoutError,
-  orderMessage
+  orderMessage,
+  orderId
 }) {
   if (orderMessage) {
     return (
@@ -38,7 +41,20 @@ export default function CheckoutPage({
         <CardContent>
           <Typography data-cy="checkout-page-title" gutterBottom variant="h5">Checkout complete</Typography>
           <Alert data-cy="checkout-success" icon={<CheckCircleOutlineIcon />} severity="success">
-            {orderMessage}
+            {orderId ? (
+              <>
+                Order confirmed (
+                <Link
+                  component={RouterLink}
+                  data-cy="checkout-order-link"
+                  to={`/orders/${encodeURIComponent(orderId)}`}
+                  underline="hover"
+                >
+                  #{orderId}
+                </Link>
+                )
+              </>
+            ) : orderMessage}
           </Alert>
         </CardContent>
       </Card>
