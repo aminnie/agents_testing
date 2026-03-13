@@ -16,19 +16,18 @@ describe("Feature: Catalog and Cart", () => {
   });
 
   it("should add an item to cart and update total", () => {
-    cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
     catalogPage.navCartCount().should("contain", "0");
     catalogPage.addFirstCatalogItem();
 
     catalogPage.cartItemList().find("li").should("have.length", 1);
     catalogPage.cartTotal().should("not.contain", "$0.00");
-    cy.get('[data-cy="nav-checkout"]').should("be.enabled");
     catalogPage.navCartCount().should("contain", "1");
   });
 
   it("should navigate from store to checkout page", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="nav-checkout"]').should("be.enabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
 
     catalogPage.navCartIcon().click();
     cy.location("pathname").should("eq", "/checkout");
@@ -45,7 +44,8 @@ describe("Feature: Catalog and Cart", () => {
     catalogPage.addFromDetailAndReturn();
     cy.location("pathname").should("eq", "/store");
     catalogPage.cartItemList().find("li").should("have.length", 1);
-    cy.get('[data-cy="nav-checkout"]').should("be.enabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
+    catalogPage.navCartCount().should("contain", "1");
   });
 
   it("should return from item details without adding an item", () => {
@@ -56,7 +56,8 @@ describe("Feature: Catalog and Cart", () => {
     catalogPage.returnFromDetail();
     cy.location("pathname").should("eq", "/store");
     cy.get('[data-cy="cart-empty"]').should("be.visible");
-    cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
+    catalogPage.navCartCount().should("contain", "0");
   });
 
   it("should re-enable top checkout button after adding an item again", () => {
@@ -71,13 +72,13 @@ describe("Feature: Catalog and Cart", () => {
     cy.get('[data-cy="checkout-name"]').type("Anton Minnie");
     cy.get('[data-cy="checkout-card"]').type("12345");
     cy.get('[data-cy="checkout-submit"]').click();
-    cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
     catalogPage.navCartCount().should("contain", "0");
 
     cy.get('[data-cy="nav-store"]').click();
     cy.location("pathname").should("eq", "/store");
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="nav-checkout"]').should("be.enabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
     catalogPage.navCartCount().should("contain", "1");
   });
 });

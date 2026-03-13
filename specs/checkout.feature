@@ -67,3 +67,28 @@ Feature: Checkout
     And I click "Confirm order"
     Then API "POST @checkout" should return "400"
     And I should see error "Postal code"
+
+  @regression
+  Scenario: User adjusts checkout line item quantity and sees realtime total updates
+    Given I am on "/"
+    And I log in with valid credentials
+    And I add the first catalog item to cart
+    And I add the first catalog item to cart
+    And I navigate to "/checkout"
+    When I click the checkout line item decrement action
+    Then checkout line item quantity should be "1"
+    And header cart count should show "1"
+    When I click the checkout line item increment action
+    Then checkout line item quantity should be "2"
+    And header cart count should show "2"
+
+  @regression
+  Scenario: User can remove checkout line item and header checkout button is not shown
+    Given I am on "/"
+    And I log in with valid credentials
+    And I add the first catalog item to cart
+    And I navigate to "/checkout"
+    Then I should not see header action "Checkout"
+    When I click the checkout line item delete action
+    Then cart should remain empty
+    And header cart count should show "0"

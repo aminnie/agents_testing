@@ -26,4 +26,20 @@ export class CheckoutPage {
   errorMessage() {
     return cy.get('[data-cy="checkout-error"]');
   }
+
+  firstItemQuantity() {
+    return cy.get('[data-cy^="checkout-item-quantity-"]').first();
+  }
+
+  incrementFirstItem() {
+    cy.get('[data-cy^="checkout-item-inc-"]').first().click();
+  }
+
+  decrementFirstItem() {
+    cy.get('[data-cy^="checkout-item-dec-"]').first().click();
+  }
+
+  deleteFirstItem() {
+    cy.get('[data-cy^="checkout-item-delete-"]').first().click();
+  }
 }

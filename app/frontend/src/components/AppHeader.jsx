@@ -4,7 +4,6 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import {
   AppBar,
@@ -26,7 +25,6 @@ export default function AppHeader({
   onGoUserAdmin,
   onGoNewProduct,
   onLogout,
-  isCheckoutEnabled,
   cartItemCount,
   isProductManagementEnabled,
   isAdmin
@@ -83,15 +81,6 @@ export default function AppHeader({
           </IconButton>
           <Button data-cy="nav-store" onClick={onGoStore} startIcon={<StorefrontIcon />} type="button">
             Store
-          </Button>
-          <Button
-            data-cy="nav-checkout"
-            disabled={!isCheckoutEnabled}
-            onClick={onGoCheckout}
-            startIcon={<ShoppingCartCheckoutIcon />}
-            type="button"
-          >
-            Checkout
           </Button>
           {isProductManagementEnabled ? (
             <Button

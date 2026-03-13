@@ -1,14 +1,21 @@
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import PaymentIcon from "@mui/icons-material/Payment";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Button,
   Card,
   CardContent,
+  IconButton,
   Link,
-  List,
-  ListItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Stack,
   TextField,
   Typography
@@ -30,6 +37,9 @@ export default function CheckoutPage({
   onCountryChange,
   onNameChange,
   onCardChange,
+  onIncrementItem,
+  onDecrementItem,
+  onRemoveItem,
   onSubmit,
   checkoutError,
   orderMessage,
@@ -66,15 +76,64 @@ export default function CheckoutPage({
       <Card>
         <CardContent>
           <Typography data-cy="checkout-page-title" gutterBottom variant="h5">Checkout</Typography>
-          <List data-cy="cart-list" sx={{ p: 0 }}>
-          {cart.map((item) => (
-            <ListItem key={item.id} sx={{ px: 0 }}>
-              <Typography data-cy={`cart-item-${item.id}`}>
-                {item.name} x {item.quantity}
-              </Typography>
-            </ListItem>
-          ))}
-          </List>
+          <Table data-cy="cart-list" size="small" sx={{ mb: 1 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Item</TableCell>
+                <TableCell align="center">Quantity</TableCell>
+                <TableCell align="right">Subtotal</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {cart.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <Typography data-cy={`cart-item-${item.id}`}>{item.name}</Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Typography data-cy={`checkout-item-quantity-${item.id}`}>{item.quantity}</Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography data-cy={`checkout-item-subtotal-${item.id}`}>
+                      {formatPrice(item.priceCents * item.quantity)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                      <IconButton
+                        aria-label={`Decrease quantity for ${item.name}`}
+                        data-cy={`checkout-item-dec-${item.id}`}
+                        onClick={() => onDecrementItem(item.id)}
+                        size="small"
+                        type="button"
+                      >
+                        <RemoveCircleOutlineIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        aria-label={`Increase quantity for ${item.name}`}
+                        data-cy={`checkout-item-inc-${item.id}`}
+                        onClick={() => onIncrementItem(item.id)}
+                        size="small"
+                        type="button"
+                      >
+                        <AddCircleOutlineIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        aria-label={`Remove ${item.name} from cart`}
+                        data-cy={`checkout-item-delete-${item.id}`}
+                        onClick={() => onRemoveItem(item.id)}
+                        size="small"
+                        type="button"
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {cart.length === 0 ? <Typography data-cy="cart-empty">Cart is empty</Typography> : null}
           <Typography data-cy="cart-total" sx={{ fontWeight: 600 }}>
             Total: {formatPrice(totalCents)}

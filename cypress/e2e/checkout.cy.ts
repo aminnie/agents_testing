@@ -16,7 +16,7 @@ describe("Feature: Checkout", () => {
     cy.get('[data-cy="checkout-form"]').should("not.exist");
     cy.get('[data-cy="checkout-name"]').should("not.exist");
     cy.get('[data-cy="checkout-card"]').should("not.exist");
-    cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    cy.get('[data-cy="nav-checkout"]').should("not.exist");
     cy.get('[data-cy="nav-cart-count"]').should("contain", "0");
   }
 
@@ -53,6 +53,41 @@ describe("Feature: Checkout", () => {
       });
     });
     assertCheckoutSuccessOnlyMessage();
+  });
+
+  it("should support increment and delete controls for checkout line items", () => {
+    catalogPage.addFirstCatalogItem();
+    catalogPage.addFirstCatalogItem();
+    cy.get('[data-cy="go-to-checkout"]').click();
+    cy.location("pathname").should("eq", "/checkout");
+
+    cy.get('[data-cy="nav-cart-count"]').should("contain", "2");
+    checkoutPage.firstItemQuantity().should("have.text", "2");
+
+    checkoutPage.decrementFirstItem();
+    checkoutPage.firstItemQuantity().should("have.text", "1");
+    cy.get('[data-cy="nav-cart-count"]').should("contain", "1");
+
+    checkoutPage.incrementFirstItem();
+    checkoutPage.firstItemQuantity().should("have.text", "2");
+    cy.get('[data-cy="nav-cart-count"]').should("contain", "2");
+
+    checkoutPage.deleteFirstItem();
+    cy.get('[data-cy="cart-empty"]').should("be.visible");
+    cy.get('[data-cy="nav-cart-count"]').should("contain", "0");
+    cy.get('[data-cy="cart-total"]').should("contain", "$0.00");
+    cy.get("@checkout.all").should("have.length", 0);
+  });
+
+  it("should remove a line item when decrement is clicked at quantity one", () => {
+    catalogPage.addFirstCatalogItem();
+    cy.get('[data-cy="go-to-checkout"]').click();
+    cy.location("pathname").should("eq", "/checkout");
+    checkoutPage.firstItemQuantity().should("have.text", "1");
+
+    checkoutPage.decrementFirstItem();
+    cy.get('[data-cy="cart-empty"]').should("be.visible");
+    cy.get('[data-cy="nav-cart-count"]').should("contain", "0");
   });
 
   it("should block checkout when payment is incomplete", () => {

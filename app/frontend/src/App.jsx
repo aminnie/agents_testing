@@ -789,6 +789,32 @@ function StoreApp() {
     });
   }
 
+  function incrementCartItem(itemId) {
+    setCart((current) =>
+      current.map((entry) =>
+        entry.id === itemId ? { ...entry, quantity: entry.quantity + 1 } : entry
+      )
+    );
+  }
+
+  function decrementCartItem(itemId) {
+    setCart((current) =>
+      current.flatMap((entry) => {
+        if (entry.id !== itemId) {
+          return [entry];
+        }
+        if (entry.quantity <= 1) {
+          return [];
+        }
+        return [{ ...entry, quantity: entry.quantity - 1 }];
+      })
+    );
+  }
+
+  function removeCartItem(itemId) {
+    setCart((current) => current.filter((entry) => entry.id !== itemId));
+  }
+
   function viewItem(itemId) {
     navigate({
       pathname: `/store/item/${encodeURIComponent(itemId)}`,
@@ -1100,7 +1126,6 @@ function StoreApp() {
   return (
     <main className="container">
       <AppHeader
-        isCheckoutEnabled={cartItemCount > 0}
         cartItemCount={cartItemCount}
         isAdmin={isAdmin}
         onGoCheckout={() => navigate("/checkout")}
@@ -1297,6 +1322,9 @@ function StoreApp() {
               onPostalCodeChange={(event) => setCheckoutAddress((current) => ({ ...current, postalCode: event.target.value }))}
               onCountryChange={(event) => setCheckoutAddress((current) => ({ ...current, country: event.target.value }))}
               onNameChange={(event) => setNameOnCard(event.target.value)}
+              onIncrementItem={incrementCartItem}
+              onDecrementItem={decrementCartItem}
+              onRemoveItem={removeCartItem}
               onSubmit={submitCheckout}
               orderId={orderId}
               orderMessage={orderMessage}
