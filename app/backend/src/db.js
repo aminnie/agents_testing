@@ -17,6 +17,13 @@ const ROLE_TYPES = [
   { id: 3, name: "user" },
   { id: 4, name: "editor" }
 ];
+const ORDER_STATUS_TYPES = [
+  { id: 1, name: "Ordered" },
+  { id: 2, name: "Processing" },
+  { id: 3, name: "Shipped" },
+  { id: 4, name: "Delivered" },
+  { id: 5, name: "Cancelled" }
+];
 const PASSWORD_HASH_ROUNDS = Number.parseInt(process.env.PASSWORD_HASH_ROUNDS || "10", 10);
 
 function toSingleLine(value) {
@@ -183,6 +190,11 @@ export async function initDb() {
       name TEXT UNIQUE NOT NULL CHECK(length(name) <= 15)
     );
 
+    CREATE TABLE IF NOT EXISTS order_status_types (
+      id INTEGER PRIMARY KEY,
+      name TEXT UNIQUE NOT NULL CHECK(length(name) <= 15)
+    );
+
     CREATE TABLE IF NOT EXISTS catalog_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       public_id TEXT UNIQUE,
@@ -205,6 +217,7 @@ export async function initDb() {
       total_cents INTEGER NOT NULL,
       payment_last4 TEXT NOT NULL,
       created_at TEXT NOT NULL,
+      order_status_type_id INTEGER REFERENCES order_status_types(id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
 
@@ -227,6 +240,14 @@ export async function initDb() {
     );
   }
 
+  for (const orderStatusType of ORDER_STATUS_TYPES) {
+    await db.run(
+      "INSERT INTO order_status_types (id, name) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name",
+      orderStatusType.id,
+      orderStatusType.name
+    );
+  }
+
   await addMissingColumns(db, "users", [
     { name: "role_id", definition: "role_id INTEGER REFERENCES role_types(id)" },
     { name: "display_name", definition: "display_name TEXT" },
@@ -242,11 +263,14 @@ export async function initDb() {
     { name: "shipping_city", definition: "shipping_city TEXT" },
     { name: "shipping_postal_code", definition: "shipping_postal_code TEXT" },
     { name: "shipping_country", definition: "shipping_country TEXT" },
-    { name: "payment_name_on_card", definition: "payment_name_on_card TEXT" }
+    { name: "payment_name_on_card", definition: "payment_name_on_card TEXT" },
+    { name: "order_status_type_id", definition: "order_status_type_id INTEGER REFERENCES order_status_types(id)" }
   ]);
 
   await db.exec("CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)");
   await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_public_order_id ON orders(public_order_id)");
+  await db.exec("CREATE INDEX IF NOT EXISTS idx_orders_status_type_id ON orders(order_status_type_id)");
+  await db.exec("CREATE INDEX IF NOT EXISTS idx_orders_user_created_at ON orders(user_id, created_at DESC, id DESC)");
 
   const existingUsers = await db.get("SELECT COUNT(*) AS count FROM users");
   if (existingUsers.count === 0) {
@@ -349,6 +373,13 @@ export async function initDb() {
       : deriveHeaderFromDescription(row.description);
     await db.run("UPDATE catalog_items SET public_id = ?, header = ? WHERE id = ?", publicId, header, row.id);
   }
+
+  // Assign a one-time pseudo-random status to legacy orders that predate status modeling.
+  await db.exec(`
+    UPDATE orders
+    SET order_status_type_id = ((abs(random()) % 5) + 1)
+    WHERE order_status_type_id IS NULL
+  `);
 
   return db;
 }

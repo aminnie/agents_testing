@@ -2,6 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn } from "node:child_process";
+import {
+  getActiveRequirementsPath,
+  setActiveRequirementsPath
+} from "./requirements/active-requirements.mjs";
 
 const WORKSPACE_ROOT = process.cwd();
 const REQUIREMENTS_DIR = path.join(WORKSPACE_ROOT, "requirements");
@@ -19,6 +23,11 @@ async function fileExists(targetPath) {
 async function resolveRequirementsReviewPath() {
   if (process.env.REQUIREMENTS_REVIEW_PATH) {
     return path.resolve(WORKSPACE_ROOT, process.env.REQUIREMENTS_REVIEW_PATH);
+  }
+
+  const persistedActivePath = await getActiveRequirementsPath();
+  if (persistedActivePath) {
+    return path.resolve(WORKSPACE_ROOT, persistedActivePath);
   }
 
   const promptPathMatch = PROMPT_TEXT.match(/requirements\/[a-zA-Z0-9._-]+\.md/);
@@ -129,6 +138,7 @@ async function main() {
   await runCommand("npm", ["run", "test:e2e"]);
   await runCommand("npm", ["run", "test:a11y"]);
   await ensureRequirementsReviewExists(requirementsReviewPath);
+  await setActiveRequirementsPath(path.relative(WORKSPACE_ROOT, requirementsReviewPath));
   const jiraIssueKey = String(process.env.JIRA_ISSUE_KEY || "").trim();
   if (isTruthy(process.env.JIRA_FINAL_PASS_PUBLISH) && jiraIssueKey) {
     const relativeRequirementsPath = path.relative(WORKSPACE_ROOT, requirementsReviewPath);

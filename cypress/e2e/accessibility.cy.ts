@@ -88,7 +88,7 @@ function runA11yAudit(scope: string, context: string = "body") {
   it("should pass WCAG checks on authenticated core pages", () => {
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog*").as("catalog");
-    cy.intercept("GET", "/api/orders").as("orders");
+    cy.intercept("GET", "/api/orders*").as("orders");
 
     cy.loginUi();
     cy.wait("@login").its("response.statusCode").should("eq", 200);

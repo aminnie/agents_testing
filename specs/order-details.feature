@@ -19,8 +19,10 @@ Feature: Order details page
     When I click the first order id link
     Then I should be on "/orders/:orderId"
     And I should see order header details
+    And I should see the order status
     And I should see order line items
     And I should see shipping and payment summary
+    And I should be able to navigate back to "/orders"
 
   @regression
   Scenario: Checkout complete order number links to order details

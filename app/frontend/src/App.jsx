@@ -19,8 +19,11 @@ const STORAGE_KEYS = Object.freeze({
   auth: ["store", "auth", "state"].join("-"),
   user: ["store", "user", "state"].join("-")
 });
-const PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50]);
-const DEFAULT_PAGE_SIZE = 10;
+const STORE_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 50]);
+const DEFAULT_STORE_PAGE_SIZE = 10;
+const ORDER_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 30, 40, 50]);
+const DEFAULT_ORDER_PAGE_SIZE = 10;
+const MAX_ORDER_SEARCH_QUERY_LENGTH = 60;
 const POSTAL_CODE_PATTERN = /^[0-9-]{1,15}$/;
 
 function createEmptyAddress() {
@@ -38,6 +41,19 @@ function parsePositiveInteger(value, fallbackValue) {
 }
 
 function buildStoreSearch(currentSearch, page, pageSize, query = "") {
+  const params = new URLSearchParams(currentSearch);
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+  const normalizedQuery = String(query || "").trim();
+  if (normalizedQuery) {
+    params.set("q", normalizedQuery);
+  } else {
+    params.delete("q");
+  }
+  return `?${params.toString()}`;
+}
+
+function buildOrdersSearch(currentSearch, page, pageSize, query = "") {
   const params = new URLSearchParams(currentSearch);
   params.set("page", String(page));
   params.set("pageSize", String(pageSize));
@@ -166,7 +182,8 @@ function ProductFormRoute({
 function OrderDetailsRoute({
   token,
   formatPrice,
-  onSessionInvalid
+  onSessionInvalid,
+  onGoOrders
 }) {
   const { orderId = "" } = useParams();
   const [order, setOrder] = useState(null);
@@ -234,6 +251,7 @@ function OrderDetailsRoute({
       items={items}
       loading={loading}
       order={order}
+      onGoOrders={onGoOrders}
     />
   );
 }
@@ -266,20 +284,43 @@ function StoreApp() {
   const [orders, setOrders] = useState([]);
   const [ordersError, setOrdersError] = useState("");
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState("");
   const currentSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const [searchInput, setSearchInput] = useState(() => currentSearchParams.get("q") || "");
+  const isStorePath = location.pathname.startsWith("/store");
+  const isOrdersPath = location.pathname === "/orders";
+  const [searchInput, setSearchInput] = useState(() => (isStorePath ? currentSearchParams.get("q") || "" : ""));
   const [searchError, setSearchError] = useState("");
+  const [ordersSearchInput, setOrdersSearchInput] = useState(() => (isOrdersPath ? currentSearchParams.get("q") || "" : ""));
+  const [ordersSearchError, setOrdersSearchError] = useState("");
+  const [ordersPagination, setOrdersPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    pageSize: DEFAULT_ORDER_PAGE_SIZE,
+    totalItems: 0
+  });
   const [productFormError, setProductFormError] = useState("");
   const [productFormSubmitting, setProductFormSubmitting] = useState(false);
   const isProductManager = ["editor", "manager"].includes(currentUser?.role || "");
   const isAdmin = (currentUser?.role || "") === "admin";
-  const activeSearchQuery = String(currentSearchParams.get("q") || "").trim();
-  const requestedPageSize = parsePositiveInteger(currentSearchParams.get("pageSize"), DEFAULT_PAGE_SIZE);
-  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_PAGE_SIZE;
-  const requestedPage = parsePositiveInteger(currentSearchParams.get("page"), 1);
+  const activeCatalogSearchQuery = isStorePath ? String(currentSearchParams.get("q") || "").trim() : "";
+  const requestedPageSize = parsePositiveInteger(
+    isStorePath ? currentSearchParams.get("pageSize") : DEFAULT_STORE_PAGE_SIZE,
+    DEFAULT_STORE_PAGE_SIZE
+  );
+  const pageSize = STORE_PAGE_SIZE_OPTIONS.includes(requestedPageSize) ? requestedPageSize : DEFAULT_STORE_PAGE_SIZE;
+  const requestedPage = parsePositiveInteger(isStorePath ? currentSearchParams.get("page") : 1, 1);
   const totalItems = catalog.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(requestedPage, totalPages);
+  const activeOrdersSearchQuery = isOrdersPath ? String(currentSearchParams.get("q") || "").trim() : "";
+  const requestedOrdersPageSize = parsePositiveInteger(
+    isOrdersPath ? currentSearchParams.get("pageSize") : DEFAULT_ORDER_PAGE_SIZE,
+    DEFAULT_ORDER_PAGE_SIZE
+  );
+  const ordersPageSize = ORDER_PAGE_SIZE_OPTIONS.includes(requestedOrdersPageSize)
+    ? requestedOrdersPageSize
+    : DEFAULT_ORDER_PAGE_SIZE;
+  const requestedOrdersPage = parsePositiveInteger(isOrdersPath ? currentSearchParams.get("page") : 1, 1);
   const pagedCatalog = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     return catalog.slice(startIndex, startIndex + pageSize);
@@ -306,7 +347,10 @@ function StoreApp() {
     setCurrentUser(null);
     setCatalog([]);
     setCatalogError("");
+    setSearchInput("");
     setSearchError("");
+    setOrdersSearchInput("");
+    setOrdersSearchError("");
     setCart([]);
     setOrderMessage("");
     setOrderId("");
@@ -316,7 +360,14 @@ function StoreApp() {
     setCheckoutAddress(createEmptyAddress());
     setOrders([]);
     setOrdersError("");
+    setOrdersPagination({
+      currentPage: 1,
+      totalPages: 1,
+      pageSize: DEFAULT_ORDER_PAGE_SIZE,
+      totalItems: 0
+    });
     setLoadingOrders(false);
+    setCancellingOrderId("");
   }, []);
 
   const handleSessionInvalid = useCallback(() => {
@@ -344,18 +395,38 @@ function StoreApp() {
   }, [token, location.pathname, navigate]);
 
   useEffect(() => {
-    setSearchInput(activeSearchQuery);
-  }, [activeSearchQuery]);
+    if (!isStorePath) {
+      return;
+    }
+    setSearchInput(activeCatalogSearchQuery);
+  }, [isStorePath, activeCatalogSearchQuery]);
+
+  useEffect(() => {
+    if (!isOrdersPath) {
+      return;
+    }
+    setOrdersSearchInput(activeOrdersSearchQuery);
+  }, [isOrdersPath, activeOrdersSearchQuery]);
 
   useEffect(() => {
     if (!token || location.pathname !== "/store") {
       return;
     }
-    const normalizedSearch = buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery);
+    const normalizedSearch = buildStoreSearch("", currentPage, pageSize, activeCatalogSearchQuery);
     if (location.search !== normalizedSearch) {
       navigate({ pathname: "/store", search: normalizedSearch }, { replace: true });
     }
-  }, [token, location.pathname, location.search, currentPage, pageSize, activeSearchQuery, navigate]);
+  }, [token, location.pathname, location.search, currentPage, pageSize, activeCatalogSearchQuery, navigate]);
+
+  useEffect(() => {
+    if (!token || location.pathname !== "/orders") {
+      return;
+    }
+    const normalizedSearch = buildOrdersSearch("", requestedOrdersPage, ordersPageSize, activeOrdersSearchQuery);
+    if (location.search !== normalizedSearch) {
+      navigate({ pathname: "/orders", search: normalizedSearch }, { replace: true });
+    }
+  }, [token, location.pathname, location.search, requestedOrdersPage, ordersPageSize, activeOrdersSearchQuery, navigate]);
 
   useEffect(() => {
     if (!token) {
@@ -363,8 +434,8 @@ function StoreApp() {
     }
 
     setLoadingCatalog(true);
-    const catalogUrl = activeSearchQuery
-      ? `/api/catalog?q=${encodeURIComponent(activeSearchQuery)}`
+    const catalogUrl = activeCatalogSearchQuery
+      ? `/api/catalog?q=${encodeURIComponent(activeCatalogSearchQuery)}`
       : "/api/catalog";
 
     fetch(catalogUrl, {
@@ -401,15 +472,20 @@ function StoreApp() {
         setCatalogError(String(error?.message || "Could not load catalog"));
       })
       .finally(() => setLoadingCatalog(false));
-  }, [token, activeSearchQuery, handleSessionInvalid]);
+  }, [token, activeCatalogSearchQuery, handleSessionInvalid]);
 
-  useEffect(() => {
-    if (!token || location.pathname !== "/orders") {
-      return;
+  const loadOrders = useCallback(() => {
+    if (!token) {
+      return Promise.resolve();
     }
-
     setLoadingOrders(true);
-    fetch("/api/orders", {
+    const params = new URLSearchParams();
+    params.set("page", String(requestedOrdersPage));
+    params.set("pageSize", String(ordersPageSize));
+    if (activeOrdersSearchQuery) {
+      params.set("q", activeOrdersSearchQuery);
+    }
+    return fetch(`/api/orders?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -433,6 +509,28 @@ function StoreApp() {
       .then((data) => {
         setOrdersError("");
         setOrders(Array.isArray(data.orders) ? data.orders : []);
+        const responsePagination = data.pagination || {};
+        const nextPageSize = ORDER_PAGE_SIZE_OPTIONS.includes(Number(responsePagination.pageSize))
+          ? Number(responsePagination.pageSize)
+          : ordersPageSize;
+        const nextTotalItems = Number(responsePagination.totalItems || 0);
+        const nextTotalPages = Math.max(1, Number(responsePagination.totalPages || 1));
+        const nextCurrentPage = Math.min(
+          Math.max(1, Number(responsePagination.page || requestedOrdersPage)),
+          nextTotalPages
+        );
+        setOrdersPagination({
+          currentPage: nextCurrentPage,
+          totalPages: nextTotalPages,
+          pageSize: nextPageSize,
+          totalItems: nextTotalItems
+        });
+        if (location.pathname === "/orders") {
+          const normalizedSearch = buildOrdersSearch("", nextCurrentPage, nextPageSize, activeOrdersSearchQuery);
+          if (location.search !== normalizedSearch) {
+            navigate({ pathname: "/orders", search: normalizedSearch }, { replace: true });
+          }
+        }
       })
       .catch((error) => {
         if (String(error?.message || "") === "SESSION_INVALID") {
@@ -441,9 +539,82 @@ function StoreApp() {
         }
         setOrders([]);
         setOrdersError(String(error?.message || "Could not load orders"));
+        setOrdersPagination((current) => ({
+          ...current,
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: 0
+        }));
       })
       .finally(() => setLoadingOrders(false));
-  }, [token, location.pathname, handleSessionInvalid]);
+  }, [
+    token,
+    requestedOrdersPage,
+    ordersPageSize,
+    activeOrdersSearchQuery,
+    location.pathname,
+    location.search,
+    navigate,
+    handleSessionInvalid
+  ]);
+
+  useEffect(() => {
+    if (location.pathname !== "/orders") {
+      return;
+    }
+    void loadOrders();
+  }, [location.pathname, loadOrders]);
+
+  async function cancelOrder(orderId) {
+    if (!token || !orderId) {
+      return;
+    }
+
+    setOrdersError("");
+    setCancellingOrderId(orderId);
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: "Cancelled" })
+      });
+
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleSessionInvalid();
+          return;
+        }
+        setOrdersError(payload.message || "Could not cancel order");
+        return;
+      }
+
+      const nextStatus = String(payload?.order?.status || "Cancelled");
+      setOrders((current) =>
+        current.map((order) =>
+          order.orderId === orderId
+            ? {
+                ...order,
+                status: nextStatus
+              }
+            : order
+        )
+      );
+    } catch {
+      setOrdersError("Could not cancel order");
+    } finally {
+      setCancellingOrderId("");
+    }
+  }
 
   function persistAuth(nextToken, user) {
     localStorage.setItem(STORAGE_KEYS.auth, nextToken);
@@ -553,7 +724,7 @@ function StoreApp() {
   function viewItem(itemId) {
     navigate({
       pathname: `/store/item/${encodeURIComponent(itemId)}`,
-      search: buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery)
+      search: buildStoreSearch("", currentPage, pageSize, activeCatalogSearchQuery)
     });
   }
 
@@ -561,25 +732,42 @@ function StoreApp() {
     addToCart(item);
     navigate({
       pathname: "/store",
-      search: buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery)
+      search: buildStoreSearch("", currentPage, pageSize, activeCatalogSearchQuery)
     });
   }
 
   function goToStore() {
     navigate({
       pathname: "/store",
-      search: buildStoreSearch(location.search, currentPage, pageSize, activeSearchQuery)
+      search: buildStoreSearch("", currentPage, pageSize, activeCatalogSearchQuery)
     });
   }
 
-  function goToPage(nextPage, nextPageSize = pageSize, replace = false, nextSearchQuery = activeSearchQuery) {
-    const boundedPageSize = PAGE_SIZE_OPTIONS.includes(nextPageSize) ? nextPageSize : DEFAULT_PAGE_SIZE;
+  function goToPage(nextPage, nextPageSize = pageSize, replace = false, nextSearchQuery = activeCatalogSearchQuery) {
+    const boundedPageSize = STORE_PAGE_SIZE_OPTIONS.includes(nextPageSize) ? nextPageSize : DEFAULT_STORE_PAGE_SIZE;
     const boundedTotalPages = Math.max(1, Math.ceil(totalItems / boundedPageSize));
     const boundedPage = Math.min(Math.max(1, nextPage), boundedTotalPages);
     navigate(
       {
         pathname: "/store",
-        search: buildStoreSearch(location.search, boundedPage, boundedPageSize, nextSearchQuery)
+        search: buildStoreSearch("", boundedPage, boundedPageSize, nextSearchQuery)
+      },
+      { replace }
+    );
+  }
+
+  function goToOrdersPage(
+    nextPage,
+    nextPageSize = ordersPageSize,
+    replace = false,
+    nextSearchQuery = activeOrdersSearchQuery
+  ) {
+    const boundedPageSize = ORDER_PAGE_SIZE_OPTIONS.includes(nextPageSize) ? nextPageSize : DEFAULT_ORDER_PAGE_SIZE;
+    const boundedPage = Math.max(1, nextPage);
+    navigate(
+      {
+        pathname: "/orders",
+        search: buildOrdersSearch("", boundedPage, boundedPageSize, nextSearchQuery)
       },
       { replace }
     );
@@ -612,6 +800,35 @@ function StoreApp() {
     setSearchError("");
     setCatalogError("");
     goToPage(1, pageSize, false, "");
+  }
+
+  function submitOrdersSearch(event) {
+    event.preventDefault();
+    const normalizedQuery = String(ordersSearchInput || "").trim();
+    if (!normalizedQuery) {
+      setOrdersSearchError("");
+      setOrdersError("");
+      goToOrdersPage(1, ordersPageSize, false, "");
+      return;
+    }
+    if (normalizedQuery.length > MAX_ORDER_SEARCH_QUERY_LENGTH) {
+      setOrdersSearchError(`Search query must be ${MAX_ORDER_SEARCH_QUERY_LENGTH} characters or fewer`);
+      return;
+    }
+    if (!isPrintableSearchText(normalizedQuery)) {
+      setOrdersSearchError("Search query contains unsupported characters");
+      return;
+    }
+    setOrdersSearchError("");
+    setOrdersError("");
+    goToOrdersPage(1, ordersPageSize, false, normalizedQuery);
+  }
+
+  function clearOrdersSearch() {
+    setOrdersSearchInput("");
+    setOrdersSearchError("");
+    setOrdersError("");
+    goToOrdersPage(1, ordersPageSize, false, "");
   }
 
   function openNewProductForm() {
@@ -838,7 +1055,7 @@ function StoreApp() {
               loadingCatalog={loadingCatalog}
               searchInput={searchInput}
               searchError={searchError}
-              isSearchActive={Boolean(activeSearchQuery)}
+              isSearchActive={Boolean(activeCatalogSearchQuery)}
               onAddToCart={addToCart}
               onSearchInputChange={(event) => {
                 setSearchInput(event.target.value);
@@ -876,6 +1093,25 @@ function StoreApp() {
               formatPrice={formatPrice}
               loading={loadingOrders}
               orders={orders}
+              onCancelOrder={cancelOrder}
+              cancellingOrderId={cancellingOrderId}
+              searchInput={ordersSearchInput}
+              searchError={ordersSearchError}
+              isSearchActive={Boolean(activeOrdersSearchQuery)}
+              onSearchInputChange={(event) => {
+                setOrdersSearchInput(event.target.value);
+                if (ordersSearchError) {
+                  setOrdersSearchError("");
+                }
+              }}
+              onSearchSubmit={submitOrdersSearch}
+              onClearSearch={clearOrdersSearch}
+              pagination={ordersPagination}
+              onFirstPage={() => goToOrdersPage(1)}
+              onPrevPage={() => goToOrdersPage(ordersPagination.currentPage - 1)}
+              onNextPage={() => goToOrdersPage(ordersPagination.currentPage + 1)}
+              onLastPage={() => goToOrdersPage(ordersPagination.totalPages)}
+              onPageSizeChange={(nextPageSize) => goToOrdersPage(1, nextPageSize)}
             />
           }
         />
@@ -884,6 +1120,7 @@ function StoreApp() {
           element={
             <OrderDetailsRoute
               formatPrice={formatPrice}
+              onGoOrders={() => navigate("/orders")}
               onSessionInvalid={handleSessionInvalid}
               token={token}
             />

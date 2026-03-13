@@ -18,7 +18,8 @@ Feature: Orders list
     And I click "View orders"
     Then I should be on "/orders"
     And I should see at least one order header row
-    And each order row should show order id, date, and total
+    And each order row should show order id, date, total, and status
+    And cancellation is only offered for orders in status "Ordered" or "Processing"
     And order row should not show line-item details
 
   @regression
@@ -29,6 +30,29 @@ Feature: Orders list
     When I click "View orders"
     Then I should be on "/orders"
     And I should see "No previous orders"
+
+  @regression
+  Scenario: User can search previous orders by order number or item text
+    Given I am on "/"
+    And I log in with valid credentials
+    And API "GET /api/orders" returns a paginated orders response with multiple rows
+    When I click "View orders"
+    And I search orders for "01012024-00002"
+    Then I should see only matching order rows
+    When I search orders for "NO_MATCH_QUERY"
+    Then I should see "No matching orders"
+
+  @regression
+  Scenario: User can paginate orders and changing page size resets to first page
+    Given I am on "/"
+    And I log in with valid credentials
+    And API "GET /api/orders" returns paginated metadata for multiple pages
+    When I click "View orders"
+    And I go to the next orders page
+    Then orders page indicator should show page "2"
+    When I change orders page size to "20"
+    Then orders page indicator should show page "1"
+    And the orders request should use page "1" with page size "20"
 
   @regression
   Scenario: Orders API failure shows deterministic error

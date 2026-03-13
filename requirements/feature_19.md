@@ -8,5 +8,5 @@ As the store Product Owner, I would like to add a feature that enables a store u
 2.2 Enable the user to cancel an order only if is in the status of Ordered or Processing.
 3. Order type change rule: Orders in the state of Shipped, Delivered or already Cancelled cannot change status.
 4. Allow the user to save the order status change.
-5. On the order detail page add a back to order listing button.
+5. On the order detail page add a back toCan  order listing button.
 

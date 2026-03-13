@@ -2,6 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { jiraRequest, parseArgs } from "./lib/jira-client.mjs";
+import { setActiveRequirementsPath } from "../requirements/active-requirements.mjs";
 
 function usage() {
   return [
@@ -98,7 +99,10 @@ async function main() {
   ].join("\n");
 
   await fs.writeFile(requirementsPath, `${initialHeader}${template}\n`, "utf8");
-  process.stdout.write(`Created ${path.relative(process.cwd(), requirementsPath)}\n`);
+  const relativePath = path.relative(process.cwd(), requirementsPath);
+  await setActiveRequirementsPath(relativePath);
+  process.stdout.write(`Created ${relativePath}\n`);
+  process.stdout.write(`Active requirements set to ${relativePath}\n`);
 }
 
 main().catch((error) => {

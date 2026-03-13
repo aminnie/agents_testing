@@ -109,8 +109,10 @@ Use this flow when requirements source-of-truth starts in a Jira ticket:
 2. Initialize requirements artifact:
    - `npm run jira:req:init -- --issue SCRUM-1`
    - output path: `requirements/feature_SCRUM-1.md` (or `bug` variant with `--type bug`)
+   - this step also persists active requirements state in `requirements/.state/active-requirements.txt`
 3. Clarify the generated requirements file in place using the same section requirements in this document.
-4. After explicit user approval, sync to Jira description:
+4. Do not require Jira description updates after clarification. Keep the requirements markdown as the source of truth.
+5. Optional: if explicitly requested, sync approved requirements to Jira description:
    - dry run:
      - `npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run`
    - real update:
@@ -119,6 +121,7 @@ Use this flow when requirements source-of-truth starts in a Jira ticket:
 Rules:
 - Do not perform Jira writes without explicit approval.
 - Keep existing Jira description content; only upsert the approved requirements block.
+- Jira description sync is optional and should not be treated as a required clarification step.
 
 Optional completion publication:
 - At done-done, attach the final requirements markdown to the Jira ticket and add a completion comment via:
@@ -127,6 +130,8 @@ Optional completion publication:
 
 Fallback behavior:
 - If no Jira ticket key is provided, proceed with the standard local clarification flow using a manually created `requirements/feature_*.md` or `requirements/bug_*.md` file.
+- For manual files, persist active context before later phases:
+  - `npm run requirements:set-active -- --path requirements/feature_<N>.md`
 
 ## Bug Variant Template
 

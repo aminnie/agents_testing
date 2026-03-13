@@ -155,6 +155,7 @@ Generated output:
 
 - `requirements/feature_SCRUM-1.md` (default)
 - `requirements/bug_SCRUM-1.md` with `--type bug`
+- The generated file is also persisted as the active requirements pointer in `requirements/.state/active-requirements.txt`.
 
 ### 4) Run clarification
 
@@ -167,9 +168,11 @@ Use `AGENT-CLARIFICATION.md` to update the generated requirements file:
 - `### Blocking Questions`
 - `### Status`
 
-### 5) Sync approved requirements back to Jira
+### 5) Optional: sync approved requirements back to Jira description
 
-Dry run first:
+This step is optional and not required for clarification completion.
+
+If you want to update the Jira ticket description anyway, run dry-run first:
 
 ```bash
 npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run
@@ -203,6 +206,39 @@ Behavior:
   - `npm run jira:publish-final -- --issue <KEY> --requirements <active requirements file>`
 - With `JIRA_FINAL_PASS_APPROVED=no`, Jira publish runs in dry-run mode.
 - Set `JIRA_FINAL_PASS_APPROVED=yes` to perform the real upload and comment post.
+
+### 7) One-command Jira final pass
+
+If you keep Jira vars in `requirements/.env.jira.local`, you can run:
+
+```bash
+npm run workflow:final-pass:jira
+```
+
+This command:
+
+- sources `requirements/.env.jira.local`,
+- defaults `REQUIREMENTS_REVIEW_PATH` to `requirements/feature_${JIRA_ISSUE_KEY}.md` when not set,
+- runs `npm run workflow:final-pass` (which can auto-publish to Jira when enabled).
+
+### 8) Persistent active requirements file
+
+To survive session restart/context compaction, this repo persists the active requirements path in:
+
+- `requirements/.state/active-requirements.txt`
+
+Resolution precedence in `workflow:final-pass`:
+
+1. `REQUIREMENTS_REVIEW_PATH` env var
+2. `requirements/.state/active-requirements.txt`
+3. prompt inference fallback
+
+Manual helpers:
+
+```bash
+npm run requirements:set-active -- --path requirements/feature_19.md
+npm run requirements:show-active
+```
 
 ## What is included in the Web Store Application
 

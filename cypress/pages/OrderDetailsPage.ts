@@ -11,6 +11,10 @@ export class OrderDetailsPage {
     return cy.get('[data-cy="order-details-total"]');
   }
 
+  orderStatus() {
+    return cy.get('[data-cy="order-details-status"]');
+  }
+
   shippingSummary() {
     return cy.get('[data-cy="order-details-shipping"]');
   }
@@ -25,5 +29,9 @@ export class OrderDetailsPage {
 
   errorMessage() {
     return cy.get('[data-cy="order-details-error"]');
+  }
+
+  backToOrdersButton() {
+    return cy.get('[data-cy="order-details-back-to-orders"]');
   }
 }

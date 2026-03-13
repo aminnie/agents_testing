@@ -28,6 +28,11 @@ function isPrintableText(value) {
   return /^[\x20-\x7E]*$/.test(String(value || ""));
 }
 
+function parsePositiveIntegerQuery(value, fallbackValue) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallbackValue;
+}
+
 function normalizeEmail(value) {
   return String(value || "")
     .trim()
@@ -111,6 +116,19 @@ function createPublicOrderId(sequenceValue, timestamp = new Date()) {
   return `${month}${day}${year}-${sequence}`;
 }
 
+const ORDER_STATUS = Object.freeze({
+  ORDERED: "Ordered",
+  PROCESSING: "Processing",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled"
+});
+
+const CANCELLABLE_ORDER_STATUSES = new Set([ORDER_STATUS.ORDERED, ORDER_STATUS.PROCESSING]);
+const ORDER_LIST_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 30, 40, 50]);
+const DEFAULT_ORDER_LIST_PAGE_SIZE = 10;
+const MAX_ORDER_LIST_QUERY_LENGTH = 60;
+
 function deriveHeaderFromDescription(description) {
   const normalized = normalizeText(description);
   if (!normalized) {
@@ -140,6 +158,14 @@ async function getUserRole(userId) {
     return null;
   }
   return user.role || user.legacyRole || "user";
+}
+
+async function getOrderStatusTypeId(statusName) {
+  const row = await db.get(
+    "SELECT id FROM order_status_types WHERE name = ? LIMIT 1",
+    statusName
+  );
+  return row?.id || null;
 }
 
 async function requireAnyRole(req, res, next, allowedRoles) {
@@ -702,6 +728,11 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
 
   const paymentLast4 = normalizedCardNumber.slice(-4);
   const createdAt = new Date().toISOString();
+  const orderedStatusTypeId = await getOrderStatusTypeId(ORDER_STATUS.ORDERED);
+  if (!orderedStatusTypeId) {
+    res.status(500).json({ message: "Checkout failed" });
+    return;
+  }
   let publicOrderId = "";
   try {
     await db.run("BEGIN TRANSACTION");
@@ -714,10 +745,11 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
         shipping_postal_code,
         shipping_country,
         payment_name_on_card,
+        order_status_type_id,
         total_cents,
         payment_last4,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       null,
       req.userId,
       address.street,
@@ -725,6 +757,7 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
       address.postalCode,
       address.country,
       nameOnCard,
+      orderedStatusTypeId,
       totalCents,
       paymentLast4,
       createdAt
@@ -778,24 +811,194 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/orders", authMiddleware, async (req, res) => {
-  const rows = await db.all(
-    `SELECT
-      id,
-      public_order_id AS publicOrderId,
-      total_cents AS totalCents,
-      created_at AS createdAt
-    FROM orders
-    WHERE user_id = ?
-    ORDER BY created_at DESC, id DESC`,
-    req.userId
-  );
+  const rawSearchQuery = String(req.query?.q || "").trim();
+  if (rawSearchQuery.length > MAX_ORDER_LIST_QUERY_LENGTH) {
+    res.status(400).json({ message: `Search query must be ${MAX_ORDER_LIST_QUERY_LENGTH} characters or fewer` });
+    return;
+  }
+  if (!isPrintableText(rawSearchQuery)) {
+    res.status(400).json({ message: "Search query contains unsupported characters" });
+    return;
+  }
+
+  const requestedPageSize = parsePositiveIntegerQuery(req.query?.pageSize, DEFAULT_ORDER_LIST_PAGE_SIZE);
+  if (!ORDER_LIST_PAGE_SIZE_OPTIONS.includes(requestedPageSize)) {
+    res.status(400).json({
+      message: `pageSize must be one of: ${ORDER_LIST_PAGE_SIZE_OPTIONS.join(", ")}`
+    });
+    return;
+  }
+
+  const requestedPage = parsePositiveIntegerQuery(req.query?.page, 1);
+  const normalizedQuery = rawSearchQuery.toLowerCase();
+  const hasSearchQuery = normalizedQuery.length > 0;
+
+  const countQuery = hasSearchQuery
+    ? `SELECT COUNT(DISTINCT o.id) AS totalItems
+       FROM orders o
+       LEFT JOIN order_items oi ON oi.order_id = o.id
+       LEFT JOIN catalog_items ci ON ci.id = oi.catalog_item_id
+       WHERE o.user_id = ?
+         AND (
+           lower(COALESCE(o.public_order_id, '')) LIKE ?
+           OR lower(COALESCE(ci.header, ci.name, '')) LIKE ?
+           OR lower(COALESCE(ci.name, ci.header, '')) LIKE ?
+           OR lower(COALESCE(ci.description, '')) LIKE ?
+         )`
+    : `SELECT COUNT(*) AS totalItems
+       FROM orders o
+       WHERE o.user_id = ?`;
+
+  const likeQuery = `%${normalizedQuery}%`;
+  const countRow = hasSearchQuery
+    ? await db.get(countQuery, req.userId, likeQuery, likeQuery, likeQuery, likeQuery)
+    : await db.get(countQuery, req.userId);
+  const totalItems = Number(countRow?.totalItems || 0);
+  const totalPages = Math.max(1, Math.ceil(totalItems / requestedPageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const offset = (page - 1) * requestedPageSize;
+
+  const rows = hasSearchQuery
+    ? await db.all(
+      `WITH filtered_orders AS (
+        SELECT DISTINCT o.id
+        FROM orders o
+        LEFT JOIN order_items oi ON oi.order_id = o.id
+        LEFT JOIN catalog_items ci ON ci.id = oi.catalog_item_id
+        WHERE o.user_id = ?
+          AND (
+            lower(COALESCE(o.public_order_id, '')) LIKE ?
+            OR lower(COALESCE(ci.header, ci.name, '')) LIKE ?
+            OR lower(COALESCE(ci.name, ci.header, '')) LIKE ?
+            OR lower(COALESCE(ci.description, '')) LIKE ?
+          )
+      )
+      SELECT
+        o.id,
+        o.public_order_id AS publicOrderId,
+        o.total_cents AS totalCents,
+        o.created_at AS createdAt,
+        COALESCE(ost.name, 'Ordered') AS status
+      FROM orders o
+      INNER JOIN filtered_orders fo ON fo.id = o.id
+      LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
+      ORDER BY o.created_at DESC, o.id DESC
+      LIMIT ? OFFSET ?`,
+      req.userId,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      requestedPageSize,
+      offset
+    )
+    : await db.all(
+      `SELECT
+        o.id,
+        o.public_order_id AS publicOrderId,
+        o.total_cents AS totalCents,
+        o.created_at AS createdAt,
+        COALESCE(ost.name, 'Ordered') AS status
+      FROM orders o
+      LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
+      WHERE o.user_id = ?
+      ORDER BY o.created_at DESC, o.id DESC
+      LIMIT ? OFFSET ?`,
+      req.userId,
+      requestedPageSize,
+      offset
+    );
 
   res.json({
     orders: rows.map((row) => ({
       orderId: row.publicOrderId || createPublicOrderId(row.id, row.createdAt),
       createdAt: row.createdAt,
-      totalCents: row.totalCents
-    }))
+      totalCents: row.totalCents,
+      status: row.status
+    })),
+    pagination: {
+      page,
+      pageSize: requestedPageSize,
+      totalItems,
+      totalPages
+    },
+    filters: {
+      query: rawSearchQuery
+    }
+  });
+});
+
+app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
+  const requestedOrderId = String(req.params.orderId || "").trim();
+  const requestedStatus = normalizeText(req.body?.status);
+
+  if (!requestedOrderId) {
+    res.status(404).json({ message: "Order not found" });
+    return;
+  }
+  if (requestedStatus !== ORDER_STATUS.CANCELLED) {
+    res.status(400).json({ message: "Only status Cancelled is supported" });
+    return;
+  }
+
+  const byPublicId = await db.get(
+    `SELECT
+      o.id,
+      o.public_order_id AS publicOrderId,
+      o.created_at AS createdAt,
+      COALESCE(ost.name, 'Ordered') AS status
+    FROM orders o
+    LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
+    WHERE o.user_id = ? AND o.public_order_id = ?
+    LIMIT 1`,
+    req.userId,
+    requestedOrderId
+  );
+
+  let order = byPublicId;
+  if (!order) {
+    const legacyRows = await db.all(
+      `SELECT
+        o.id,
+        o.public_order_id AS publicOrderId,
+        o.created_at AS createdAt,
+        COALESCE(ost.name, 'Ordered') AS status
+      FROM orders o
+      LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
+      WHERE o.user_id = ?
+      ORDER BY o.created_at DESC, o.id DESC`,
+      req.userId
+    );
+    order = legacyRows.find((row) => createPublicOrderId(row.id, row.createdAt) === requestedOrderId);
+  }
+
+  if (!order) {
+    res.status(404).json({ message: "Order not found" });
+    return;
+  }
+
+  if (!CANCELLABLE_ORDER_STATUSES.has(order.status)) {
+    res.status(400).json({ message: "Order cannot be cancelled from current status" });
+    return;
+  }
+
+  const cancelledStatusTypeId = await getOrderStatusTypeId(ORDER_STATUS.CANCELLED);
+  if (!cancelledStatusTypeId) {
+    res.status(500).json({ message: "Order cancellation failed" });
+    return;
+  }
+
+  await db.run(
+    "UPDATE orders SET order_status_type_id = ? WHERE id = ?",
+    cancelledStatusTypeId,
+    order.id
+  );
+
+  res.json({
+    order: {
+      orderId: order.publicOrderId || createPublicOrderId(order.id, order.createdAt),
+      status: ORDER_STATUS.CANCELLED
+    }
   });
 });
 
@@ -808,18 +1011,20 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
 
   const byPublicId = await db.get(
     `SELECT
-      id,
-      public_order_id AS publicOrderId,
-      created_at AS createdAt,
-      total_cents AS totalCents,
-      shipping_street AS shippingStreet,
-      shipping_city AS shippingCity,
-      shipping_postal_code AS shippingPostalCode,
-      shipping_country AS shippingCountry,
-      payment_name_on_card AS paymentNameOnCard,
-      payment_last4 AS paymentLast4
-    FROM orders
-    WHERE user_id = ? AND public_order_id = ?
+      o.id,
+      o.public_order_id AS publicOrderId,
+      o.created_at AS createdAt,
+      o.total_cents AS totalCents,
+      o.shipping_street AS shippingStreet,
+      o.shipping_city AS shippingCity,
+      o.shipping_postal_code AS shippingPostalCode,
+      o.shipping_country AS shippingCountry,
+      o.payment_name_on_card AS paymentNameOnCard,
+      o.payment_last4 AS paymentLast4,
+      COALESCE(ost.name, 'Ordered') AS status
+    FROM orders o
+    LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
+    WHERE o.user_id = ? AND o.public_order_id = ?
     LIMIT 1`,
     req.userId,
     requestedOrderId
@@ -829,19 +1034,21 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
   if (!order) {
     const legacyRows = await db.all(
       `SELECT
-        id,
-        public_order_id AS publicOrderId,
-        created_at AS createdAt,
-        total_cents AS totalCents,
-        shipping_street AS shippingStreet,
-        shipping_city AS shippingCity,
-        shipping_postal_code AS shippingPostalCode,
-        shipping_country AS shippingCountry,
-        payment_name_on_card AS paymentNameOnCard,
-        payment_last4 AS paymentLast4
-      FROM orders
-      WHERE user_id = ?
-      ORDER BY created_at DESC, id DESC`,
+        o.id,
+        o.public_order_id AS publicOrderId,
+        o.created_at AS createdAt,
+        o.total_cents AS totalCents,
+        o.shipping_street AS shippingStreet,
+        o.shipping_city AS shippingCity,
+        o.shipping_postal_code AS shippingPostalCode,
+        o.shipping_country AS shippingCountry,
+        o.payment_name_on_card AS paymentNameOnCard,
+        o.payment_last4 AS paymentLast4,
+        COALESCE(ost.name, 'Ordered') AS status
+      FROM orders o
+      LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
+      WHERE o.user_id = ?
+      ORDER BY o.created_at DESC, o.id DESC`,
       req.userId
     );
     order = legacyRows.find((row) => createPublicOrderId(row.id, row.createdAt) === requestedOrderId);
@@ -871,6 +1078,7 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
       orderId: order.publicOrderId || createPublicOrderId(order.id, order.createdAt),
       createdAt: order.createdAt,
       totalCents: order.totalCents,
+      status: order.status,
       shipping: {
         street: order.shippingStreet || "",
         city: order.shippingCity || "",

@@ -13,7 +13,7 @@ describe("Feature: Order Details", () => {
     cy.intercept("POST", "/api/login").as("login");
     cy.intercept("GET", "/api/catalog*").as("catalog");
     cy.intercept("POST", "/api/checkout").as("checkout");
-    cy.intercept("GET", "/api/orders").as("orders");
+    cy.intercept("GET", "/api/orders*").as("orders");
     cy.intercept("GET", /\/api\/orders\/[^/]+$/).as("orderDetails");
   });
 
@@ -42,6 +42,7 @@ describe("Feature: Order Details", () => {
         "orderId",
         "createdAt",
         "totalCents",
+        "status",
         "shipping",
         "paymentSummary"
       ]);
@@ -49,8 +50,11 @@ describe("Feature: Order Details", () => {
     });
     orderDetailsPage.title().should("be.visible");
     orderDetailsPage.orderId().should("contain", "Order #");
+    orderDetailsPage.orderStatus().should("contain", "Status:");
     orderDetailsPage.shippingSummary().should("contain", "USA");
     orderDetailsPage.itemsList().should("be.visible");
+    orderDetailsPage.backToOrdersButton().click();
+    cy.location("pathname").should("eq", "/orders");
   });
 
   it("should open order details from checkout complete order number link", () => {

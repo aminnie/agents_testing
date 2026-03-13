@@ -1,4 +1,4 @@
-import { Card, CardContent, CircularProgress, Divider, List, ListItem, Stack, Typography } from "@mui/material";
+import { Button, Card, CardContent, CircularProgress, Divider, List, ListItem, Stack, Typography } from "@mui/material";
 
 function formatOrderDate(value) {
   const date = new Date(value);
@@ -13,7 +13,8 @@ export default function OrderDetailsPage({
   errorMessage,
   order,
   items,
-  formatPrice
+  formatPrice,
+  onGoOrders
 }) {
   return (
     <Stack spacing={3} sx={{ mt: 2 }}>
@@ -44,6 +45,12 @@ export default function OrderDetailsPage({
               <Typography data-cy="order-details-total" variant="body2">
                 Total: {formatPrice(order.totalCents)}
               </Typography>
+              <Typography data-cy="order-details-status" variant="body2">
+                Status: {order.status || "Ordered"}
+              </Typography>
+              <Button data-cy="order-details-back-to-orders" onClick={onGoOrders} size="small" sx={{ alignSelf: "flex-start" }}>
+                Back to orders
+              </Button>
               <Divider sx={{ my: 1 }} />
               <Typography variant="subtitle1">Shipping</Typography>
               <Typography data-cy="order-details-shipping" variant="body2">
