@@ -184,15 +184,15 @@ Then real update:
 npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run false
 ```
 
-### 6) Optional final-pass publish (attachment + completion comment)
+### 6) Final-pass publish (attachment + completion comment)
 
-You can publish the active requirements artifact to Jira at the end of `workflow:final-pass`.
+The active requirements artifact should be published to Jira at the end of `workflow:final-pass`.
 
 Set:
 
 - `JIRA_ISSUE_KEY=SCRUM-1`
 - `JIRA_FINAL_PASS_PUBLISH=true`
-- `JIRA_FINAL_PASS_APPROVED=no` (default dry-run safety)
+- `JIRA_FINAL_PASS_APPROVED=yes` (recommended for completion runs)
 
 Run:
 
@@ -202,10 +202,15 @@ npm run workflow:final-pass
 
 Behavior:
 
-- If `JIRA_FINAL_PASS_PUBLISH=true` and `JIRA_ISSUE_KEY` is set, final pass calls:
+- If Jira credentials are configured, `workflow:final-pass` now enforces:
+  - `JIRA_FINAL_PASS_PUBLISH=true`
+  - Jira issue key must resolve from either:
+    - `JIRA_ISSUE_KEY`, or
+    - active requirements filename pattern `feature_<JIRA_KEY>.md` / `bug_<JIRA_KEY>.md`
+- With publish enabled and issue key set, final pass calls:
   - `npm run jira:publish-final -- --issue <KEY> --requirements <active requirements file>`
 - With `JIRA_FINAL_PASS_APPROVED=no`, Jira publish runs in dry-run mode.
-- Set `JIRA_FINAL_PASS_APPROVED=yes` to perform the real upload and comment post.
+- With `JIRA_FINAL_PASS_APPROVED=yes`, Jira publish performs real upload + completion comment.
 
 ### 7) One-command Jira final pass
 
@@ -218,8 +223,8 @@ npm run workflow:final-pass:jira
 This command:
 
 - sources `requirements/.env.jira.local`,
-- defaults `REQUIREMENTS_REVIEW_PATH` to `requirements/feature_${JIRA_ISSUE_KEY}.md` when not set,
-- runs `npm run workflow:final-pass` (which can auto-publish to Jira when enabled).
+- defaults `REQUIREMENTS_REVIEW_PATH` to `requirements/feature_${JIRA_ISSUE_KEY}.md` when `JIRA_ISSUE_KEY` is set,
+- runs `npm run workflow:final-pass` (which enforces Jira publish prerequisites when Jira credentials are configured).
 
 ### 8) Persistent active requirements file
 

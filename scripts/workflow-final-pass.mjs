@@ -93,6 +93,23 @@ function isTruthy(value) {
   return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
+function hasJiraCredentialsConfigured() {
+  return Boolean(
+    String(process.env.JIRA_BASE_URL || "").trim()
+    && String(process.env.JIRA_EMAIL || "").trim()
+    && String(process.env.JIRA_API_TOKEN || "").trim()
+  );
+}
+
+function deriveJiraIssueKeyFromRequirementsPath(requirementsReviewPath) {
+  const fileName = path.basename(String(requirementsReviewPath || ""));
+  const match = fileName.match(/(?:feature|bug)_([A-Z][A-Z0-9]+-\d+)\.md$/i);
+  if (!match) {
+    return "";
+  }
+  return String(match[1] || "").toUpperCase();
+}
+
 async function ensureRequirementsReviewExists(requirementsReviewPath) {
   if (!requirementsReviewPath) {
     throw new Error(
@@ -139,8 +156,29 @@ async function main() {
   await runCommand("npm", ["run", "test:a11y"]);
   await ensureRequirementsReviewExists(requirementsReviewPath);
   await setActiveRequirementsPath(path.relative(WORKSPACE_ROOT, requirementsReviewPath));
-  const jiraIssueKey = String(process.env.JIRA_ISSUE_KEY || "").trim();
-  if (isTruthy(process.env.JIRA_FINAL_PASS_PUBLISH) && jiraIssueKey) {
+  const jiraCredentialsConfigured = hasJiraCredentialsConfigured();
+  const jiraPublishEnabled = isTruthy(process.env.JIRA_FINAL_PASS_PUBLISH);
+  const explicitJiraIssueKey = String(process.env.JIRA_ISSUE_KEY || "").trim();
+  const derivedJiraIssueKey = deriveJiraIssueKeyFromRequirementsPath(requirementsReviewPath);
+  const jiraIssueKey = explicitJiraIssueKey || derivedJiraIssueKey;
+  if (jiraCredentialsConfigured && !jiraPublishEnabled) {
+    throw new Error(
+      [
+        "Jira credentials are configured but JIRA_FINAL_PASS_PUBLISH is not enabled.",
+        "Set JIRA_FINAL_PASS_PUBLISH=true to enforce final artifact attachment on ticket completion."
+      ].join(" ")
+    );
+  }
+  if (jiraCredentialsConfigured && !jiraIssueKey) {
+    throw new Error(
+      [
+        "Jira credentials are configured but Jira issue key could not be resolved.",
+        "Set JIRA_ISSUE_KEY=<TICKET_KEY> or use a requirements filename containing a Jira key",
+        "(for example requirements/feature_SCRUM-3.md) before running workflow:final-pass."
+      ].join(" ")
+    );
+  }
+  if (jiraPublishEnabled && jiraIssueKey) {
     const relativeRequirementsPath = path.relative(WORKSPACE_ROOT, requirementsReviewPath);
     const dryRunEnabled = !isTruthy(process.env.JIRA_FINAL_PASS_APPROVED);
     await runCommand("npm", [
