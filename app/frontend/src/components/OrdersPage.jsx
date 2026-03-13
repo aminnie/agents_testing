@@ -4,6 +4,10 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
   List,
@@ -42,7 +46,14 @@ export default function OrdersPage({
   onPrevPage,
   onNextPage,
   onLastPage,
-  onPageSizeChange
+  onPageSizeChange,
+  cancelModalOpen,
+  cancelReasonInput,
+  cancelReasonError,
+  onCancelReasonInputChange,
+  onConfirmCancelOrder,
+  onDismissCancelModal,
+  cancelModalSubmitting
 }) {
   const isCancelableStatus = (status) => ["Ordered", "Processing"].includes(String(status || ""));
   const {
@@ -205,6 +216,54 @@ export default function OrdersPage({
           </Stack>
         </CardContent>
       </Card>
+      <Dialog
+        aria-labelledby="orders-cancel-modal-title"
+        data-cy="orders-cancel-modal"
+        fullWidth
+        maxWidth="sm"
+        onClose={onDismissCancelModal}
+        open={cancelModalOpen}
+      >
+        <DialogTitle id="orders-cancel-modal-title">Cancel order</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Typography variant="body2">
+              Please provide a reason for cancelling this order.
+            </Typography>
+            <TextField
+              data-cy="orders-cancel-reason-input"
+              error={Boolean(cancelReasonError)}
+              helperText={cancelReasonError || "Required"}
+              inputProps={{ maxLength: 300 }}
+              label="Cancellation reason"
+              multiline
+              minRows={3}
+              onChange={onCancelReasonInputChange}
+              value={cancelReasonInput}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            data-cy="orders-cancel-modal-cancel"
+            disabled={cancelModalSubmitting}
+            onClick={onDismissCancelModal}
+            type="button"
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            data-cy="orders-cancel-modal-proceed"
+            disabled={cancelModalSubmitting || !String(cancelReasonInput || "").trim()}
+            onClick={onConfirmCancelOrder}
+            type="button"
+            variant="contained"
+          >
+            {cancelModalSubmitting ? "Cancelling..." : "Proceed"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

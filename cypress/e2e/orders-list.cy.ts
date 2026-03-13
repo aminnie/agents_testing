@@ -55,7 +55,7 @@ describe("Feature: Orders List", () => {
     cy.get('[data-cy^="orders-item-"]').should("have.length.at.least", 1);
   });
 
-  it("should allow cancellation only for eligible order statuses", () => {
+  it("should require a cancellation reason and only allow cancellation for eligible order statuses", () => {
     const cancellableOrderId = "01012024-00001";
     const lockedOrderId = "01012024-00002";
 
@@ -106,13 +106,59 @@ describe("Feature: Orders List", () => {
     cy.wait("@orders").its("response.statusCode").should("eq", 200);
 
     ordersPage.cancelButton(cancellableOrderId).should("be.visible").click();
+    ordersPage.cancelModal().should("be.visible");
+    ordersPage.cancelModalProceed().should("be.disabled");
+    ordersPage.cancelReasonInput().type("Customer requested cancellation");
+    ordersPage.cancelModalProceed().should("be.enabled").click();
     cy.wait("@cancelOrder").then(({ request, response }) => {
-      expect(request.body).to.deep.equal({ status: "Cancelled" });
+      expect(request.body).to.deep.equal({
+        status: "Cancelled",
+        reason: "Customer requested cancellation"
+      });
       expect(response?.statusCode).to.eq(200);
     });
+    ordersPage.cancelModal().should("not.exist");
     cy.get(`[data-cy="orders-status-${cancellableOrderId}"]`).should("contain", "Cancelled");
     ordersPage.cancelButton(cancellableOrderId).should("not.exist");
     ordersPage.cancelButton(lockedOrderId).should("not.exist");
+  });
+
+  it("should close cancellation modal without API request when user cancels modal action", () => {
+    const cancellableOrderId = "01012024-00003";
+
+    cy.intercept("GET", "/api/orders*", {
+      statusCode: 200,
+      body: {
+        orders: [createOrder(cancellableOrderId, "Processing", 1800)],
+        pagination: {
+          page: 1,
+          pageSize: 10,
+          totalItems: 1,
+          totalPages: 1
+        },
+        filters: {
+          query: ""
+        }
+      }
+    }).as("orders");
+    cy.intercept("PATCH", `/api/orders/${cancellableOrderId}/status`).as("cancelOrder");
+
+    cy.loginUi();
+    cy.wait("@login").its("response.statusCode").should("eq", 200);
+    cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
+
+    catalogPage.goToOrders();
+    cy.location("pathname").should("eq", "/orders");
+    cy.wait("@orders").its("response.statusCode").should("eq", 200);
+
+    ordersPage.cancelButton(cancellableOrderId).click();
+    ordersPage.cancelModal().should("be.visible");
+    ordersPage.cancelReasonInput().type("No longer needed");
+    ordersPage.cancelModalCancel().click();
+    ordersPage.cancelModal().should("not.exist");
+
+    cy.get("@cancelOrder.all").should("have.length", 0);
+    cy.get(`[data-cy="orders-status-${cancellableOrderId}"]`).should("contain", "Processing");
   });
 
   it("should show an empty-state message when no previous orders exist", () => {

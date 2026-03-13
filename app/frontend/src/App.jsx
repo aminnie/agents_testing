@@ -24,6 +24,7 @@ const DEFAULT_STORE_PAGE_SIZE = 10;
 const ORDER_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 30, 40, 50]);
 const DEFAULT_ORDER_PAGE_SIZE = 10;
 const MAX_ORDER_SEARCH_QUERY_LENGTH = 60;
+const MAX_CANCELLATION_REASON_LENGTH = 300;
 const POSTAL_CODE_PATTERN = /^[0-9-]{1,15}$/;
 
 function createEmptyAddress() {
@@ -68,6 +69,10 @@ function buildOrdersSearch(currentSearch, page, pageSize, query = "") {
 
 function isPrintableSearchText(value) {
   return /^[\x20-\x7E]*$/.test(String(value || ""));
+}
+
+function hasSupportedCancellationReasonCharacters(value) {
+  return /^[\x09\x0A\x0D\x20-\x7E]*$/.test(String(value || ""));
 }
 
 function formatPrice(cents) {
@@ -285,6 +290,9 @@ function StoreApp() {
   const [ordersError, setOrdersError] = useState("");
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [cancellingOrderId, setCancellingOrderId] = useState("");
+  const [cancelModalOrderId, setCancelModalOrderId] = useState("");
+  const [cancelReasonInput, setCancelReasonInput] = useState("");
+  const [cancelReasonError, setCancelReasonError] = useState("");
   const currentSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isStorePath = location.pathname.startsWith("/store");
   const isOrdersPath = location.pathname === "/orders";
@@ -368,6 +376,9 @@ function StoreApp() {
     });
     setLoadingOrders(false);
     setCancellingOrderId("");
+    setCancelModalOrderId("");
+    setCancelReasonInput("");
+    setCancelReasonError("");
   }, []);
 
   const handleSessionInvalid = useCallback(() => {
@@ -565,12 +576,55 @@ function StoreApp() {
     void loadOrders();
   }, [location.pathname, loadOrders]);
 
-  async function cancelOrder(orderId) {
-    if (!token || !orderId) {
+  useEffect(() => {
+    if (location.pathname === "/orders") {
+      return;
+    }
+    setCancelModalOrderId("");
+    setCancelReasonInput("");
+    setCancelReasonError("");
+  }, [location.pathname]);
+
+  function openCancelOrderModal(orderId) {
+    if (!orderId || cancellingOrderId) {
+      return;
+    }
+    setOrdersError("");
+    setCancelReasonError("");
+    setCancelReasonInput("");
+    setCancelModalOrderId(orderId);
+  }
+
+  function closeCancelOrderModal() {
+    if (cancellingOrderId) {
+      return;
+    }
+    setCancelModalOrderId("");
+    setCancelReasonInput("");
+    setCancelReasonError("");
+  }
+
+  async function confirmCancelOrder() {
+    if (!token || !cancelModalOrderId) {
+      return;
+    }
+    const normalizedReason = String(cancelReasonInput || "").trim();
+    if (!normalizedReason) {
+      setCancelReasonError("Cancellation reason is required");
+      return;
+    }
+    if (normalizedReason.length > MAX_CANCELLATION_REASON_LENGTH) {
+      setCancelReasonError(`Cancellation reason must be ${MAX_CANCELLATION_REASON_LENGTH} characters or fewer`);
+      return;
+    }
+    if (!hasSupportedCancellationReasonCharacters(normalizedReason)) {
+      setCancelReasonError("Cancellation reason contains unsupported characters");
       return;
     }
 
+    const orderId = cancelModalOrderId;
     setOrdersError("");
+    setCancelReasonError("");
     setCancellingOrderId(orderId);
     try {
       const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
@@ -579,7 +633,10 @@ function StoreApp() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ status: "Cancelled" })
+        body: JSON.stringify({
+          status: "Cancelled",
+          reason: normalizedReason
+        })
       });
 
       let payload = {};
@@ -594,7 +651,9 @@ function StoreApp() {
           handleSessionInvalid();
           return;
         }
-        setOrdersError(payload.message || "Could not cancel order");
+        const message = payload.message || "Could not cancel order";
+        setOrdersError(message);
+        setCancelReasonError(message);
         return;
       }
 
@@ -609,8 +668,13 @@ function StoreApp() {
             : order
         )
       );
+      setCancelModalOrderId("");
+      setCancelReasonInput("");
+      setCancelReasonError("");
     } catch {
-      setOrdersError("Could not cancel order");
+      const message = "Could not cancel order";
+      setOrdersError(message);
+      setCancelReasonError(message);
     } finally {
       setCancellingOrderId("");
     }
@@ -1093,7 +1157,7 @@ function StoreApp() {
               formatPrice={formatPrice}
               loading={loadingOrders}
               orders={orders}
-              onCancelOrder={cancelOrder}
+              onCancelOrder={openCancelOrderModal}
               cancellingOrderId={cancellingOrderId}
               searchInput={ordersSearchInput}
               searchError={ordersSearchError}
@@ -1112,6 +1176,18 @@ function StoreApp() {
               onNextPage={() => goToOrdersPage(ordersPagination.currentPage + 1)}
               onLastPage={() => goToOrdersPage(ordersPagination.totalPages)}
               onPageSizeChange={(nextPageSize) => goToOrdersPage(1, nextPageSize)}
+              cancelModalOpen={Boolean(cancelModalOrderId)}
+              cancelReasonInput={cancelReasonInput}
+              cancelReasonError={cancelReasonError}
+              onCancelReasonInputChange={(event) => {
+                setCancelReasonInput(event.target.value);
+                if (cancelReasonError) {
+                  setCancelReasonError("");
+                }
+              }}
+              onConfirmCancelOrder={confirmCancelOrder}
+              onDismissCancelModal={closeCancelOrderModal}
+              cancelModalSubmitting={Boolean(cancellingOrderId && cancelModalOrderId && cancellingOrderId === cancelModalOrderId)}
             />
           }
         />

@@ -128,6 +128,15 @@ const CANCELLABLE_ORDER_STATUSES = new Set([ORDER_STATUS.ORDERED, ORDER_STATUS.P
 const ORDER_LIST_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 30, 40, 50]);
 const DEFAULT_ORDER_LIST_PAGE_SIZE = 10;
 const MAX_ORDER_LIST_QUERY_LENGTH = 60;
+const MAX_CANCELLATION_REASON_LENGTH = 300;
+
+function normalizeCancellationReason(value) {
+  return String(value || "").trim();
+}
+
+function hasSupportedCancellationReasonCharacters(value) {
+  return /^[\x09\x0A\x0D\x20-\x7E]*$/.test(String(value || ""));
+}
 
 function deriveHeaderFromDescription(description) {
   const normalized = normalizeText(description);
@@ -931,6 +940,7 @@ app.get("/api/orders", authMiddleware, async (req, res) => {
 app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
   const requestedOrderId = String(req.params.orderId || "").trim();
   const requestedStatus = normalizeText(req.body?.status);
+  const normalizedReason = normalizeCancellationReason(req.body?.reason);
 
   if (!requestedOrderId) {
     res.status(404).json({ message: "Order not found" });
@@ -938,6 +948,20 @@ app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
   }
   if (requestedStatus !== ORDER_STATUS.CANCELLED) {
     res.status(400).json({ message: "Only status Cancelled is supported" });
+    return;
+  }
+  if (!normalizedReason) {
+    res.status(400).json({ message: "Cancellation reason is required" });
+    return;
+  }
+  if (normalizedReason.length > MAX_CANCELLATION_REASON_LENGTH) {
+    res.status(400).json({
+      message: `Cancellation reason must be ${MAX_CANCELLATION_REASON_LENGTH} characters or fewer`
+    });
+    return;
+  }
+  if (!hasSupportedCancellationReasonCharacters(normalizedReason)) {
+    res.status(400).json({ message: "Cancellation reason contains unsupported characters" });
     return;
   }
 
@@ -989,15 +1013,17 @@ app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
   }
 
   await db.run(
-    "UPDATE orders SET order_status_type_id = ? WHERE id = ?",
+    "UPDATE orders SET order_status_type_id = ?, cancellation_reason = ? WHERE id = ?",
     cancelledStatusTypeId,
+    normalizedReason,
     order.id
   );
 
   res.json({
     order: {
       orderId: order.publicOrderId || createPublicOrderId(order.id, order.createdAt),
-      status: ORDER_STATUS.CANCELLED
+      status: ORDER_STATUS.CANCELLED,
+      cancellationReason: normalizedReason
     }
   });
 });
@@ -1021,6 +1047,7 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
       o.shipping_country AS shippingCountry,
       o.payment_name_on_card AS paymentNameOnCard,
       o.payment_last4 AS paymentLast4,
+      o.cancellation_reason AS cancellationReason,
       COALESCE(ost.name, 'Ordered') AS status
     FROM orders o
     LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
@@ -1044,6 +1071,7 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
         o.shipping_country AS shippingCountry,
         o.payment_name_on_card AS paymentNameOnCard,
         o.payment_last4 AS paymentLast4,
+        o.cancellation_reason AS cancellationReason,
         COALESCE(ost.name, 'Ordered') AS status
       FROM orders o
       LEFT JOIN order_status_types ost ON ost.id = o.order_status_type_id
@@ -1088,7 +1116,8 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
       paymentSummary: {
         nameOnCard: order.paymentNameOnCard || "",
         last4: order.paymentLast4 || ""
-      }
+      },
+      cancellationReason: order.cancellationReason || ""
     },
     items: itemRows.map((item) => ({
       itemId: item.publicItemId || String(item.catalogItemId || ""),

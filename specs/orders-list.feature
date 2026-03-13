@@ -23,6 +23,30 @@ Feature: Orders list
     And order row should not show line-item details
 
   @regression
+  Scenario: User must provide a cancellation reason before proceeding
+    Given I am on "/"
+    And I log in with valid credentials
+    And API "GET /api/orders" returns an order in status "Ordered"
+    When I click "View orders"
+    And I click cancel for that order
+    Then I should see a cancellation reason modal
+    And proceed should be disabled until I provide a reason
+    When I provide a valid cancellation reason and click proceed
+    Then cancellation request should include the provided reason
+    And order status should update to "Cancelled"
+
+  @regression
+  Scenario: User can dismiss cancellation reason modal without cancelling order
+    Given I am on "/"
+    And I log in with valid credentials
+    And API "GET /api/orders" returns an order in status "Processing"
+    When I click "View orders"
+    And I click cancel for that order
+    And I close the cancellation modal using "Cancel"
+    Then no cancellation request should be sent
+    And order status should remain "Processing"
+
+  @regression
   Scenario: Empty orders list shows deterministic empty state
     Given I am on "/"
     And I log in with valid credentials

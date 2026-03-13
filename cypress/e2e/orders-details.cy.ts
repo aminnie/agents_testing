@@ -44,7 +44,8 @@ describe("Feature: Order Details", () => {
         "totalCents",
         "status",
         "shipping",
-        "paymentSummary"
+        "paymentSummary",
+        "cancellationReason"
       ]);
       expect(response?.body?.items).to.be.an("array");
     });

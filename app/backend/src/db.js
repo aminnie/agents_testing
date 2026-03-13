@@ -264,7 +264,8 @@ export async function initDb() {
     { name: "shipping_postal_code", definition: "shipping_postal_code TEXT" },
     { name: "shipping_country", definition: "shipping_country TEXT" },
     { name: "payment_name_on_card", definition: "payment_name_on_card TEXT" },
-    { name: "order_status_type_id", definition: "order_status_type_id INTEGER REFERENCES order_status_types(id)" }
+    { name: "order_status_type_id", definition: "order_status_type_id INTEGER REFERENCES order_status_types(id)" },
+    { name: "cancellation_reason", definition: "cancellation_reason TEXT" }
   ]);
 
   await db.exec("CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)");

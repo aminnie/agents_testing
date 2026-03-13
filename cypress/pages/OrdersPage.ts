@@ -19,6 +19,22 @@ export class OrdersPage {
     return cy.get(`[data-cy="orders-cancel-${orderId}"]`);
   }
 
+  cancelModal() {
+    return cy.get('[data-cy="orders-cancel-modal"]');
+  }
+
+  cancelReasonInput() {
+    return cy.get('[data-cy="orders-cancel-reason-input"]');
+  }
+
+  cancelModalProceed() {
+    return cy.get('[data-cy="orders-cancel-modal-proceed"]');
+  }
+
+  cancelModalCancel() {
+    return cy.get('[data-cy="orders-cancel-modal-cancel"]');
+  }
+
   emptyState() {
     return cy.get('[data-cy="orders-empty"]');
   }
