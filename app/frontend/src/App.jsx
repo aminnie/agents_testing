@@ -338,6 +338,10 @@ function StoreApp() {
     () => cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0),
     [cart]
   );
+  const cartItemCount = useMemo(
+    () => cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+    [cart]
+  );
 
   function resetRegisterFormState() {
     setRegisterDisplayName("");
@@ -1096,7 +1100,8 @@ function StoreApp() {
   return (
     <main className="container">
       <AppHeader
-        isCheckoutEnabled={cart.length > 0}
+        isCheckoutEnabled={cartItemCount > 0}
+        cartItemCount={cartItemCount}
         isAdmin={isAdmin}
         onGoCheckout={() => navigate("/checkout")}
         onGoHelp={() => navigate("/help")}

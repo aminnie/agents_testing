@@ -17,6 +17,7 @@ describe("Feature: Checkout", () => {
     cy.get('[data-cy="checkout-name"]').should("not.exist");
     cy.get('[data-cy="checkout-card"]').should("not.exist");
     cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    cy.get('[data-cy="nav-cart-count"]').should("contain", "0");
   }
 
   beforeEach(() => {

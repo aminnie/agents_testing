@@ -94,4 +94,12 @@ export class CatalogPage {
   cartItemList() {
     return cy.get('[data-cy="cart-list"]');
   }
+
+  navCartIcon() {
+    return cy.get('[data-cy="nav-cart-icon"]');
+  }
+
+  navCartCount() {
+    return cy.get('[data-cy="nav-cart-count"]');
+  }
 }

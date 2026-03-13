@@ -3,10 +3,12 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import {
   AppBar,
+  Badge,
   Box,
   Button,
   IconButton,
@@ -25,6 +27,7 @@ export default function AppHeader({
   onGoNewProduct,
   onLogout,
   isCheckoutEnabled,
+  cartItemCount,
   isProductManagementEnabled,
   isAdmin
 }) {
@@ -61,6 +64,23 @@ export default function AppHeader({
           {userEmail || "unknown user"}
         </Typography>
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <IconButton
+            aria-label={`Shopping cart with ${cartItemCount} item${cartItemCount === 1 ? "" : "s"}`}
+            color="inherit"
+            data-cy="nav-cart-icon"
+            onClick={onGoCheckout}
+            type="button"
+          >
+            <Badge
+              badgeContent={cartItemCount}
+              color="secondary"
+              data-cy="nav-cart-count"
+              max={999}
+              showZero
+            >
+              <ShoppingCartIcon />
+            </Badge>
+          </IconButton>
           <Button data-cy="nav-store" onClick={onGoStore} startIcon={<StorefrontIcon />} type="button">
             Store
           </Button>

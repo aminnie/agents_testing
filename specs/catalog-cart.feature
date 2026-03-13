@@ -20,6 +20,16 @@ Feature: Catalog and cart
     When I add the first catalog item to cart
     Then cart should contain 1 item
     And cart total should be greater than "$0.00"
+    And header cart count should show "1"
+
+  @regression
+  Scenario: Header cart icon opens checkout
+    Given I am on "/"
+    And I log in with valid credentials
+    And I add the first catalog item to cart
+    When I click the header cart icon
+    Then I should be on "/checkout"
+    And I should see "Checkout"
 
   @regression
   Scenario: User views a catalog item detail and adds it to cart
@@ -38,3 +48,11 @@ Feature: Catalog and cart
     And I return to the catalog list without adding the item
     Then I should return to "/store"
     And cart should remain empty
+
+  @regression
+  Scenario: Header cart count resets after successful checkout
+    Given I am on "/"
+    And I log in with valid credentials
+    And I add the first catalog item to cart
+    When I proceed to checkout and complete order confirmation
+    Then header cart count should show "0"

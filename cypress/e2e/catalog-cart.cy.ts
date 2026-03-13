@@ -17,18 +17,20 @@ describe("Feature: Catalog and Cart", () => {
 
   it("should add an item to cart and update total", () => {
     cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    catalogPage.navCartCount().should("contain", "0");
     catalogPage.addFirstCatalogItem();
 
     catalogPage.cartItemList().find("li").should("have.length", 1);
     catalogPage.cartTotal().should("not.contain", "$0.00");
     cy.get('[data-cy="nav-checkout"]').should("be.enabled");
+    catalogPage.navCartCount().should("contain", "1");
   });
 
   it("should navigate from store to checkout page", () => {
     catalogPage.addFirstCatalogItem();
     cy.get('[data-cy="nav-checkout"]').should("be.enabled");
 
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.navCartIcon().click();
     cy.location("pathname").should("eq", "/checkout");
     cy.get('[data-cy="checkout-page-title"]').should("be.visible");
   });
@@ -59,6 +61,7 @@ describe("Feature: Catalog and Cart", () => {
 
   it("should re-enable top checkout button after adding an item again", () => {
     catalogPage.addFirstCatalogItem();
+    catalogPage.navCartCount().should("contain", "1");
     cy.get('[data-cy="go-to-checkout"]').click();
 
     cy.get('[data-cy="checkout-street"]').type("101 Test Street");
@@ -69,10 +72,12 @@ describe("Feature: Catalog and Cart", () => {
     cy.get('[data-cy="checkout-card"]').type("12345");
     cy.get('[data-cy="checkout-submit"]').click();
     cy.get('[data-cy="nav-checkout"]').should("be.disabled");
+    catalogPage.navCartCount().should("contain", "0");
 
     cy.get('[data-cy="nav-store"]').click();
     cy.location("pathname").should("eq", "/store");
     catalogPage.addFirstCatalogItem();
     cy.get('[data-cy="nav-checkout"]').should("be.enabled");
+    catalogPage.navCartCount().should("contain", "1");
   });
 });
