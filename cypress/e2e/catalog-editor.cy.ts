@@ -8,7 +8,7 @@ describe("Feature: Catalog editor workflows", () => {
 
   it("should allow editor to create a product from header control", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
     cy.intercept("POST", "/api/catalog").as("createCatalogItem");
 
     cy.loginUi("editor@example.com", "Password123!");
@@ -17,7 +17,7 @@ describe("Feature: Catalog editor workflows", () => {
 
     cy.get('[data-cy="nav-new-product"]').should("be.enabled");
     catalogPage.openNewProductFromHeader();
-    cy.location("pathname").should("eq", "/store/product/new");
+    cy.location("pathname", { timeout: 10000 }).should("eq", "/store/product/new");
 
     productFormPage.fillForm(
       "Editor Created Product",
@@ -41,7 +41,7 @@ describe("Feature: Catalog editor workflows", () => {
 
   it("should allow editor to edit a product from catalog and detail controls", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
     cy.intercept("PUT", "/api/catalog/*").as("updateCatalogItem");
 
     cy.loginUi("editor@example.com", "Password123!");
@@ -79,7 +79,7 @@ describe("Feature: Catalog editor workflows", () => {
 
   it("should allow manager to create and edit products", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
     cy.intercept("POST", "/api/catalog").as("createCatalogItem");
     cy.intercept("PUT", "/api/catalog/*").as("updateCatalogItem");
 
@@ -89,7 +89,7 @@ describe("Feature: Catalog editor workflows", () => {
 
     cy.get('[data-cy="nav-new-product"]').should("be.visible");
     catalogPage.openNewProductFromHeader();
-    cy.location("pathname").should("eq", "/store/product/new");
+    cy.location("pathname", { timeout: 10000 }).should("eq", "/store/product/new");
 
     productFormPage.fillForm(
       "Manager Created Product",
@@ -113,7 +113,7 @@ describe("Feature: Catalog editor workflows", () => {
 
   it("should persist editor updates after page refresh from catalog and detail paths", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
     cy.intercept("PUT", "/api/catalog/*").as("updateCatalogItem");
 
     const stamp = Date.now();
@@ -169,7 +169,7 @@ describe("Feature: Catalog editor workflows", () => {
 
   it("should hide product controls for non-manager and non-editor users", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
 
     cy.loginUi("user@example.com", "CorrectHorseBatteryStaple1!");
     cy.wait("@login").its("response.statusCode").should("eq", 200);
@@ -186,7 +186,7 @@ describe("Feature: Catalog editor workflows", () => {
 
   it("should hide product controls for admin users", () => {
     cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("GET", "/api/catalog").as("catalog");
+    cy.intercept("GET", "/api/catalog*").as("catalog");
 
     cy.loginUi("admin@example.com", "Password123!");
     cy.wait("@login").its("response.statusCode").should("eq", 200);

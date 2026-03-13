@@ -36,7 +36,11 @@ export class CatalogPage {
   }
 
   openNewProductFromHeader() {
-    cy.get('[data-cy="nav-new-product"]').click();
+    cy.get('[data-cy="nav-new-product"]')
+      .should("be.visible")
+      .and("not.be.disabled")
+      .scrollIntoView()
+      .click();
   }
 
   addFromDetailAndReturn() {
