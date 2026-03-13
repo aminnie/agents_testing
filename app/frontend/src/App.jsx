@@ -767,7 +767,19 @@ function StoreApp() {
     }
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      if (token) {
+        await fetch("/api/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
+    } catch {
+      // Ignore logout transport errors; local session must still be cleared.
+    }
     clearSession();
     setPassword("");
     setAuthError("");

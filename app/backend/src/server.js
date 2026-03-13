@@ -3,6 +3,7 @@ import express from "express";
 import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { initDb } from "./db.js";
+import { initSessionStore } from "./session-store.js";
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -11,8 +12,8 @@ app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
 
-const tokens = new Map();
 let db;
+let sessionStore;
 
 function createToken() {
   return randomBytes(32).toString("hex");
@@ -213,10 +214,10 @@ function mapCatalogItem(row) {
   };
 }
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization || "";
-  const token = authHeader.replace("Bearer ", "");
-  const userId = tokens.get(token);
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const userId = token ? await sessionStore.getUserId(token) : null;
 
   if (!userId) {
     res.status(401).json({ message: "Unauthorized" });
@@ -228,7 +229,7 @@ function authMiddleware(req, res, next) {
 }
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, sessionMode: sessionStore?.mode || "unknown" });
 });
 
 app.get("/api/help", async (_req, res) => {
@@ -291,7 +292,7 @@ app.post("/api/login", async (req, res) => {
   }
 
   const token = createToken();
-  tokens.set(token, user.id);
+  await sessionStore.setUserId(token, user.id);
 
   res.json({
     token,
@@ -360,7 +361,7 @@ app.post("/api/register", async (req, res) => {
   }
 
   const token = createToken();
-  tokens.set(token, result.lastID);
+  await sessionStore.setUserId(token, result.lastID);
 
   res.status(201).json({
     token,
@@ -382,6 +383,15 @@ app.post("/api/register", async (req, res) => {
 app.get("/api/admin/roles", authMiddleware, requireAdminAccess, async (_req, res) => {
   const roles = await db.all("SELECT id, name FROM role_types ORDER BY id");
   res.json({ roles });
+});
+
+app.post("/api/logout", authMiddleware, async (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (token) {
+    await sessionStore.delete(token);
+  }
+  res.json({ ok: true });
 });
 
 app.get("/api/admin/users", authMiddleware, requireAdminAccess, async (_req, res) => {
@@ -1129,12 +1139,13 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
   });
 });
 
-initDb()
-  .then((database) => {
+Promise.all([initDb(), initSessionStore()])
+  .then(([database, initializedSessionStore]) => {
     db = database;
+    sessionStore = initializedSessionStore;
     app.listen(port, () => {
       // eslint-disable-next-line no-console
-      console.log(`Backend running on http://localhost:${port}`);
+      console.log(`Backend running on http://localhost:${port} (sessions: ${sessionStore.mode})`);
     });
   })
   .catch((error) => {

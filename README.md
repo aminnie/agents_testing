@@ -272,6 +272,7 @@ npm run requirements:show-active
 
 - Node.js 20+ recommended
 - npm 10+
+- Docker Desktop (recommended for local Redis/Postgres infrastructure)
 
 ## Install
 
@@ -304,6 +305,48 @@ The same overrides work for:
 - `npm run test:e2e`
 
 You can copy `.env.example` for reference, but these scripts read shell environment variables directly.
+
+## Optional local infrastructure (Redis + Postgres via Docker)
+
+For enterprise-readiness workstreams, local infrastructure services are provided via Docker Compose:
+
+- Redis: `localhost:6379`
+- Postgres: `localhost:5432`
+
+Start services:
+
+```bash
+npm run infra:up
+```
+
+Stop services:
+
+```bash
+npm run infra:down
+```
+
+Tail logs:
+
+```bash
+npm run infra:logs
+```
+
+Session-store environment variables:
+
+- `SESSION_STORE_DRIVER`:
+  - `auto` (default): use Redis when `REDIS_URL` is set and reachable; fallback to in-memory.
+  - `redis`: require Redis; startup fails if Redis is unavailable.
+  - `memory`: force in-memory sessions.
+- `REDIS_URL`: Redis connection string, for example `redis://localhost:6379`.
+- `REDIS_REQUIRED`: `true|false` guard for strict Redis dependency in `auto` mode.
+- `SESSION_TTL_SECONDS`: session expiration in seconds (default: `28800` / 8h).
+- `SESSION_KEY_PREFIX`: Redis key prefix (default: `store:session:`).
+
+Typical local setup command when using Redis sessions:
+
+```bash
+REDIS_URL=redis://localhost:6379 SESSION_STORE_DRIVER=redis npm run dev
+```
 
 ## Optional demo/test password overrides
 
