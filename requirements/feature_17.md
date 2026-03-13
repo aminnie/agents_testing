@@ -47,7 +47,7 @@ As a store Product Owner, I want store users to view previously placed orders.
 ### Status
 
 Completed (superseded by Technical Analysis status below).
-
+p
 ## Technical Analysis
 
 ### Current State Observations
