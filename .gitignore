@@ -5,3 +5,5 @@ cypress/videos/
 cypress/screenshots/
 dist/
 reports/
+.env.jira.local
+requirements/.env.jira.local

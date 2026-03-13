@@ -79,6 +79,11 @@ function runCommand(command, args) {
   });
 }
 
+function isTruthy(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
 async function ensureRequirementsReviewExists(requirementsReviewPath) {
   if (!requirementsReviewPath) {
     throw new Error(
@@ -124,6 +129,24 @@ async function main() {
   await runCommand("npm", ["run", "test:e2e"]);
   await runCommand("npm", ["run", "test:a11y"]);
   await ensureRequirementsReviewExists(requirementsReviewPath);
+  const jiraIssueKey = String(process.env.JIRA_ISSUE_KEY || "").trim();
+  if (isTruthy(process.env.JIRA_FINAL_PASS_PUBLISH) && jiraIssueKey) {
+    const relativeRequirementsPath = path.relative(WORKSPACE_ROOT, requirementsReviewPath);
+    const dryRunEnabled = !isTruthy(process.env.JIRA_FINAL_PASS_APPROVED);
+    await runCommand("npm", [
+      "run",
+      "jira:publish-final",
+      "--",
+      "--issue",
+      jiraIssueKey,
+      "--requirements",
+      relativeRequirementsPath,
+      "--approved",
+      "yes",
+      "--dry-run",
+      dryRunEnabled ? "true" : "false",
+    ]);
+  }
   // eslint-disable-next-line no-console
   console.log(`Final pass complete with requirements artifact: ${path.relative(WORKSPACE_ROOT, requirementsReviewPath)}`);
 }

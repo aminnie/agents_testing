@@ -1,3 +1,9 @@
+## Source Context
+
+- Source system: <manual or jira>
+- Source ticket/reference: <none or SCRUM-1>
+- Source summary: <short summary>
+
 As a <role>, I would like to:
 1. <requirement 1>
 2. <requirement 2>

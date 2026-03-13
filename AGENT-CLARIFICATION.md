@@ -100,6 +100,34 @@ Important:
 If unresolved decisions remain, return numbered blocking questions and stop.
 ```
 
+## Jira-Backed Invocation
+
+Use this flow when requirements source-of-truth starts in a Jira ticket:
+
+1. Read ticket:
+   - `npm run jira:read -- --issue SCRUM-1`
+2. Initialize requirements artifact:
+   - `npm run jira:req:init -- --issue SCRUM-1`
+   - output path: `requirements/feature_SCRUM-1.md` (or `bug` variant with `--type bug`)
+3. Clarify the generated requirements file in place using the same section requirements in this document.
+4. After explicit user approval, sync to Jira description:
+   - dry run:
+     - `npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run`
+   - real update:
+     - `npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run false`
+
+Rules:
+- Do not perform Jira writes without explicit approval.
+- Keep existing Jira description content; only upsert the approved requirements block.
+
+Optional completion publication:
+- At done-done, attach the final requirements markdown to the Jira ticket and add a completion comment via:
+  - `npm run jira:publish-final -- --issue <ISSUE_KEY> --requirements <requirements_file> --approved yes --dry-run false`
+- The same publication can be triggered from `npm run workflow:final-pass` when `JIRA_FINAL_PASS_PUBLISH=true`, `JIRA_ISSUE_KEY` is set, and `JIRA_FINAL_PASS_APPROVED=yes`.
+
+Fallback behavior:
+- If no Jira ticket key is provided, proceed with the standard local clarification flow using a manually created `requirements/feature_*.md` or `requirements/bug_*.md` file.
+
 ## Bug Variant Template
 
 ```text

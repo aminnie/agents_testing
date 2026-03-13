@@ -23,7 +23,11 @@
     "cypress:run:pdf": "node scripts/run-cypress-with-pdf.mjs",
     "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:pdf\"'",
     "test:a11y": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:a11y\"'",
-    "workflow:final-pass": "node scripts/workflow-final-pass.mjs"
+    "workflow:final-pass": "node scripts/workflow-final-pass.mjs",
+    "jira:read": "node scripts/jira/read_issue.mjs",
+    "jira:req:init": "node scripts/jira/create_requirements_from_issue.mjs",
+    "jira:update-description": "node scripts/jira/update_description.mjs",
+    "jira:publish-final": "node scripts/jira/publish_final_artifact.mjs"
   },
   "devDependencies": {
     "axe-core": "^4.11.1",

@@ -121,6 +121,89 @@ Next Up:
 
 - Explore agent skills and plug-ins to provide more advanced guidance and capabilities (e.g. Jira integration).
 
+## Jira-Backed Clarification Flow
+
+This repo includes a Jira-oriented clarification workflow for tickets like `SCRUM-1`.
+
+### 1) Configure environment variables
+
+Set:
+
+- `JIRA_BASE_URL` (example: `https://your-org.atlassian.net`)
+- `JIRA_EMAIL` (Atlassian account email)
+- `JIRA_API_TOKEN` (Atlassian API token)
+
+### 2) Optional local Jira MCP server setup
+
+Workspace MCP config is provided in `.cursor/mcp.json` with server id `jira`.
+It uses:
+
+- package: `@mcp-devtools/jira`
+- env names expected by server:
+  - `JIRA_URL` (mapped from `JIRA_BASE_URL`)
+  - `JIRA_API_MAIL` (mapped from `JIRA_EMAIL`)
+  - `JIRA_API_KEY` (mapped from `JIRA_API_TOKEN`)
+
+### 3) Create requirements file from Jira
+
+```bash
+npm run jira:read -- --issue SCRUM-1
+npm run jira:req:init -- --issue SCRUM-1
+```
+
+Generated output:
+
+- `requirements/feature_SCRUM-1.md` (default)
+- `requirements/bug_SCRUM-1.md` with `--type bug`
+
+### 4) Run clarification
+
+Use `AGENT-CLARIFICATION.md` to update the generated requirements file:
+
+- `## Clarification Decisions`
+- `### Decisions Applied`
+- `### Requirements Updates`
+- `### Acceptance Criteria Updates`
+- `### Blocking Questions`
+- `### Status`
+
+### 5) Sync approved requirements back to Jira
+
+Dry run first:
+
+```bash
+npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run
+```
+
+Then real update:
+
+```bash
+npm run jira:update-description -- --issue SCRUM-1 --requirements requirements/feature_SCRUM-1.md --approved yes --dry-run false
+```
+
+### 6) Optional final-pass publish (attachment + completion comment)
+
+You can publish the active requirements artifact to Jira at the end of `workflow:final-pass`.
+
+Set:
+
+- `JIRA_ISSUE_KEY=SCRUM-1`
+- `JIRA_FINAL_PASS_PUBLISH=true`
+- `JIRA_FINAL_PASS_APPROVED=no` (default dry-run safety)
+
+Run:
+
+```bash
+npm run workflow:final-pass
+```
+
+Behavior:
+
+- If `JIRA_FINAL_PASS_PUBLISH=true` and `JIRA_ISSUE_KEY` is set, final pass calls:
+  - `npm run jira:publish-final -- --issue <KEY> --requirements <active requirements file>`
+- With `JIRA_FINAL_PASS_APPROVED=no`, Jira publish runs in dry-run mode.
+- Set `JIRA_FINAL_PASS_APPROVED=yes` to perform the real upload and comment post.
+
 ## What is included in the Web Store Application
 
 - Backend API (`app/backend`) with SQLite seed data (initial specifications):
