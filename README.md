@@ -12,11 +12,12 @@ Coders in the IDE
 (<https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04>). The
 messaging related to use and benefits of AI in engineering teams does not seem
 to be conclusive and may even be somehwat contradictory. It is not agreed on as
-to who benefits most, the senior engineer or junior. Seniors already generate
+to who benefits most, the senior engineer or junior? Seniors already generate
 significant amounts of code that they may never fully inspect themselves,
 leaving team member peer reviewers with significant challenges in terms of the
 scope of changes to be reviewed in pull requests. Team throughput is increasing,
-but not necessarily equally so.
+but not necessarily equally so by team member or with the same levels of 
+attention to engineering activities pheripheral to code generation.
 
 To solo YOLO or not? There is a question as what would a mature engineering team
 would look like in a future state AI Native/Hybrid engineering team where roles
@@ -53,7 +54,7 @@ Some of the findings and open questions to date:
 - The size of the ticket (user story or smaller epic) do not seem to matter
   all that much as coding phase of the implementation happens blazingly fast.
 - The project agent definitions enable full tracebility of the process, from
-  requirements elaboration through done-done! The noore we exercise and enhance
+  requirements elaboration through done-done! The more we exercise and enhance
   the agents, the more reliable the process guidance and do's and don't become.
   AI likes to code and haas no problem skipping e.g requirements clarification
   technical analysis if not guided properly. And in doing so we loose
