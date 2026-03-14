@@ -4,6 +4,14 @@ import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { initDb } from "./db.js";
 import { initSessionStore } from "./session-store.js";
+import {
+  correlationIdMiddleware,
+  requestLoggingMiddleware,
+  logEvent,
+  logError,
+  logSystemInfo,
+  logSystemError
+} from "./observability/logger.js";
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -11,6 +19,8 @@ const port = Number(process.env.PORT || 4000);
 app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json());
+app.use(correlationIdMiddleware);
+app.use(requestLoggingMiddleware);
 
 let db;
 let sessionStore;
@@ -247,7 +257,8 @@ app.get("/api/help", async (_req, res) => {
         "GET /api/catalog and checkout endpoints require a valid session token."
       ]
     });
-  } catch {
+  } catch (error) {
+    logError(_req, "Failed to load help information", error);
     res.status(500).json({ message: "Unable to load help information" });
   }
 });
@@ -257,6 +268,7 @@ app.post("/api/login", async (req, res) => {
   const password = String(req.body?.password || "").trim();
 
   if (!email || !password) {
+    logEvent(req, "auth.login.validation_failed");
     res.status(400).json({ message: "Email and password are required" });
     return;
   }
@@ -281,18 +293,24 @@ app.post("/api/login", async (req, res) => {
   );
 
   if (!user) {
+    logEvent(req, "auth.login.failed", { reason: "invalid_credentials" });
     res.status(401).json({ message: "Invalid email or password" });
     return;
   }
 
   const isPasswordValid = await bcrypt.compare(password, String(user.password || ""));
   if (!isPasswordValid) {
+    logEvent(req, "auth.login.failed", { reason: "invalid_credentials" });
     res.status(401).json({ message: "Invalid email or password" });
     return;
   }
 
   const token = createToken();
   await sessionStore.setUserId(token, user.id);
+  logEvent(req, "auth.login.succeeded", {
+    userId: user.id,
+    role: user.role || user.legacyRole || "user"
+  });
 
   res.json({
     token,
@@ -318,6 +336,9 @@ app.post("/api/register", async (req, res) => {
       errors.password = "Password is required";
     }
     Object.assign(errors, addressErrors);
+    logEvent(req, "auth.register.validation_failed", {
+      errorCount: Object.keys(errors).length
+    });
     res.status(400).json({
       message: firstValidationMessage(errors, "Registration input is invalid"),
       errors
@@ -326,12 +347,14 @@ app.post("/api/register", async (req, res) => {
   }
 
   if (password.length < 8) {
+    logEvent(req, "auth.register.validation_failed", { reason: "password_too_short" });
     res.status(400).json({ message: "Password must be at least 8 characters" });
     return;
   }
 
   const existingUser = await db.get("SELECT id FROM users WHERE lower(email) = ?", email);
   if (existingUser) {
+    logEvent(req, "auth.register.rejected", { reason: "email_exists" });
     res.status(409).json({ message: "An account with that email already exists" });
     return;
   }
@@ -353,15 +376,21 @@ app.post("/api/register", async (req, res) => {
     );
   } catch (error) {
     if (String(error?.message || "").includes("UNIQUE constraint failed: users.email")) {
+      logEvent(req, "auth.register.rejected", { reason: "email_exists" });
       res.status(409).json({ message: "An account with that email already exists" });
       return;
     }
+    logError(req, "Failed to register user", error);
     res.status(500).json({ message: "Unable to register user" });
     return;
   }
 
   const token = createToken();
   await sessionStore.setUserId(token, result.lastID);
+  logEvent(req, "auth.register.succeeded", {
+    userId: result.lastID,
+    role: "user"
+  });
 
   res.status(201).json({
     token,
@@ -391,6 +420,7 @@ app.post("/api/logout", authMiddleware, async (req, res) => {
   if (token) {
     await sessionStore.delete(token);
   }
+  logEvent(req, "auth.logout.succeeded", { userId: req.userId });
   res.json({ ok: true });
 });
 
@@ -692,15 +722,22 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
   const nameOnCard = normalizeText(payment?.nameOnCard);
 
   if (!Array.isArray(items) || items.length === 0) {
+    logEvent(req, "checkout.rejected", { reason: "empty_cart", userId: req.userId });
     res.status(400).json({ message: "Cart cannot be empty" });
     return;
   }
 
   if (!nameOnCard || normalizedCardNumber.length <= 4) {
+    logEvent(req, "checkout.rejected", { reason: "invalid_payment", userId: req.userId });
     res.status(400).json({ message: "Payment details are required" });
     return;
   }
   if (hasAddressErrors) {
+    logEvent(req, "checkout.rejected", {
+      reason: "invalid_address",
+      userId: req.userId,
+      errorCount: Object.keys(addressErrors).length
+    });
     res.status(400).json({
       message: firstValidationMessage(addressErrors, "Address input is invalid"),
       errors: addressErrors
@@ -712,6 +749,7 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
   for (const item of items) {
     const itemId = String(item.id ?? "").trim();
     if (!itemId) {
+      logEvent(req, "checkout.rejected", { reason: "missing_item_id", userId: req.userId });
       res.status(400).json({ message: "Invalid catalog item id" });
       return;
     }
@@ -723,12 +761,14 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
     );
 
     if (!catalogItem) {
+      logEvent(req, "checkout.rejected", { reason: "invalid_item_id", userId: req.userId });
       res.status(400).json({ message: `Invalid catalog item id ${itemId}` });
       return;
     }
 
     const quantity = Number(item.quantity || 1);
     if (!Number.isInteger(quantity) || quantity <= 0) {
+      logEvent(req, "checkout.rejected", { reason: "invalid_quantity", userId: req.userId });
       res.status(400).json({ message: `Invalid quantity for item id ${itemId}` });
       return;
     }
@@ -749,6 +789,9 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
   const createdAt = new Date().toISOString();
   const orderedStatusTypeId = await getOrderStatusTypeId(ORDER_STATUS.ORDERED);
   if (!orderedStatusTypeId) {
+    logError(req, "Ordered status type lookup failed during checkout", new Error("Missing ordered status type"), {
+      userId: req.userId
+    });
     res.status(500).json({ message: "Checkout failed" });
     return;
   }
@@ -811,9 +854,17 @@ app.post("/api/checkout", authMiddleware, async (req, res) => {
     } catch {
       // Ignore rollback failures and report the original checkout failure.
     }
+    logError(req, "Checkout transaction failed", error, { userId: req.userId });
     res.status(500).json({ message: "Checkout failed" });
     return;
   }
+
+  logEvent(req, "checkout.completed", {
+    userId: req.userId,
+    orderId: publicOrderId,
+    itemCount: normalizedItems.length,
+    totalCents
+  });
 
   res.status(201).json({
     orderId: publicOrderId,
@@ -945,6 +996,12 @@ app.get("/api/orders", authMiddleware, async (req, res) => {
       query: rawSearchQuery
     }
   });
+  logEvent(req, "orders.list.viewed", {
+    userId: req.userId,
+    page,
+    pageSize: requestedPageSize,
+    totalItems
+  });
 });
 
 app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
@@ -953,24 +1010,29 @@ app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
   const normalizedReason = normalizeCancellationReason(req.body?.reason);
 
   if (!requestedOrderId) {
+    logEvent(req, "orders.status_update.rejected", { reason: "missing_order_id", userId: req.userId });
     res.status(404).json({ message: "Order not found" });
     return;
   }
   if (requestedStatus !== ORDER_STATUS.CANCELLED) {
+    logEvent(req, "orders.status_update.rejected", { reason: "unsupported_status", userId: req.userId });
     res.status(400).json({ message: "Only status Cancelled is supported" });
     return;
   }
   if (!normalizedReason) {
+    logEvent(req, "orders.status_update.rejected", { reason: "missing_cancellation_reason", userId: req.userId });
     res.status(400).json({ message: "Cancellation reason is required" });
     return;
   }
   if (normalizedReason.length > MAX_CANCELLATION_REASON_LENGTH) {
+    logEvent(req, "orders.status_update.rejected", { reason: "reason_too_long", userId: req.userId });
     res.status(400).json({
       message: `Cancellation reason must be ${MAX_CANCELLATION_REASON_LENGTH} characters or fewer`
     });
     return;
   }
   if (!hasSupportedCancellationReasonCharacters(normalizedReason)) {
+    logEvent(req, "orders.status_update.rejected", { reason: "reason_invalid_chars", userId: req.userId });
     res.status(400).json({ message: "Cancellation reason contains unsupported characters" });
     return;
   }
@@ -1007,17 +1069,22 @@ app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
   }
 
   if (!order) {
+    logEvent(req, "orders.status_update.rejected", { reason: "order_not_found", userId: req.userId });
     res.status(404).json({ message: "Order not found" });
     return;
   }
 
   if (!CANCELLABLE_ORDER_STATUSES.has(order.status)) {
+    logEvent(req, "orders.status_update.rejected", { reason: "status_not_cancellable", userId: req.userId });
     res.status(400).json({ message: "Order cannot be cancelled from current status" });
     return;
   }
 
   const cancelledStatusTypeId = await getOrderStatusTypeId(ORDER_STATUS.CANCELLED);
   if (!cancelledStatusTypeId) {
+    logError(req, "Cancelled status type lookup failed", new Error("Missing cancelled status type"), {
+      userId: req.userId
+    });
     res.status(500).json({ message: "Order cancellation failed" });
     return;
   }
@@ -1028,6 +1095,11 @@ app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
     normalizedReason,
     order.id
   );
+  logEvent(req, "orders.status_update.completed", {
+    userId: req.userId,
+    orderId: order.publicOrderId || createPublicOrderId(order.id, order.createdAt),
+    status: ORDER_STATUS.CANCELLED
+  });
 
   res.json({
     order: {
@@ -1041,6 +1113,7 @@ app.patch("/api/orders/:orderId/status", authMiddleware, async (req, res) => {
 app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
   const requestedOrderId = String(req.params.orderId || "").trim();
   if (!requestedOrderId) {
+    logEvent(req, "orders.details.rejected", { reason: "missing_order_id", userId: req.userId });
     res.status(404).json({ message: "Order not found" });
     return;
   }
@@ -1093,6 +1166,7 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
   }
 
   if (!order) {
+    logEvent(req, "orders.details.rejected", { reason: "order_not_found", userId: req.userId });
     res.status(404).json({ message: "Order not found" });
     return;
   }
@@ -1137,6 +1211,11 @@ app.get("/api/orders/:orderId", authMiddleware, async (req, res) => {
       lineTotalCents: item.quantity * item.unitPriceCents
     }))
   });
+  logEvent(req, "orders.details.viewed", {
+    userId: req.userId,
+    orderId: order.publicOrderId || createPublicOrderId(order.id, order.createdAt),
+    itemCount: itemRows.length
+  });
 });
 
 Promise.all([initDb(), initSessionStore()])
@@ -1144,12 +1223,13 @@ Promise.all([initDb(), initSessionStore()])
     db = database;
     sessionStore = initializedSessionStore;
     app.listen(port, () => {
-      // eslint-disable-next-line no-console
-      console.log(`Backend running on http://localhost:${port} (sessions: ${sessionStore.mode})`);
+      logSystemInfo("Backend started", {
+        port,
+        sessionMode: sessionStore.mode
+      });
     });
   })
   .catch((error) => {
-    // eslint-disable-next-line no-console
-    console.error("Failed to initialize database", error);
+    logSystemError("Failed to initialize database", error);
     process.exit(1);
   });

@@ -348,6 +348,18 @@ Typical local setup command when using Redis sessions:
 REDIS_URL=redis://localhost:6379 SESSION_STORE_DRIVER=redis npm run dev
 ```
 
+## Structured logging and correlation IDs (SCRUM-15)
+
+Backend API requests now emit structured JSON logs with request correlation support.
+
+- Incoming `x-correlation-id` is reused when valid; otherwise backend generates one.
+- Response includes `x-correlation-id` for end-to-end traceability.
+- Request completion logs include:
+  - `timestamp`, `level`, `category`, `message`
+  - `correlationId`, `method`, `path`, `statusCode`, `durationMs`
+- Event and error logs are emitted for auth, checkout, and order flows.
+- Sensitive fields (passwords, auth tokens, card number/cvv values) are redacted from structured log payloads.
+
 ## Postgres migration spike commands (SCRUM-14)
 
 These commands support local SQLite -> Postgres rehearsal without changing runtime persistence.
@@ -388,6 +400,39 @@ Artifacts:
 
 - Mapping and rollout plan: `app/backend/docs/postgres-migration-plan.md`
 - Query baseline report: `reports/migration/performance-baseline.json`
+
+## Merge governance and branch protection (SCRUM-16)
+
+Required CI checks are defined in `.github/workflows/required-checks.yml`:
+
+- `test-e2e`
+- `test-a11y`
+- `workflow-final-pass`
+
+CI-safe final pass command:
+
+```bash
+npm run workflow:final-pass:ci
+```
+
+Branch protection automation (requires GitHub admin permissions via `gh auth`):
+
+```bash
+# Dry run (recommended first)
+npm run governance:branch-protection:apply -- --dry-run true
+
+# Apply protection policy
+npm run governance:branch-protection:apply -- --dry-run false
+
+# Verify applied policy
+npm run governance:branch-protection:verify
+```
+
+Override process (emergency only):
+
+1. Record incident reason and approving engineer.
+2. Apply temporary exception with explicit expiry/timebox.
+3. Restore full policy and document post-incident remediation.
 
 ## Optional demo/test password overrides
 

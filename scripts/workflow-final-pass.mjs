@@ -151,17 +151,26 @@ async function ensureRequirementsReviewExists(requirementsReviewPath) {
 }
 
 async function main() {
-  const requirementsReviewPath = await resolveRequirementsReviewPath();
-  await runCommand("npm", ["run", "test:e2e"]);
-  await runCommand("npm", ["run", "test:a11y"]);
-  await ensureRequirementsReviewExists(requirementsReviewPath);
-  await setActiveRequirementsPath(path.relative(WORKSPACE_ROOT, requirementsReviewPath));
+  const ciMode = isTruthy(process.env.WORKFLOW_FINAL_PASS_CI);
+  const requirementsReviewPath = ciMode ? "" : await resolveRequirementsReviewPath();
+  const skipTestsInCi = ciMode && isTruthy(process.env.WORKFLOW_FINAL_PASS_SKIP_TESTS);
+
+  if (!skipTestsInCi) {
+    await runCommand("npm", ["run", "test:e2e"]);
+    await runCommand("npm", ["run", "test:a11y"]);
+  }
+
+  if (!ciMode) {
+    await ensureRequirementsReviewExists(requirementsReviewPath);
+    await setActiveRequirementsPath(path.relative(WORKSPACE_ROOT, requirementsReviewPath));
+  }
+
   const jiraCredentialsConfigured = hasJiraCredentialsConfigured();
   const jiraPublishEnabled = isTruthy(process.env.JIRA_FINAL_PASS_PUBLISH);
   const explicitJiraIssueKey = String(process.env.JIRA_ISSUE_KEY || "").trim();
   const derivedJiraIssueKey = deriveJiraIssueKeyFromRequirementsPath(requirementsReviewPath);
   const jiraIssueKey = explicitJiraIssueKey || derivedJiraIssueKey;
-  if (jiraCredentialsConfigured && !jiraPublishEnabled) {
+  if (!ciMode && jiraCredentialsConfigured && !jiraPublishEnabled) {
     throw new Error(
       [
         "Jira credentials are configured but JIRA_FINAL_PASS_PUBLISH is not enabled.",
@@ -169,7 +178,7 @@ async function main() {
       ].join(" ")
     );
   }
-  if (jiraCredentialsConfigured && !jiraIssueKey) {
+  if (!ciMode && jiraCredentialsConfigured && !jiraIssueKey) {
     throw new Error(
       [
         "Jira credentials are configured but Jira issue key could not be resolved.",
@@ -178,7 +187,7 @@ async function main() {
       ].join(" ")
     );
   }
-  if (jiraPublishEnabled && jiraIssueKey) {
+  if (!ciMode && jiraPublishEnabled && jiraIssueKey) {
     const relativeRequirementsPath = path.relative(WORKSPACE_ROOT, requirementsReviewPath);
     const dryRunEnabled = !isTruthy(process.env.JIRA_FINAL_PASS_APPROVED);
     await runCommand("npm", [
@@ -195,6 +204,13 @@ async function main() {
       dryRunEnabled ? "true" : "false",
     ]);
   }
+  // eslint-disable-next-line no-console
+  if (ciMode) {
+    // eslint-disable-next-line no-console
+    console.log("Final pass complete in CI mode.");
+    return;
+  }
+
   // eslint-disable-next-line no-console
   console.log(`Final pass complete with requirements artifact: ${path.relative(WORKSPACE_ROOT, requirementsReviewPath)}`);
 }

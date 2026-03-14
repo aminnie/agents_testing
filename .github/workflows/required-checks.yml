@@ -1,0 +1,74 @@
+name: required-checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-e2e:
+    name: test-e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Cypress binary
+        run: npm run cypress:install
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+
+  test-a11y:
+    name: test-a11y
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Cypress binary
+        run: npm run cypress:install
+
+      - name: Run accessibility tests
+        run: npm run test:a11y
+
+  workflow-final-pass:
+    name: workflow-final-pass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Cypress binary
+        run: npm run cypress:install
+
+      - name: Run final pass in CI mode
+        run: npm run workflow:final-pass:ci
