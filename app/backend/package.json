@@ -6,12 +6,18 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "db:pg:schema": "node scripts/migrations/apply-postgres-schema.mjs",
+    "db:pg:rehearse": "node scripts/migrations/rehearse-sqlite-to-postgres.mjs",
+    "db:pg:parity": "node scripts/migrations/check-parity.mjs",
+    "db:pg:benchmark": "node scripts/migrations/benchmark-read-queries.mjs",
+    "db:pg:spike": "npm run db:pg:schema && npm run db:pg:rehearse && npm run db:pg:parity && npm run db:pg:benchmark"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^4.22.1",
+    "pg": "^8.20.0",
     "redis": "^5.11.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"

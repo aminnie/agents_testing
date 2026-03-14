@@ -348,6 +348,47 @@ Typical local setup command when using Redis sessions:
 REDIS_URL=redis://localhost:6379 SESSION_STORE_DRIVER=redis npm run dev
 ```
 
+## Postgres migration spike commands (SCRUM-14)
+
+These commands support local SQLite -> Postgres rehearsal without changing runtime persistence.
+
+Required environment variables (defaults shown):
+
+- `POSTGRES_HOST=localhost`
+- `POSTGRES_PORT=5432`
+- `POSTGRES_DB=happyvibes`
+- `POSTGRES_USER=happyvibes`
+- `POSTGRES_PASSWORD=happyvibes`
+- optional: `SQLITE_DB_PATH=app/backend/data/store.db`
+
+If `localhost:5432` is already used by another local Postgres instance, run Docker infra and migration commands with an alternate port, for example:
+
+```bash
+POSTGRES_PORT=55432 npm run infra:up
+POSTGRES_PORT=55432 npm run db:pg:spike
+```
+
+Run the full spike flow:
+
+```bash
+npm run infra:up
+npm run db:pg:spike
+```
+
+Or run steps individually:
+
+```bash
+npm run db:pg:schema
+npm run db:pg:rehearse
+npm run db:pg:parity
+npm run db:pg:benchmark
+```
+
+Artifacts:
+
+- Mapping and rollout plan: `app/backend/docs/postgres-migration-plan.md`
+- Query baseline report: `reports/migration/performance-baseline.json`
+
 ## Optional demo/test password overrides
 
 Default demo/test credentials can be overridden via environment variables:
