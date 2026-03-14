@@ -1,10 +1,11 @@
 # Happy Vibes Agents Development Application
 
-This repository contains a small web store application that is used to develop
+This repository contains a demo web store application that is used to develop
 and validate AI agents, skills and plugins in the software engineering life
 cycle. When present in a repo all engineering team members benefit from AI agent
 expert guidance and are able to use and benefit from the AI support equally -
-irrespective of experience level.
+irrespective of experience level. The demo store is incomplete and continue  -
+to evolve as we proceed with agent definitions in the SDLC.
 
 Today, it is thought that most engineers operate at the Yegge phase 2 level -
 Coders in the IDE
