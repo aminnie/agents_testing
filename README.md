@@ -80,6 +80,7 @@ Some of the findings and open questions as to date:
   project with Jira tickets - attempting to recover them from the chat history
   and context. And who knows? With Slack integration AGENT.md may decide to tell
   on you!
+- Third party tools such as SNYK (IDE integration via MCP) are not aware of current requirement and may report out-of-scope changes as a new security rules are added. During implementation and following an integrated SNYK scan, the LLM may proceed to fix issues in the broader repo. We have scope creep and unintended code changes that may or may not be fully recovered by our test portfolio! Adding an agent rule to limit changes the current requirements and implemenation in our requirements .md file seems to be working.
 - Agents, skills and plugins definitions continue to standardize across vendors.
   To what extent are these agents re-usable as is in Cursor vs. CLaude Code or
   Codex for example. Also, can/should we back out and make them more re-usable
