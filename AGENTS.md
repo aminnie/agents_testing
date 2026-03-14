@@ -180,6 +180,39 @@ If the user requests coding before these conditions are met, the agent must:
 
 If an override is granted, record the override decision in the active requirements file before implementation begins.
 
+### 11.3) Ad hoc implementation request gate (ticket/requirements confirmation)
+
+If the user requests implementation directly from chat and there is no linked ticket and no official requirements artifact (for example an active `requirements/*.md` file), the agent must pause and present a mandatory choice before any code edits.
+
+Required prompt:
+
+`No ticket and no official requirements artifact were provided for this implementation request. Choose one option: (1) Abort implementation for now and create/provide ticket + requirements first, or (2) Proceed anyway and explicitly confirm that no ticket is required for this work.`
+
+Required handling:
+
+1. If the user chooses **Abort**:
+   - do not implement,
+   - respond that implementation is stopped because no ticket/official requirements were provided,
+   - offer to help create the requirements artifact.
+2. If the user chooses **Proceed anyway**:
+   - require an explicit confirmation in the current thread that no ticket is required,
+   - if there is no official requirements artifact, create one before coding as `requirements/adhoc-<N>.md`, where `<N>` is the next available integer after existing `adhoc-*.md` files,
+   - initialize that file from `requirements/template.md` (or equivalent required structure) and mark it as the active requirements artifact for the implementation,
+   - record the "proceed without ticket" decision in that artifact (and include it in final summary output),
+   - continue with implementation only after that explicit confirmation.
+
+Ad hoc artifact minimum sections:
+
+- request/context summary
+- explicit decision note that no ticket is required (user-confirmed)
+- scope/constraints
+- `## What Changed`
+- `## Verification Results`
+- `## Review Results`
+- `## Phase Timeline`
+
+If the user response is ambiguous, ask again and do not start implementation.
+
 ## 12) Verification Minimums
 
 Before considering work complete:

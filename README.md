@@ -197,6 +197,14 @@ Note:
   explicitly invokes it (or the user requests a review).
 - `AGENT-SIMPLIFIER.md` is an optional manual step and runs only when explicitly
   invoked (it is not auto-triggered).
+- If implementation is requested ad hoc in chat without a ticket and without an
+  official requirements artifact, the agent must stop and ask the user to choose
+  one option: (1) abort until ticket/requirements are provided, or (2) proceed
+  with explicit confirmation that no ticket is required.
+- If option (2) is chosen and no requirements artifact exists yet, create
+  `requirements/adhoc-<N>.md` (next available ad hoc number) before coding and
+  use it as the active requirements file for `## What Changed`,
+  `## Verification Results`, `## Review Results`, and `## Phase Timeline`.
 
 ### Phase Timeline Entry Format
 
