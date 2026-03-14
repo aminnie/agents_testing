@@ -126,6 +126,7 @@ Next up (knowns):
 This project includes the following agent guidance files used to drive the
 development process:
 
+- Architecture reference: `ARCHITECTURE.md`
 - `AGENTS.md` - default baseline engineering policy and instruction precedence
   for all work in this repository.
 - `AGENT-CLARIFICATION.md` - refines ambiguous requirement or bug requests into
