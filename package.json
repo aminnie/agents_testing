@@ -17,6 +17,12 @@
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
+    "app:up": "docker compose --profile app up -d",
+    "app:down": "docker compose stop frontend backend",
+    "app:logs": "docker compose logs -f frontend backend",
+    "app:restart": "docker compose restart frontend backend",
+    "app:ps": "docker compose ps frontend backend",
+    "app:config": "docker compose --profile app config",
     "db:pg:schema": "npm run db:pg:schema --workspace app/backend",
     "db:pg:rehearse": "npm run db:pg:rehearse --workspace app/backend",
     "db:pg:parity": "npm run db:pg:parity --workspace app/backend",
@@ -43,7 +49,8 @@
     "jira:read": "node scripts/jira/read_issue.mjs",
     "jira:req:init": "node scripts/jira/create_requirements_from_issue.mjs",
     "jira:update-description": "node scripts/jira/update_description.mjs",
-    "jira:publish-final": "node scripts/jira/publish_final_artifact.mjs"
+    "jira:publish-final": "node scripts/jira/publish_final_artifact.mjs",
+    "jira:create-epic-stories": "node scripts/jira/create_epic_and_stories.mjs"
   },
   "devDependencies": {
     "axe-core": "^4.11.1",

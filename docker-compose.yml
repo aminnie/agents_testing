@@ -1,4 +1,70 @@
 services:
+  backend:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: app/backend/Dockerfile
+    container_name: happyvibes-backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      SESSION_STORE_DRIVER: ${SESSION_STORE_DRIVER:-redis}
+      REDIS_REQUIRED: ${REDIS_REQUIRED:-true}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-28800}
+      SESSION_KEY_PREFIX: ${SESSION_KEY_PREFIX:-store:session:}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-happyvibes}
+      POSTGRES_USER: ${POSTGRES_USER:-happyvibes}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-happyvibes}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:4000/health').then((res)=>{if(!res.ok)process.exit(1);}).catch(()=>process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    volumes:
+      - backend_data:/app/app/backend/data
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: app/frontend/Dockerfile
+    container_name: happyvibes-frontend
+    restart: unless-stopped
+    environment:
+      FRONTEND_PORT: 5173
+      BACKEND_PORT: 4000
+      BACKEND_PROXY_TARGET: ${BACKEND_PROXY_TARGET:-http://backend:4000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:5173').then((res)=>{if(!res.ok)process.exit(1);}).catch(()=>process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+
   postgres:
     image: postgres:16-alpine
     container_name: happyvibes-postgres
@@ -33,5 +99,6 @@ services:
       retries: 5
 
 volumes:
+  backend_data:
   postgres_data:
   redis_data:

@@ -1,0 +1,43 @@
+{
+  "projectKey": "SCRUM",
+  "storyIssueType": "Story",
+  "epic": {
+    "issueType": "Epic",
+    "summary": "Containerized application runtime for frontend and backend",
+    "epicName": "Containerized application runtime",
+    "description": "Containerize frontend and backend services to run consistently with existing Postgres and Redis local infrastructure. Deliver repeatable startup, clear environment wiring, and operational documentation for enterprise-track execution.",
+    "labels": ["enterprise", "containerization", "platform"]
+  },
+  "stories": [
+    {
+      "summary": "Containerize backend runtime with stable environment wiring",
+      "description": "Create backend container runtime with deterministic startup, required environment configuration, and health checks suitable for local and CI usage.",
+      "labels": ["containerization", "backend", "platform"]
+    },
+    {
+      "summary": "Containerize frontend runtime with backend proxy target support",
+      "description": "Create frontend container runtime and configurable API proxy target so frontend can call backend reliably inside compose networking.",
+      "labels": ["containerization", "frontend", "platform"]
+    },
+    {
+      "summary": "Orchestrate app and infrastructure services in docker compose",
+      "description": "Extend compose topology to run frontend, backend, postgres, and redis together with health checks and startup ordering.",
+      "labels": ["containerization", "compose", "platform"]
+    },
+    {
+      "summary": "Add container lifecycle scripts for local developer workflows",
+      "description": "Add root-level scripts for containerized app startup, logs, restart, and stop operations while preserving infra-only workflows.",
+      "labels": ["developer-experience", "containerization", "platform"]
+    },
+    {
+      "summary": "Add CI smoke validation for containerized runtime",
+      "description": "Introduce a lightweight CI verification path that validates compose config, app container startup, and health endpoint availability.",
+      "labels": ["ci", "containerization", "quality"]
+    },
+    {
+      "summary": "Document containerized runbook and operational guardrails",
+      "description": "Update README and requirements artifacts with containerized runtime commands, port override guidance, and troubleshooting notes.",
+      "labels": ["documentation", "containerization", "operations"]
+    }
+  ]
+}

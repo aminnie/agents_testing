@@ -238,6 +238,20 @@ Resolution precedence in `workflow:final-pass`:
 2. `requirements/.state/active-requirements.txt`
 3. prompt inference fallback
 
+### 9) Create an EPIC + initial stories from seed payload
+
+You can create a new Jira EPIC and linked initial stories from a JSON seed file:
+
+```bash
+npm run jira:create-epic-stories -- --seed requirements/jira-containerization-seed.json --dry-run
+```
+
+Then execute the real create run:
+
+```bash
+npm run jira:create-epic-stories -- --seed requirements/jira-containerization-seed.json --dry-run false --out reports/jira-containerization-created.json
+```
+
 Manual helpers:
 
 ```bash
@@ -329,6 +343,57 @@ Tail logs:
 
 ```bash
 npm run infra:logs
+```
+
+These commands now target infrastructure-only services (`postgres`, `redis`). Application services are managed separately with `app:*` commands below.
+
+## Containerized app runtime (frontend + backend via Docker)
+
+Start containerized frontend + backend (and required infra dependencies):
+
+```bash
+npm run app:up
+```
+
+Show app container status:
+
+```bash
+npm run app:ps
+```
+
+Tail app logs:
+
+```bash
+npm run app:logs
+```
+
+Restart app services:
+
+```bash
+npm run app:restart
+```
+
+Stop app services (keeps infra containers available):
+
+```bash
+npm run app:down
+```
+
+Validate merged compose config for app profile:
+
+```bash
+npm run app:config
+```
+
+Optional host port overrides for containerized app:
+
+- `BACKEND_PORT` (default `4000`)
+- `FRONTEND_PORT` (default `5173`)
+
+Example:
+
+```bash
+BACKEND_PORT=4400 FRONTEND_PORT=5184 npm run app:up
 ```
 
 Session-store environment variables:
