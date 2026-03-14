@@ -360,6 +360,45 @@ Backend API requests now emit structured JSON logs with request correlation supp
 - Event and error logs are emitted for auth, checkout, and order flows.
 - Sensitive fields (passwords, auth tokens, card number/cvv values) are redacted from structured log payloads.
 
+## API rate limiting for auth and checkout (SCRUM-17)
+
+Scoped fixed-window rate limiting is enabled for:
+
+- `POST /api/login`
+- `POST /api/register`
+- `POST /api/checkout`
+
+Rate-limit configuration (defaults shown):
+
+- `RATE_LIMIT_ENABLED=true`
+- `RATE_LIMIT_LOGIN_MAX_REQUESTS=120`
+- `RATE_LIMIT_LOGIN_WINDOW_SECONDS=60`
+- `RATE_LIMIT_REGISTER_MAX_REQUESTS=40`
+- `RATE_LIMIT_REGISTER_WINDOW_SECONDS=300`
+- `RATE_LIMIT_CHECKOUT_MAX_REQUESTS=80`
+- `RATE_LIMIT_CHECKOUT_WINDOW_SECONDS=60`
+
+When a limit is exceeded, backend returns:
+
+- HTTP `429`
+- JSON body: `{ "message": "Too many requests. Please retry later.", "code": "RATE_LIMIT_EXCEEDED", "retryAfterSeconds": <number> }`
+- `Retry-After` response header
+
+Rate-limit observability:
+
+- Throttle events are logged as structured events (`message=rate_limit.throttled`) with endpoint scope and retry metadata.
+
+Rollback/tuning:
+
+- Disable quickly: `RATE_LIMIT_ENABLED=false`
+- Or increase endpoint-specific thresholds while investigating user impact.
+
+Focused verification command (run against an already-running backend):
+
+```bash
+RATE_LIMIT_VERIFY_BASE_URL=http://localhost:4000 npm run verify:rate-limit
+```
+
 ## Postgres migration spike commands (SCRUM-14)
 
 These commands support local SQLite -> Postgres rehearsal without changing runtime persistence.

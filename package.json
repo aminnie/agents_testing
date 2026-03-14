@@ -31,6 +31,8 @@
     "cypress:run:pdf": "node scripts/run-cypress-with-pdf.mjs",
     "test:e2e": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:pdf\"'",
     "test:a11y": "sh -c 'BACKEND_PORT=${BACKEND_PORT:-4000}; FRONTEND_PORT=${FRONTEND_PORT:-5173}; export BACKEND_PORT FRONTEND_PORT; start-server-and-test \"npm run dev:backend\" \"http://localhost:${BACKEND_PORT}/health\" \"npm run dev:frontend\" \"http://localhost:${FRONTEND_PORT}\" \"npm run cypress:run:a11y\"'",
+    "test:rate-limit": "node --test app/backend/src/security/rate-limit.test.js",
+    "verify:rate-limit": "node scripts/security/verify-rate-limit.mjs",
     "workflow:final-pass": "node scripts/workflow-final-pass.mjs",
     "workflow:final-pass:ci": "WORKFLOW_FINAL_PASS_CI=true node scripts/workflow-final-pass.mjs",
     "workflow:final-pass:jira": "sh -c 'set -a; . ./requirements/.env.jira.local; set +a; if [ -z \"$REQUIREMENTS_REVIEW_PATH\" ] && [ -n \"$JIRA_ISSUE_KEY\" ]; then REQUIREMENTS_REVIEW_PATH=\"requirements/feature_${JIRA_ISSUE_KEY}.md\"; fi; export REQUIREMENTS_REVIEW_PATH; npm run workflow:final-pass'",

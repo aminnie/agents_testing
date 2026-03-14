@@ -5,6 +5,11 @@ import bcrypt from "bcryptjs";
 import { initDb } from "./db.js";
 import { initSessionStore } from "./session-store.js";
 import {
+  createRateLimiterStore,
+  createScopedRateLimitMiddleware,
+  readRateLimitConfigFromEnv
+} from "./security/rate-limit.js";
+import {
   correlationIdMiddleware,
   requestLoggingMiddleware,
   logEvent,
@@ -140,6 +145,42 @@ const ORDER_LIST_PAGE_SIZE_OPTIONS = Object.freeze([10, 20, 30, 40, 50]);
 const DEFAULT_ORDER_LIST_PAGE_SIZE = 10;
 const MAX_ORDER_LIST_QUERY_LENGTH = 60;
 const MAX_CANCELLATION_REASON_LENGTH = 300;
+const rateLimitConfig = readRateLimitConfigFromEnv();
+const sharedRateLimitStore = createRateLimiterStore();
+
+const loginRateLimit = createScopedRateLimitMiddleware({
+  scope: "auth.login",
+  maxRequests: rateLimitConfig.login.maxRequests,
+  windowSeconds: rateLimitConfig.login.windowSeconds,
+  enabled: rateLimitConfig.enabled,
+  store: sharedRateLimitStore,
+  keyResolver: (req) => req.ip || req.socket?.remoteAddress || "unknown",
+  logEvent
+});
+
+const registerRateLimit = createScopedRateLimitMiddleware({
+  scope: "auth.register",
+  maxRequests: rateLimitConfig.register.maxRequests,
+  windowSeconds: rateLimitConfig.register.windowSeconds,
+  enabled: rateLimitConfig.enabled,
+  store: sharedRateLimitStore,
+  keyResolver: (req) => req.ip || req.socket?.remoteAddress || "unknown",
+  logEvent
+});
+
+const checkoutRateLimit = createScopedRateLimitMiddleware({
+  scope: "checkout",
+  maxRequests: rateLimitConfig.checkout.maxRequests,
+  windowSeconds: rateLimitConfig.checkout.windowSeconds,
+  enabled: rateLimitConfig.enabled,
+  store: sharedRateLimitStore,
+  keyResolver: (req) => {
+    const userPart = req.userId ? `user:${req.userId}` : "user:anonymous";
+    const ipPart = req.ip || req.socket?.remoteAddress || "unknown";
+    return `${userPart}|ip:${ipPart}`;
+  },
+  logEvent
+});
 
 function normalizeCancellationReason(value) {
   return String(value || "").trim();
@@ -263,7 +304,7 @@ app.get("/api/help", async (_req, res) => {
   }
 });
 
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", loginRateLimit, async (req, res) => {
   const email = normalizeEmail(req.body?.email);
   const password = String(req.body?.password || "").trim();
 
@@ -318,7 +359,7 @@ app.post("/api/login", async (req, res) => {
   });
 });
 
-app.post("/api/register", async (req, res) => {
+app.post("/api/register", registerRateLimit, async (req, res) => {
   const displayName = normalizeText(req.body?.displayName);
   const email = normalizeEmail(req.body?.email);
   const password = String(req.body?.password || "").trim();
@@ -715,7 +756,7 @@ app.put("/api/catalog/:id", authMiddleware, requireCatalogProductManager, async 
   });
 });
 
-app.post("/api/checkout", authMiddleware, async (req, res) => {
+app.post("/api/checkout", authMiddleware, checkoutRateLimit, async (req, res) => {
   const { items, payment, address: submittedAddress } = req.body;
   const { address, errors: addressErrors, hasErrors: hasAddressErrors } = validateAddressInput(submittedAddress);
   const normalizedCardNumber = String(payment?.cardNumber || "").replace(/\D/g, "");
@@ -1225,7 +1266,8 @@ Promise.all([initDb(), initSessionStore()])
     app.listen(port, () => {
       logSystemInfo("Backend started", {
         port,
-        sessionMode: sessionStore.mode
+        sessionMode: sessionStore.mode,
+        rateLimitEnabled: rateLimitConfig.enabled
       });
     });
   })
