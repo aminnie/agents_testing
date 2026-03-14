@@ -46,12 +46,12 @@ the engineering team in the following use cases:
 This project repo is developed in Cursor with GPT 5.3 Codex as of
 03/14/2026.
 
-Some of the findings and open questions as to date:
+Some of the findings and open questions to date:
 
 - We typically go from Jira ticket to code complete in 30 under minutes, auto
   code reviewed and with full test automation!
-- The size of the ticket (user story or smaller epic) do not seem to impact to
-  matter all that much as coding happens blazingly fast.
+- The size of the ticket (user story or smaller epic) do not seem to matter
+  all that much as coding phase of the implementation happens blazingly fast.
 - The project agent definitions enable full tracebility of the process, from
   requirements elaboration through done-done! The noore we exercise and enhance
   the agents, the more reliable the process guidance and do's and don't become.
@@ -80,7 +80,13 @@ Some of the findings and open questions as to date:
   project with Jira tickets - attempting to recover them from the chat history
   and context. And who knows? With Slack integration AGENT.md may decide to tell
   on you!
-- Third party tools such as SNYK (IDE integration via MCP) are not aware of current requirement and may report out-of-scope changes as a new security rules are added. During implementation and following an integrated SNYK scan, the LLM may proceed to fix issues in the broader repo. We have scope creep and unintended code changes that may or may not be fully recovered by our test portfolio! Adding an agent rule to limit changes the current requirements and implemenation in our requirements .md file seems to be working.
+- Third party tools such as SNYK (IDE integration via MCP) are not aware of 
+  current requirement and may report out-of-scope changes as a new security
+  rules are added. During implementation and following an integrated SNYK
+  scan, the LLM may proceed to fix issues in the broader repo. We have scope
+  creep and unintended code changes that may or may not be fully recovered by
+  our test portfolio! Adding an agent rule to limit changes the current requirements
+  and implemenation in our requirements .md file seems to be working.
 - Agents, skills and plugins definitions continue to standardize across vendors.
   To what extent are these agents re-usable as is in Cursor vs. CLaude Code or
   Codex for example. Also, can/should we back out and make them more re-usable
