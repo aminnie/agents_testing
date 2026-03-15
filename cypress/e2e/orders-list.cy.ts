@@ -26,7 +26,7 @@ describe("Feature: Orders List", () => {
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     checkoutPage.fillAddress("500 Orders Lane", "Austin", "73301", "USA");
     checkoutPage.fillPayment("Anton Minnie", "4242424242424242");
     checkoutPage.submit();

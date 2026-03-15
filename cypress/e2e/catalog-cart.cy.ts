@@ -19,9 +19,6 @@ describe("Feature: Catalog and Cart", () => {
     cy.get('[data-cy="nav-checkout"]').should("not.exist");
     catalogPage.navCartCount().should("contain", "0");
     catalogPage.addFirstCatalogItem();
-
-    catalogPage.cartItemList().find("li").should("have.length", 1);
-    catalogPage.cartTotal().should("not.contain", "$0.00");
     catalogPage.navCartCount().should("contain", "1");
   });
 
@@ -29,7 +26,7 @@ describe("Feature: Catalog and Cart", () => {
     catalogPage.addFirstCatalogItem();
     cy.get('[data-cy="nav-checkout"]').should("not.exist");
 
-    catalogPage.navCartIcon().click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
     cy.get('[data-cy="checkout-page-title"]').should("be.visible");
   });
@@ -43,19 +40,17 @@ describe("Feature: Catalog and Cart", () => {
 
     catalogPage.addFromDetailAndReturn();
     cy.location("pathname").should("eq", "/store");
-    catalogPage.cartItemList().find("li").should("have.length", 1);
     cy.get('[data-cy="nav-checkout"]').should("not.exist");
     catalogPage.navCartCount().should("contain", "1");
   });
 
   it("should return from item details without adding an item", () => {
-    cy.get('[data-cy="cart-empty"]').should("be.visible");
+    catalogPage.navCartCount().should("contain", "0");
     catalogPage.viewFirstCatalogItem();
     cy.location("pathname").should("match", /^\/store\/item\/.+$/);
 
     catalogPage.returnFromDetail();
     cy.location("pathname").should("eq", "/store");
-    cy.get('[data-cy="cart-empty"]').should("be.visible");
     cy.get('[data-cy="nav-checkout"]').should("not.exist");
     catalogPage.navCartCount().should("contain", "0");
   });
@@ -63,7 +58,7 @@ describe("Feature: Catalog and Cart", () => {
   it("should re-enable top checkout button after adding an item again", () => {
     catalogPage.addFirstCatalogItem();
     catalogPage.navCartCount().should("contain", "1");
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
 
     cy.get('[data-cy="checkout-street"]').type("101 Test Street");
     cy.get('[data-cy="checkout-city"]').type("Austin");

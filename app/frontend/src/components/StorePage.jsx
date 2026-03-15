@@ -2,7 +2,6 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
-import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
 import {
   Box,
   Button,
@@ -26,7 +25,6 @@ export default function StorePage({
   searchInput,
   searchError,
   isSearchActive,
-  cart,
   totalLabel,
   onAddToCart,
   onSearchInputChange,
@@ -34,7 +32,6 @@ export default function StorePage({
   onClearSearch,
   onViewItem,
   onEditItem,
-  onGoCheckout,
   onGoOrders,
   isProductManagementEnabled,
   pagination,
@@ -208,28 +205,6 @@ export default function StorePage({
               Last
             </Button>
           </Stack>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent>
-          <Typography sx={{ mb: 2 }} variant="h5">Cart</Typography>
-          {cart.length === 0 ? <Typography data-cy="cart-empty">Cart is empty</Typography> : null}
-          <List data-cy="cart-list" sx={{ p: 0 }}>
-            {cart.map((item) => (
-              <ListItem key={item.id} sx={{ px: 0 }}>
-                <Typography data-cy={`cart-item-${item.id}`}>
-                  {(item.header || item.name)} x {item.quantity}
-                </Typography>
-              </ListItem>
-            ))}
-          </List>
-          <Typography data-cy="cart-total" sx={{ fontWeight: 600 }}>
-            Total: {totalLabel(cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0))}
-          </Typography>
-          <Button data-cy="go-to-checkout" onClick={onGoCheckout} startIcon={<ShoppingCartCheckoutIcon />} type="button">
-            Go to checkout
-          </Button>
         </CardContent>
       </Card>
     </Stack>

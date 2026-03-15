@@ -87,19 +87,15 @@ export class CatalogPage {
     cy.get('[data-cy="item-detail-return"]').click();
   }
 
-  cartTotal() {
-    return cy.get('[data-cy="cart-total"]');
-  }
-
-  cartItemList() {
-    return cy.get('[data-cy="cart-list"]');
-  }
-
   navCartIcon() {
     return cy.get('[data-cy="nav-cart-icon"]');
   }
 
   navCartCount() {
     return cy.get('[data-cy="nav-cart-count"]');
+  }
+
+  openCheckoutFromHeader() {
+    this.navCartIcon().click();
   }
 }

@@ -131,7 +131,7 @@ function runA11yAudit(scope: string, context: string = "body") {
     // Checkout page
     cy.get('[data-cy="item-detail-return"]').click();
     cy.get('[data-cy^="catalog-add-"]').first().click();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    cy.get('[data-cy="nav-cart-icon"]').click();
     cy.get('[data-cy="checkout-page-title"]').should("be.visible");
     runA11yAudit("checkout");
   });
