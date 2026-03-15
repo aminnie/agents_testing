@@ -35,7 +35,7 @@ export default function LoginScreen({
             variant="h6"
           >
             <StorefrontIcon sx={{ mr: 1 }} />
-            Happy Vibes
+            Good Vibes
           </Typography>
           <Box sx={{ ml: "auto" }}>
             <Button data-cy="login-help" onClick={onGoHelp} startIcon={<HelpOutlineIcon />} type="button">

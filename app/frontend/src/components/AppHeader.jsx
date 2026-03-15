@@ -51,7 +51,7 @@ export default function AppHeader({
           type="button"
         >
           <Typography component="span" data-cy="dashboard-title" sx={{ fontWeight: 700 }} variant="h6">
-            Happy Vibes
+            Good Vibes
           </Typography>
         </Button>
         <Typography
