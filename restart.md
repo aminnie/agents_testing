@@ -47,6 +47,17 @@ Start full stack (app + required infra dependencies) using explicit host ports:
 BACKEND_PORT=4400 FRONTEND_PORT=5188 npm run app:up
 ```
 
+If code or Dockerfile changes were made since the last build, rebuild images during restart:
+
+```bash
+BACKEND_PORT=4400 FRONTEND_PORT=5188 docker compose --profile app up -d --build
+```
+
+When to use each command:
+
+- Use `npm run app:up` for a normal restart when images are already current.
+- Use `docker compose --profile app up -d --build` after frontend/backend code changes, dependency changes, or Dockerfile updates to avoid stale image behavior.
+
 Check app container status:
 
 ```bash

@@ -538,6 +538,8 @@ Application services are managed separately with `app:*` commands below.
 
 ## Containerized app runtime (frontend + backend via Docker)
 
+For full shutdown/restart and rebuild guidance after code changes, see `restart.md`.
+
 Start containerized frontend + backend (and required infra dependencies):
 
 ```bash
