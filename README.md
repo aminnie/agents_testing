@@ -710,9 +710,22 @@ Artifacts:
 
 Required CI checks are defined in `.github/workflows/required-checks.yml`:
 
+- `jira-traceability` (enforces Jira key traceability across branch, PR title, and commit messages)
 - `test-e2e`
 - `test-a11y`
 - `workflow-final-pass`
+
+Traceability policy for collaborative development:
+
+- Branch names must follow: `feature|bugfix|chore|hotfix/SCRUM-<id>-short-description`
+- PR titles must include Jira key (example: `SCRUM-25`)
+- Commits in the PR range must include Jira key and align with the branch Jira key
+
+Local pre-check helper (before opening PR):
+
+```bash
+npm run governance:jira-traceability:check -- --branch feature/SCRUM-25-example --prTitle "SCRUM-25: Example change" --base origin/main --head HEAD
+```
 
 CI-safe final pass command:
 

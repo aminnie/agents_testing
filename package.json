@@ -44,6 +44,7 @@
     "workflow:final-pass:jira": "sh -c 'set -a; . ./requirements/.env.jira.local; set +a; if [ -z \"$REQUIREMENTS_REVIEW_PATH\" ] && [ -n \"$JIRA_ISSUE_KEY\" ]; then REQUIREMENTS_REVIEW_PATH=\"requirements/feature_${JIRA_ISSUE_KEY}.md\"; fi; export REQUIREMENTS_REVIEW_PATH; npm run workflow:final-pass'",
     "governance:branch-protection:apply": "node scripts/governance/apply-branch-protection.mjs",
     "governance:branch-protection:verify": "node scripts/governance/verify-branch-protection.mjs",
+    "governance:jira-traceability:check": "node scripts/governance/validate-jira-traceability.mjs",
     "requirements:set-active": "node scripts/requirements/set_active_requirements.mjs",
     "requirements:show-active": "node scripts/requirements/show_active_requirements.mjs",
     "jira:read": "node scripts/jira/read_issue.mjs",
