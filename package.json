@@ -59,6 +59,7 @@
     "cypress": "^15.11.0",
     "cypress-axe": "^1.7.0",
     "pdfkit": "^0.17.2",
-    "start-server-and-test": "^2.1.5"
+    "start-server-and-test": "^2.1.5",
+    "typescript": "^5.9.3"
   }
 }

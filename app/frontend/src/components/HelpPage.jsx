@@ -49,7 +49,7 @@ export default function HelpPage({ onBack, showSimpleHeader = true }) {
               variant="h6"
             >
               <StorefrontIcon sx={{ mr: 1 }} />
-              Happy Vibes
+              Good Vibes
             </Typography>
             {onBack ? (
               <Box sx={{ ml: "auto" }}>

@@ -1,4 +1,4 @@
-# Happy Vibes Agents Development Initiative
+# Good Vibes Agents Development Initiative
 
 This repository contains a demo web store application that is used to develop
 and validate AI agents, skills and plugins in the software engineering life

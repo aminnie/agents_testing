@@ -5,7 +5,7 @@ describe("Feature: Help", () => {
     cy.visit("/help");
     cy.wait("@help").its("response.statusCode").should("be.oneOf", [200, 304]);
 
-    cy.get('[data-cy="unauth-store-title"]').should("be.visible").and("contain", "Happy Vibes");
+    cy.get('[data-cy="unauth-store-title"]').should("be.visible").and("contain", "Good Vibes");
     cy.get('[data-cy="help-page-title"]').should("contain", "Help");
     cy.get('[data-cy="help-demo-users"]').should("not.exist");
     cy.get('[data-cy="help-navigation-tips"] li').should("have.length.at.least", 4);
