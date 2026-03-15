@@ -176,6 +176,9 @@ API/data contract impact:
     - `specs/login.feature`
 - Documentation updates:
   - Updated repository heading branding in `README.md` to `Good Vibes Agents Development Initiative`.
+  - Added `GITHUB_TOKEN` placeholder entry to `.env.example` (no secret value) for local GitHub CLI/Jira-adjacent workflow documentation.
+- CI/tooling updates:
+  - Added `typescript` to root `devDependencies` (`package.json`, `package-lock.json`) so GitHub Actions can execute Cypress TypeScript specs reliably.
 
 ## Verification Results
 
@@ -191,6 +194,8 @@ API/data contract impact:
   - Result: expected fail due Jira publish guardrail (`JIRA_FINAL_PASS_PUBLISH` must be `true` when Jira credentials are configured).
 - `BACKEND_PORT=4424 FRONTEND_PORT=5200 REQUIREMENTS_REVIEW_PATH=requirements/feature_SCRUM-26.md JIRA_ISSUE_KEY=SCRUM-26 JIRA_FINAL_PASS_PUBLISH=true JIRA_FINAL_PASS_APPROVED=no npm run workflow:final-pass`
   - Result: pass. Final pass completed with Jira publish dry-run (`jira:publish-final --dry-run true`), no Jira write executed.
+- `BACKEND_PORT=4430 FRONTEND_PORT=5206 npm run test:a11y` (post-CI failure remediation)
+  - Result: pass. Confirmed TypeScript dependency fix resolves Cypress TypeScript preparation error path.
 
 ## Review Results
 
@@ -225,4 +230,6 @@ API/data contract impact:
 - 2026-03-15T18:20:18Z | Testing | Started | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Executed required regression, accessibility, and final-pass validation commands.
 - 2026-03-15T18:27:52Z | Testing | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | test:e2e and test:a11y passed; final-pass:ci passed; non-CI final pass passed in Jira dry-run mode after confirming publish guard behavior.
 - 2026-03-15T18:27:52Z | Review | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Reviewed changed scope and completed Snyk code scan with zero new issues.
+- 2026-03-15T18:59:58Z | Testing | Resumed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Investigated PR CI failures and identified missing `typescript` dependency on GitHub runner for Cypress `.ts` specs.
+- 2026-03-15T18:59:58Z | Testing | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Added `typescript` devDependency, re-ran accessibility suite, and validated remediation before push.
 
