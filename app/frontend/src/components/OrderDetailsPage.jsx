@@ -25,7 +25,7 @@ export default function OrderDetailsPage({
           </Typography>
           {loading ? (
             <Stack data-cy="order-details-loading" direction="row" spacing={1} sx={{ alignItems: "center", mb: 2 }}>
-              <CircularProgress size={18} />
+              <CircularProgress aria-label="Loading order details" size={18} />
               <Typography variant="body2">Loading order details...</Typography>
             </Stack>
           ) : null}

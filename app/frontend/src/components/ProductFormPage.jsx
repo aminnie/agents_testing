@@ -51,7 +51,7 @@ export default function ProductFormPage({
         <CardContent>
           <Typography gutterBottom variant="h5">Edit product</Typography>
           <Stack alignItems="center" direction="row" spacing={1}>
-            <CircularProgress size={18} />
+            <CircularProgress aria-label="Loading product form" size={18} />
             <Typography>Loading...</Typography>
           </Stack>
         </CardContent>

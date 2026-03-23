@@ -100,7 +100,7 @@ export default function StorePage({
           </Stack>
           {loadingCatalog ? (
             <Box data-cy="catalog-loading" sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <CircularProgress size={18} />
+              <CircularProgress aria-label="Loading catalog items" size={18} />
               <Typography variant="body2">Loading...</Typography>
             </Box>
           ) : null}

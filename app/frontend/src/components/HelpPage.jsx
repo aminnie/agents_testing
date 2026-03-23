@@ -49,7 +49,7 @@ export default function HelpPage({ onBack, showSimpleHeader = true }) {
               variant="h6"
             >
               <StorefrontIcon sx={{ mr: 1 }} />
-              Happy Vibes
+              Good Vibes
             </Typography>
             {onBack ? (
               <Box sx={{ ml: "auto" }}>
@@ -67,7 +67,7 @@ export default function HelpPage({ onBack, showSimpleHeader = true }) {
           <CardContent>
             <Typography data-cy="help-page-title" gutterBottom variant="h5">Help</Typography>
             <Stack alignItems="center" direction="row" spacing={1}>
-              <CircularProgress size={18} />
+              <CircularProgress aria-label="Loading help content" size={18} />
               <Typography>Loading...</Typography>
             </Stack>
           </CardContent>

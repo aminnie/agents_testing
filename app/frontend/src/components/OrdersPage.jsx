@@ -108,7 +108,7 @@ export default function OrdersPage({
           </Stack>
           {loading ? (
             <Stack data-cy="orders-loading" direction="row" spacing={1} sx={{ alignItems: "center", mb: 2 }}>
-              <CircularProgress size={18} />
+              <CircularProgress aria-label="Loading orders" size={18} />
               <Typography variant="body2">Loading orders...</Typography>
             </Stack>
           ) : null}

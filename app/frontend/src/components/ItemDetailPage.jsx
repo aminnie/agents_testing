@@ -21,7 +21,7 @@ export default function ItemDetailPage({
         <CardContent>
           <Typography gutterBottom variant="h5">Item details</Typography>
           <Stack alignItems="center" direction="row" spacing={1}>
-            <CircularProgress size={18} />
+            <CircularProgress aria-label="Loading item details" size={18} />
             <Typography>Loading...</Typography>
           </Stack>
         </CardContent>

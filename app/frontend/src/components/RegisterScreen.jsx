@@ -45,7 +45,7 @@ export default function RegisterScreen({
             variant="h6"
           >
             <StorefrontIcon sx={{ mr: 1 }} />
-            Happy Vibes
+            Good Vibes
           </Typography>
           <Box sx={{ ml: "auto" }}>
             <Button
