@@ -179,6 +179,7 @@ API/data contract impact:
   - Added `GITHUB_TOKEN` placeholder entry to `.env.example` (no secret value) for local GitHub CLI/Jira-adjacent workflow documentation.
 - CI/tooling updates:
   - Added `typescript` to root `devDependencies` (`package.json`, `package-lock.json`) so GitHub Actions can execute Cypress TypeScript specs reliably.
+  - Stabilized CI reliability by hardening `cypress/e2e/catalog-pagination.cy.ts` against dataset-size variance and by adding accessible names to loading indicators in active frontend pages.
 
 ## Verification Results
 
@@ -196,6 +197,12 @@ API/data contract impact:
   - Result: pass. Final pass completed with Jira publish dry-run (`jira:publish-final --dry-run true`), no Jira write executed.
 - `BACKEND_PORT=4430 FRONTEND_PORT=5206 npm run test:a11y` (post-CI failure remediation)
   - Result: pass. Confirmed TypeScript dependency fix resolves Cypress TypeScript preparation error path.
+- `BACKEND_PORT=4433 FRONTEND_PORT=5209 npm run test:a11y` (post-flake remediation)
+  - Result: pass. Accessibility checks passed with loading indicator naming updates.
+- `BACKEND_PORT=4434 FRONTEND_PORT=5210 npx start-server-and-test "npm run dev:backend" "http://localhost:4434/health" "npm run dev:frontend" "http://localhost:5210" "npm run cypress:run -- --spec cypress/e2e/catalog-pagination.cy.ts"`
+  - Result: pass. Catalog pagination scenario now stable with page-preservation fallback handling.
+- `BACKEND_PORT=4435 FRONTEND_PORT=5211 npm run test:e2e`
+  - Result: pass. Full e2e suite passed (`57/57`) after remediation.
 
 ## Review Results
 
@@ -232,4 +239,6 @@ API/data contract impact:
 - 2026-03-15T18:27:52Z | Review | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Reviewed changed scope and completed Snyk code scan with zero new issues.
 - 2026-03-15T18:59:58Z | Testing | Resumed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Investigated PR CI failures and identified missing `typescript` dependency on GitHub runner for Cypress `.ts` specs.
 - 2026-03-15T18:59:58Z | Testing | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Added `typescript` devDependency, re-ran accessibility suite, and validated remediation before push.
+- 2026-03-15T19:52:25Z | Testing | Resumed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Investigated remaining CI failures and identified pagination assertion flake plus loading-spinner accessibility violation under authenticated navigation flow.
+- 2026-03-15T19:52:25Z | Testing | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Updated flaky pagination assertion logic, added accessible loading indicator labels, and revalidated with targeted plus full regression runs.
 

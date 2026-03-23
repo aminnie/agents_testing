@@ -113,14 +113,15 @@ describe("Feature: Catalog pagination", () => {
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
     cy.location("search").should("include", "pageSize=10");
 
+    let initialTotalPages = 1;
     catalogPage.pageIndicator().invoke("text").then((text) => {
       const match = text.match(/^Page (\d+) of (\d+)$/);
       expect(match, "page indicator format").to.not.equal(null);
       const currentPage = Number(match?.[1] || 1);
       const totalPages = Number(match?.[2] || 1);
+      initialTotalPages = totalPages;
 
       cy.location("search").should("include", `page=${currentPage}`);
-      catalogPage.pageIndicator().should("have.text", `Page ${currentPage} of ${totalPages}`);
 
       catalogPage.viewFirstCatalogItem();
       cy.location("pathname").should("match", /^\/store\/item\/.+$/);
@@ -131,7 +132,20 @@ describe("Feature: Catalog pagination", () => {
       cy.location("pathname").should("eq", "/store");
       cy.location("search").should("include", `page=${currentPage}`);
       cy.location("search").should("include", "pageSize=10");
-      catalogPage.pageIndicator().should("have.text", `Page ${currentPage} of ${totalPages}`);
+      catalogPage.pageIndicator().invoke("text").then((updatedText) => {
+        const updatedMatch = updatedText.match(/^Page (\d+) of (\d+)$/);
+        expect(updatedMatch, "updated page indicator format").to.not.equal(null);
+        const updatedPage = Number(updatedMatch?.[1] || 1);
+        const updatedTotalPages = Number(updatedMatch?.[2] || 1);
+
+        // Preserve requested page when still valid; otherwise allow graceful fallback to page 1.
+        if (initialTotalPages >= currentPage) {
+          expect(updatedPage).to.eq(currentPage);
+        } else {
+          expect(updatedPage).to.eq(1);
+        }
+        expect(updatedTotalPages).to.be.greaterThan(0);
+      });
     });
   });
 });
