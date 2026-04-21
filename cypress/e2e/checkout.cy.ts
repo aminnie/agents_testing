@@ -32,7 +32,7 @@ describe("Feature: Checkout", () => {
 
   it("should complete checkout for cart items", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
     cy.get('[data-cy="checkout-page-title"]').should("be.visible");
     checkoutPage.fillAddress("101 Test Street", "Austin", "73301", "USA");
@@ -58,7 +58,7 @@ describe("Feature: Checkout", () => {
   it("should support increment and delete controls for checkout line items", () => {
     catalogPage.addFirstCatalogItem();
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
 
     cy.get('[data-cy="nav-cart-count"]').should("contain", "2");
@@ -81,7 +81,7 @@ describe("Feature: Checkout", () => {
 
   it("should remove a line item when decrement is clicked at quantity one", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
     checkoutPage.firstItemQuantity().should("have.text", "1");
 
@@ -92,7 +92,7 @@ describe("Feature: Checkout", () => {
 
   it("should block checkout when payment is incomplete", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
     checkoutPage.fillAddress("101 Test Street", "Austin", "73301", "USA");
     checkoutPage.submit();
@@ -102,7 +102,7 @@ describe("Feature: Checkout", () => {
 
   it("should normalize card number input with spaces and hyphens", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
 
     checkoutPage.fillAddress("101 Test Street", "Austin", "73301", "USA");
@@ -121,7 +121,7 @@ describe("Feature: Checkout", () => {
 
   it("should allow card numbers longer than four digits", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
 
     checkoutPage.fillAddress("101 Test Street", "Austin", "73301", "USA");
@@ -140,7 +140,7 @@ describe("Feature: Checkout", () => {
 
   it("should reject card numbers with four or fewer digits", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
 
     checkoutPage.fillAddress("101 Test Street", "Austin", "73301", "USA");
@@ -152,7 +152,7 @@ describe("Feature: Checkout", () => {
 
   it("should persist edited address and prefill on later checkout", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     checkoutPage.fillAddress("900 Persist Lane", "Denver", "80202", "USA");
     checkoutPage.fillPayment("Anton Minnie", "4242424242424242");
     checkoutPage.submit();
@@ -162,7 +162,7 @@ describe("Feature: Checkout", () => {
     cy.get('[data-cy="nav-store"]').click();
     cy.location("pathname").should("eq", "/store");
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     cy.location("pathname").should("eq", "/checkout");
     cy.get('[data-cy="checkout-street"]').should("have.value", "900 Persist Lane");
     cy.get('[data-cy="checkout-city"]').should("have.value", "Denver");
@@ -172,7 +172,7 @@ describe("Feature: Checkout", () => {
 
   it("should block checkout when postal code is invalid", () => {
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     checkoutPage.fillAddress("101 Test Street", "Austin", "ABC", "USA");
     checkoutPage.fillPayment("Anton Minnie", "4242424242424242");
     checkoutPage.submit();

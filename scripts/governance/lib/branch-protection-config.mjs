@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 
 export const DEFAULT_REQUIRED_CHECKS = Object.freeze([
+  "required-checks / jira-traceability",
   "required-checks / test-e2e",
   "required-checks / test-a11y",
   "required-checks / workflow-final-pass"

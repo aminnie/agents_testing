@@ -119,6 +119,8 @@ Mitigations:
   - Added root scripts: `app:up`, `app:down`, `app:logs`, `app:restart`, `app:ps`, `app:config`.
   - Updated `README.md` with containerized app runbook and Jira EPIC/story seed-creation commands.
   - Added Jira automation script `scripts/jira/create_epic_and_stories.mjs` and seed file `requirements/jira-containerization-seed.json`.
+  - Added Jira traceability governance script `scripts/governance/validate-jira-traceability.mjs` and npm helper `governance:jira-traceability:check`.
+  - Updated CI required checks and branch protection default contexts to include `jira-traceability`.
   - Created containerization EPIC and initial story set in Jira: `SCRUM-18` with linked stories `SCRUM-19`..`SCRUM-24`.
 
 ## Verification Results
@@ -171,3 +173,4 @@ Mitigations:
 - 2026-03-14T03:19:22Z | Testing | Started | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Ran compose validation, container startup probes, required regression suites, final-pass CI run, and Jira create/verify checks.
 - 2026-03-14T03:19:22Z | Testing | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Verification completed with successful regressions and Jira linkage confirmation.
 - 2026-03-14T03:19:22Z | Review | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Performed code quality/security review and Snyk scans on modified first-party code; no new issues detected.
+- 2026-03-15T17:35:53Z | Implementation | Completed | model=openai/gpt-5.3-codex | tokens_in=estimate | tokens_out=estimate | token_source=estimate | Added Jira-linked collaborative workflow governance checks (branch naming, PR title key, commit key traceability) and wired them into required CI/branch-protection defaults.

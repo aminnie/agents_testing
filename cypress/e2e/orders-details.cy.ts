@@ -23,7 +23,7 @@ describe("Feature: Order Details", () => {
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     checkoutPage.fillAddress("120 Detail Road", "Austin", "78702", "USA");
     checkoutPage.fillPayment("Anton Minnie", "4242424242424242");
     checkoutPage.submit();
@@ -64,7 +64,7 @@ describe("Feature: Order Details", () => {
     cy.wait("@catalog").its("response.statusCode").should("be.oneOf", [200, 304]);
 
     catalogPage.addFirstCatalogItem();
-    cy.get('[data-cy="go-to-checkout"]').click();
+    catalogPage.openCheckoutFromHeader();
     checkoutPage.fillAddress("500 Checkout Link Ln", "Austin", "73301", "USA");
     checkoutPage.fillPayment("Anton Minnie", "4242424242424242");
     checkoutPage.submit();

@@ -7,6 +7,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  jira-traceability:
+    name: jira-traceability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Jira traceability (branch, PR title, commits)
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/governance/validate-jira-traceability.mjs
+
   test-e2e:
     name: test-e2e
     runs-on: ubuntu-latest
