@@ -1,4 +1,4 @@
-# Specifcation Driven Development and Testing Initiative
+# Specifation Driven Development and Testing Initiative
 
 This repository contains a demo web store application that is used to develop
 and validate AI agents, skills and plugins in the software engineering life
